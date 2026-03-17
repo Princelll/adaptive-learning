@@ -11,7 +11,117 @@ export type PresentationMode =
   | 'socratic'
   | 'mnemonic'
   | 'step-by-step'
-  | 'contrast';
+  | 'contrast'
+  | 'real_life_example'
+  | 'clinical_example'
+  | 'story';
+
+// ── Z-Score Biometric Model (Cheng 2022, Schiweck 2018) ────────
+
+/** Biometric z-scores relative to personal baseline */
+export interface BiometricZScores {
+  /** RMSSD z-score — parasympathetic index. Negative = below personal baseline */
+  rmssdZ: number;
+  /** SpO2 nocturnal dip severity z-score. Positive = worse than usual dipping */
+  spo2DipZ: number;
+  /** Resting HR z-score. Positive = elevated above personal baseline */
+  restingHRZ: number;
+  /** Self-reported sleep quality 0-1 (0=poor, 1=excellent) */
+  sleepQuality: number;
+  /** Self-reported stress state 0-1 (0=low, 1=extreme) */
+  stressState: number;
+  /** Self-reported cognitive load 0-1 (0=low, 1=high) */
+  cognitiveLoad: number;
+}
+
+/** Structural confounders — collected once, affect HRV baseline (Licht 2008) */
+export interface Confounders {
+  /** SSRIs structurally reduce HRV by ~10-15ms RMSSD */
+  onSSRI: boolean;
+  /** BMI category — obesity associated with lower HRV */
+  bmiCategory: 'underweight' | 'normal' | 'overweight' | 'obese';
+  /** Smoking reduces HRV structurally */
+  smoker: boolean;
+}
+
+/** One day of biometric readings for personal baseline calculation */
+export interface DailyBiometric {
+  /** ISO date string YYYY-MM-DD */
+  date: string;
+  /** RMSSD in ms */
+  rmssd: number;
+  /** Resting heart rate in bpm */
+  restingHR: number;
+  /** SpO2 nocturnal dip severity score 0-1 */
+  spo2Dip: number;
+}
+
+/** Session recommendation from biometric analysis */
+export interface SessionRecommendation {
+  mode: 'normal' | 'review_only' | 'stop';
+  cards: number;
+  reason: string | null;
+}
+
+/** Calibration status for personal baseline */
+export interface CalibrationStatus {
+  calibrated: boolean;
+  daysRemaining: number;
+  totalDays: number;
+  message: string;
+}
+
+/** Single observation for OLS regression training */
+export interface Observation {
+  id: string;
+  timestamp: number;
+  cardId: string;
+  sessionId: string;
+  features: {
+    explanationStyle: string;
+    stressLevel: number;
+    energyLevel: number;
+    timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
+    topicPosition: number;
+    minutesIntoSession: number;
+    daysSinceLastStudy: number;
+    priorLevel: number;
+    complexity: string;
+    course: string;
+  };
+  confounders: Confounders;
+  outcomes: {
+    masteryGain: number;
+    quickfireCorrect: boolean;
+    elaborated: boolean;
+    madeOwnConnection: boolean;
+    neededReexplanation: boolean;
+    recalledCorrectly: boolean;
+    latencyMs: number;
+  };
+}
+
+/** OLS regression analysis result */
+export interface RegressionResult {
+  status: 'collecting_data' | 'initial_model' | 'refined' | 'mature' | 'error';
+  observationsNeeded?: number;
+  r_squared?: number;
+  adjusted_r_squared?: number;
+  n_observations?: number;
+  coefficients?: Record<string, {
+    beta: number;
+    std_error: number;
+    t_stat: number;
+    p_value: number;
+    significant: boolean;
+    isConfounder?: boolean;
+  }>;
+  recommendations?: {
+    bestStyle: string;
+    styleRanking: { style: string; beta: number; significant: boolean }[];
+  };
+  message?: string;
+}
 
 /** Confidence rating from user input (tap gestures on Frame) */
 export type ConfidenceRating = 'again' | 'hard' | 'good' | 'easy';
