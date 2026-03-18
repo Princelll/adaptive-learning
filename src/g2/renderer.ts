@@ -102,6 +102,41 @@ async function rebuildPage(config: PageConfig): Promise<void> {
 
 // ── Screen builders ──────────────────────────────────────────
 
+function buildWelcome(): PageConfig {
+  const title = 'Welcome to StudyHub';
+  const body = [
+    '',
+    'Click → Planned Study',
+    'Scroll → Pick a Subject',
+  ].join('\n');
+
+  return {
+    textObject: [
+      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
+      textContainer(1, 'title', title, 0, 80, 576, 48),
+      textContainer(2, 'body', body, 0, 140, 576, 120),
+    ],
+  };
+}
+
+function buildDeckSelect(): PageConfig {
+  const title = 'Pick a Subject';
+  const lines = state.deckNames.map(
+    (name, i) => (i === state.deckSelectIdx ? '\u25B6 ' : '  ') + name,
+  );
+  const body = lines.join('\n');
+  const hint = 'Up/Down → select, Click → start';
+
+  return {
+    textObject: [
+      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
+      textContainer(1, 'title', title, 0, 6, 576, 36),
+      textContainer(2, 'body', body, 0, 44, 576, 200),
+      textContainer(3, 'hint', hint, 0, 252, 576, 32),
+    ],
+  };
+}
+
 function buildDashboard(): PageConfig {
   const title = 'BioLoop';
   const body = [
@@ -211,6 +246,8 @@ function buildSummary(): PageConfig {
 // ── Public API ───────────────────────────────────────────────
 
 const SCREEN_BUILDERS: Record<string, () => PageConfig> = {
+  welcome: buildWelcome,
+  deck_select: buildDeckSelect,
   dashboard: buildDashboard,
   bio_sleep: () => buildBioScreen('Sleep quality', BIO_OPTIONS, state.bioSleepIdx),
   bio_stress: () => buildBioScreen('Stress level', BIO_OPTIONS, state.bioStressIdx),

@@ -99,7 +99,34 @@ async function rateCard(idx: number): Promise<void> {
 
 async function returnToDashboard(): Promise<void> {
   await refreshDashboard();
-  state.screen = 'dashboard';
+  state.screen = 'welcome';
+  void showScreen();
+}
+
+async function selectDeck(idx: number): Promise<void> {
+  if (idx < 0 || idx >= state.deckIds.length) return;
+  currentDeckId = state.deckIds[idx];
+  state.deckName = state.deckNames[idx];
+
+  // Refresh due count for the selected deck
+  const reviewStates = await storage.getReviewStatesForDeck(currentDeckId);
+  const now = Date.now();
+  state.cardsDue = reviewStates.filter(s => s.dueDate <= now).length;
+  if (state.cardsDue === 0) {
+    state.cardsDue = reviewStates.filter(s => s.totalReviews === 0).length;
+  }
+
+  log(`Selected deck: ${state.deckName} (${state.cardsDue} due)`);
+
+  // Go straight to bio checkin for this deck
+  state.screen = 'bio_sleep';
+  void showScreen();
+}
+
+async function startPlannedStudy(): Promise<void> {
+  await refreshDashboard();
+  // Go to bio checkin with the default (first) deck
+  state.screen = 'bio_sleep';
   void showScreen();
 }
 
@@ -107,6 +134,12 @@ async function returnToDashboard(): Promise<void> {
 
 async function refreshDashboard(): Promise<void> {
   const decks = await storage.getAllDecks();
+
+  // Update deck lists for selection screen
+  state.deckNames = decks.map(d => d.name);
+  state.deckIds = decks.map(d => d.id);
+  state.deckSelectIdx = 0;
+
   if (decks.length > 0) {
     const deck = decks[0];
     currentDeckId = deck.id;
@@ -166,6 +199,8 @@ export async function initApp(): Promise<void> {
     revealAnswer,
     rateCard,
     returnToDashboard,
+    selectDeck,
+    startPlannedStudy,
   });
 
   // Connect to glasses bridge
@@ -178,11 +213,16 @@ export async function initApp(): Promise<void> {
   bridge.onEvenHubEvent(onEvenHubEvent);
   log('Event handler registered');
 
-  // Load dashboard data and render
+  // Load deck list for selection screen and dashboard data
   await refreshDashboard();
-  state.screen = 'dashboard';
+  const allDecks = await storage.getAllDecks();
+  state.deckNames = allDecks.map(d => d.name);
+  state.deckIds = allDecks.map(d => d.id);
+
+  // Start on welcome screen
+  state.screen = 'welcome';
   await showScreen();
 
-  log('BioLoop ready');
+  log('StudyHub ready');
   updateBrowserStatus();
 }

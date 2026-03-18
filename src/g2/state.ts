@@ -7,6 +7,8 @@ import type { ConfidenceRating, BiometricZScores } from '../core/models';
 
 /** All screens the glasses can show */
 export type Screen =
+  | 'welcome'
+  | 'deck_select'
   | 'dashboard'
   | 'bio_sleep'
   | 'bio_stress'
@@ -59,10 +61,15 @@ export interface AppState {
   cardsDue: number;
   modelStatus: string;
   obsCount: number;
+
+  // Deck selection
+  deckNames: string[];
+  deckIds: string[];
+  deckSelectIdx: number;
 }
 
 export const state: AppState = {
-  screen: 'dashboard',
+  screen: 'welcome',
   startupRendered: false,
 
   bioSleepIdx: 2,
@@ -82,6 +89,10 @@ export const state: AppState = {
   cardsDue: 0,
   modelStatus: 'collecting_data',
   obsCount: 0,
+
+  deckNames: [],
+  deckIds: [],
+  deckSelectIdx: 0,
 };
 
 /** Build z-scores from self-reported biometric levels */

@@ -13,17 +13,23 @@ let startSessionFn: () => Promise<void> = async () => {};
 let revealAnswerFn: () => void = () => {};
 let rateCardFn: (idx: number) => Promise<void> = async () => {};
 let returnToDashboardFn: () => Promise<void> = async () => {};
+let selectDeckFn: (idx: number) => Promise<void> = async () => {};
+let startPlannedStudyFn: () => Promise<void> = async () => {};
 
 export function setAppActions(actions: {
   startSession: () => Promise<void>;
   revealAnswer: () => void;
   rateCard: (idx: number) => Promise<void>;
   returnToDashboard: () => Promise<void>;
+  selectDeck: (idx: number) => Promise<void>;
+  startPlannedStudy: () => Promise<void>;
 }): void {
   startSessionFn = actions.startSession;
   revealAnswerFn = actions.revealAnswer;
   rateCardFn = actions.rateCard;
   returnToDashboardFn = actions.returnToDashboard;
+  selectDeckFn = actions.selectDeck;
+  startPlannedStudyFn = actions.startPlannedStudy;
 }
 
 // ── Event normalization (from weather/pong pattern) ──────────
@@ -120,6 +126,16 @@ export function onEvenHubEvent(event: EvenHubEvent): void {
 
 function handleClick(): void {
   switch (state.screen) {
+    case 'welcome':
+      // Click = planned study (go to dashboard then bio checkin)
+      void startPlannedStudyFn();
+      break;
+
+    case 'deck_select':
+      // Click = select the highlighted deck
+      void selectDeckFn(state.deckSelectIdx);
+      break;
+
     case 'dashboard':
       // Start biometric checkin
       state.screen = 'bio_sleep';
@@ -165,6 +181,15 @@ function handleClick(): void {
 
 function handleScrollUp(): void {
   switch (state.screen) {
+    case 'welcome':
+      // Any scroll on welcome → go to deck select
+      state.screen = 'deck_select';
+      void showScreen();
+      break;
+    case 'deck_select':
+      state.deckSelectIdx = Math.max(0, state.deckSelectIdx - 1);
+      void showScreen();
+      break;
     case 'bio_sleep':
       state.bioSleepIdx = Math.max(0, state.bioSleepIdx - 1);
       void showScreen();
@@ -183,6 +208,17 @@ function handleScrollUp(): void {
 function handleScrollDown(): void {
   const max = BIO_OPTIONS.length - 1;
   switch (state.screen) {
+    case 'welcome':
+      // Any scroll on welcome → go to deck select
+      state.screen = 'deck_select';
+      void showScreen();
+      break;
+    case 'deck_select': {
+      const deckMax = state.deckNames.length - 1;
+      state.deckSelectIdx = Math.min(deckMax, state.deckSelectIdx + 1);
+      void showScreen();
+      break;
+    }
     case 'bio_sleep':
       state.bioSleepIdx = Math.min(max, state.bioSleepIdx + 1);
       void showScreen();
