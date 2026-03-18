@@ -5,7 +5,7 @@
 
 import { OsEventTypeList, type EvenHubEvent } from '@evenrealities/even_hub_sdk';
 import { state, RATING_OPTIONS, BIO_OPTIONS } from './state';
-import { showScreen } from './renderer';
+import { safeShowScreen } from './connection';
 import { log } from './log';
 
 // Forward declarations — set by app.ts to avoid circular imports
@@ -157,22 +157,22 @@ function handleClick(): void {
     case 'dashboard':
       // Start biometric checkin
       state.screen = 'bio_sleep';
-      void showScreen();
+      void safeShowScreen();
       break;
 
     case 'bio_sleep':
       state.screen = 'bio_stress';
-      void showScreen();
+      void safeShowScreen();
       break;
 
     case 'bio_stress':
       state.screen = 'bio_load';
-      void showScreen();
+      void safeShowScreen();
       break;
 
     case 'bio_load':
       state.screen = 'bio_confirm';
-      void showScreen();
+      void safeShowScreen();
       break;
 
     case 'bio_confirm':
@@ -186,7 +186,7 @@ function handleClick(): void {
     case 'answer':
       state.screen = 'rating';
       state.ratingIdx = 2; // default to 'good'
-      void showScreen();
+      void safeShowScreen();
       break;
 
     case 'summary':
@@ -202,23 +202,23 @@ function handleScrollUp(): void {
     case 'welcome':
       // Any scroll on welcome → go to deck select
       state.screen = 'deck_select';
-      void showScreen();
+      void safeShowScreen();
       break;
     case 'deck_select':
       state.deckSelectIdx = Math.max(0, state.deckSelectIdx - 1);
-      void showScreen();
+      void safeShowScreen();
       break;
     case 'bio_sleep':
       state.bioSleepIdx = Math.max(0, state.bioSleepIdx - 1);
-      void showScreen();
+      void safeShowScreen();
       break;
     case 'bio_stress':
       state.bioStressIdx = Math.max(0, state.bioStressIdx - 1);
-      void showScreen();
+      void safeShowScreen();
       break;
     case 'bio_load':
       state.bioLoadIdx = Math.max(0, state.bioLoadIdx - 1);
-      void showScreen();
+      void safeShowScreen();
       break;
   }
 }
@@ -229,25 +229,25 @@ function handleScrollDown(): void {
     case 'welcome':
       // Any scroll on welcome → go to deck select
       state.screen = 'deck_select';
-      void showScreen();
+      void safeShowScreen();
       break;
     case 'deck_select': {
       const deckMax = state.deckNames.length - 1;
       state.deckSelectIdx = Math.min(deckMax, state.deckSelectIdx + 1);
-      void showScreen();
+      void safeShowScreen();
       break;
     }
     case 'bio_sleep':
       state.bioSleepIdx = Math.min(max, state.bioSleepIdx + 1);
-      void showScreen();
+      void safeShowScreen();
       break;
     case 'bio_stress':
       state.bioStressIdx = Math.min(max, state.bioStressIdx + 1);
-      void showScreen();
+      void safeShowScreen();
       break;
     case 'bio_load':
       state.bioLoadIdx = Math.min(max, state.bioLoadIdx + 1);
-      void showScreen();
+      void safeShowScreen();
       break;
   }
 }

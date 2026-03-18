@@ -3,13 +3,16 @@
 // Connects SDK bridge, storage, session manager, and renderer
 // ============================================================
 
-import { waitForEvenAppBridge } from '@evenrealities/even_hub_sdk';
-import { state, setBridge, getBridge, buildZScores, RATING_OPTIONS } from './state';
+import { state, buildZScores, RATING_OPTIONS } from './state';
 import { showScreen } from './renderer';
 import { onEvenHubEvent, setAppActions } from './events';
 import { log } from './log';
-import { startKeepAlive } from './keep-alive';
 import { separator } from './display-utils';
+import {
+  connectToGlasses,
+  safeShowScreen,
+  onConnectionStatusChange,
+} from './connection';
 import { Storage } from '../core/storage';
 import { Scheduler } from '../core/scheduler';
 import { SessionManager, SessionEvents } from '../core/session';
@@ -42,7 +45,7 @@ const sessionEvents: SessionEvents = {
       `Avg time: ${(session.averageLatencyMs / 1000).toFixed(1)}s`,
     ].join('\n');
     state.screen = 'summary';
-    void showScreen();
+    void safeShowScreen();
   },
 
   onCardDisplay: (text: string, isFront: boolean) => {
@@ -53,7 +56,7 @@ const sessionEvents: SessionEvents = {
       state.answerText = text;
       state.screen = 'answer';
     }
-    void showScreen();
+    void safeShowScreen();
   },
 
   onLog: (msg: string) => {
@@ -84,7 +87,7 @@ async function startSession(): Promise<void> {
   } catch (err) {
     log(`Session error: ${err}`);
     state.screen = 'dashboard';
-    void showScreen();
+    void safeShowScreen();
   }
 }
 
@@ -103,7 +106,7 @@ async function rateCard(idx: number): Promise<void> {
 async function returnToDashboard(): Promise<void> {
   await refreshDashboard();
   state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
-  void showScreen();
+  void safeShowScreen();
 }
 
 async function selectDeck(idx: number): Promise<void> {
@@ -123,19 +126,19 @@ async function selectDeck(idx: number): Promise<void> {
 
   // Go straight to bio checkin for this deck
   state.screen = 'bio_sleep';
-  void showScreen();
+  void safeShowScreen();
 }
 
 async function startPlannedStudy(): Promise<void> {
   await refreshDashboard();
   if (state.deckNames.length === 0) {
     state.screen = 'no_decks';
-    void showScreen();
+    void safeShowScreen();
     return;
   }
   // Go to bio checkin with the default (first) deck
   state.screen = 'bio_sleep';
-  void showScreen();
+  void safeShowScreen();
 }
 
 // ── Dashboard data refresh ───────────────────────────────────
@@ -211,18 +214,23 @@ export async function initApp(): Promise<void> {
     startPlannedStudy,
   });
 
-  // Connect to glasses bridge
+  // Connect to glasses bridge with error recovery
+  onConnectionStatusChange((status) => {
+    const el = document.getElementById('status');
+    if (el) {
+      if (status === 'reconnecting') {
+        el.textContent = 'Reconnecting to glasses...';
+      } else if (status === 'failed') {
+        el.textContent = 'Connection lost. Refresh to retry.';
+      } else if (status === 'connected') {
+        updateBrowserStatus();
+      }
+    }
+  });
+
   log('Waiting for glasses bridge...');
-  const bridge = await waitForEvenAppBridge();
-  setBridge(bridge);
-  log('Bridge connected');
-
-  // Register event handler
-  bridge.onEvenHubEvent(onEvenHubEvent);
-  log('Event handler registered');
-
-  // Start keep-alive heartbeat to prevent BLE/webview suspension
-  startKeepAlive();
+  await connectToGlasses(onEvenHubEvent);
+  log('Bridge connected with error recovery');
 
   // Load deck list for selection screen and dashboard data
   await refreshDashboard();

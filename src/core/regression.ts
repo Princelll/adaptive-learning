@@ -209,18 +209,40 @@ const ALL_STYLES: string[] = [
 ];
 const BASELINE_STYLE = 'socratic';
 
+// Ridge regression penalty (L2 regularization)
+// Prevents overfitting when observations << predictors
+const RIDGE_LAMBDA = 0.1;
+
+// Temporal decay: recent observations weighted more heavily
+// Half-life in days — observations older than this get 50% weight
+const DECAY_HALF_LIFE_DAYS = 14;
+
 function computeLearningScore(obs: Observation): number {
   const o = obs.outcomes;
+  // Include latency as a factor: faster correct answers score higher
+  const latencyBonus = o.recalledCorrectly
+    ? Math.max(0, 1 - o.latencyMs / 15000) * 0.5  // 0-0.5 bonus for speed
+    : 0;
   return (
     o.masteryGain * 2 +
     (o.quickfireCorrect ? 1 : 0) * 1.5 +
     (o.elaborated ? 1 : 0) * 1.0 +
     (o.madeOwnConnection ? 1 : 0) * 1.0 -
-    (o.neededReexplanation ? 1 : 0) * 1.5
+    (o.neededReexplanation ? 1 : 0) * 1.5 +
+    latencyBonus
   );
 }
 
-function buildDesignMatrix(observations: Observation[]): { X: Matrix; y: Vector; colNames: string[] } {
+/**
+ * Compute temporal weight for an observation.
+ * Recent observations get weight ~1.0, older ones decay exponentially.
+ */
+function temporalWeight(obsTimestamp: number, now: number): number {
+  const ageDays = (now - obsTimestamp) / 86400000;
+  return Math.pow(0.5, ageDays / DECAY_HALF_LIFE_DAYS);
+}
+
+function buildDesignMatrix(observations: Observation[]): { X: Matrix; y: Vector; W: Vector; colNames: string[] } {
   const styleNames = ALL_STYLES.filter(s => s !== BASELINE_STYLE);
 
   const colNames = [
@@ -237,6 +259,8 @@ function buildDesignMatrix(observations: Observation[]): { X: Matrix; y: Vector;
     'minutesIntoSession',
     'daysSinceLastStudy',
     'priorLevel',
+    // Interaction: stress × complexity (high stress + hard topic = bigger penalty)
+    'stress_x_complex',
     // Confounders
     'onSSRI',
     'smoker',
@@ -246,6 +270,17 @@ function buildDesignMatrix(observations: Observation[]): { X: Matrix; y: Vector;
 
   const X: Matrix = [];
   const y: Vector = [];
+  const W: Vector = []; // temporal weights
+  const now = Date.now();
+
+  // Complexity to numeric mapping for interaction term
+  const complexityMap: Record<string, number> = {
+    vocabulary: 0.2,
+    concept: 0.4,
+    procedure: 0.6,
+    application: 0.8,
+    analysis: 1.0,
+  };
 
   for (const obs of observations) {
     const row: number[] = [1]; // intercept
@@ -266,6 +301,10 @@ function buildDesignMatrix(observations: Observation[]): { X: Matrix; y: Vector;
     row.push(obs.features.daysSinceLastStudy);
     row.push(obs.features.priorLevel);
 
+    // Interaction: stress × complexity
+    const complexityNum = complexityMap[obs.features.complexity] ?? 0.5;
+    row.push(obs.features.stressLevel * complexityNum);
+
     // Confounders
     row.push(obs.confounders.onSSRI ? 1 : 0);
     row.push(obs.confounders.smoker ? 1 : 0);
@@ -274,9 +313,10 @@ function buildDesignMatrix(observations: Observation[]): { X: Matrix; y: Vector;
 
     X.push(row);
     y.push(computeLearningScore(obs));
+    W.push(temporalWeight(obs.timestamp, now));
   }
 
-  return { X, y, colNames };
+  return { X, y, W, colNames };
 }
 
 // ── Main analysis ─────────────────────────────────────────────
@@ -293,7 +333,7 @@ export function runAnalysis(observations: Observation[]): RegressionResult {
   }
 
   try {
-    const { X, y, colNames } = buildDesignMatrix(observations);
+    const { X, y, W, colNames } = buildDesignMatrix(observations);
     const p = colNames.length;
 
     if (n <= p) {
@@ -304,18 +344,29 @@ export function runAnalysis(observations: Observation[]): RegressionResult {
       };
     }
 
-    const Xt = transpose(X);
-    const XtX = matMul(Xt, X);
+    // Apply temporal weights: W^0.5 * X and W^0.5 * y (weighted least squares)
+    const sqrtW = W.map(w => Math.sqrt(w));
+    const Xw: Matrix = X.map((row, i) => row.map(v => v * sqrtW[i]));
+    const yw: Vector = y.map((v, i) => v * sqrtW[i]);
+
+    const Xt = transpose(Xw);
+    const XtX = matMul(Xt, Xw);
+
+    // Ridge regularization: add λI to XtX (skip intercept)
+    for (let j = 0; j < p; j++) {
+      XtX[j][j] += j === 0 ? 0 : RIDGE_LAMBDA;
+    }
+
     const XtXinv = invertMatrix(XtX);
 
     if (!XtXinv) {
       return { status: 'error', message: 'Matrix is singular – try more diverse study data' };
     }
 
-    const Xty = matVecMul(Xt, y);
+    const Xty = matVecMul(Xt, yw);
     const beta = matVecMul(XtXinv, Xty);
 
-    // Residuals and R²
+    // Residuals and R² (computed on unweighted data for interpretability)
     const yHat = matVecMul(X, beta);
     const yMean = y.reduce((s, v) => s + v, 0) / n;
     const ssTot = y.reduce((s, v) => s + (v - yMean) ** 2, 0);
@@ -383,7 +434,20 @@ export function runAnalysis(observations: Observation[]): RegressionResult {
   }
 }
 
-/** Online style preference update (bandit-style reward) */
+// Track per-style observation counts for adaptive learning rate
+const styleObsCounts: Record<string, number> = {};
+
+/**
+ * Online style preference update (bandit-style reward).
+ *
+ * Improvements over v1:
+ * - Adaptive learning rate: starts high (0.3) for new styles, decays to 0.05
+ *   as confidence grows. Follows 1/sqrt(n) schedule.
+ * - Richer reward signal: factors in response latency on a gradient
+ *   rather than binary fast/slow cutoff.
+ * - Exploration bonus: styles with few observations get a slight boost
+ *   to encourage exploration before exploitation.
+ */
 export function updateStylePreferences(
   prefs: Record<string, number>,
   style: string,
@@ -391,16 +455,36 @@ export function updateStylePreferences(
   latencyMs: number,
 ): Record<string, number> {
   const updated = { ...prefs };
-  const lr = 0.1;
 
+  // Adaptive learning rate: 0.3 / sqrt(count) clamped to [0.05, 0.3]
+  styleObsCounts[style] = (styleObsCounts[style] ?? 0) + 1;
+  const count = styleObsCounts[style];
+  const lr = Math.max(0.05, Math.min(0.3, 0.3 / Math.sqrt(count)));
+
+  // Gradient reward based on latency (not binary)
   let reward: number;
   if (correct) {
-    reward = latencyMs < 5000 ? 1.0 : 0.5;
+    // Fast (<3s) = 1.0, medium (3-8s) = 0.7, slow (8-15s) = 0.4, very slow = 0.2
+    const seconds = latencyMs / 1000;
+    if (seconds < 3) reward = 1.0;
+    else if (seconds < 8) reward = 0.7;
+    else if (seconds < 15) reward = 0.4;
+    else reward = 0.2;
   } else {
     reward = -0.3;
   }
 
   const current = updated[style] ?? 0.5;
   updated[style] = Math.max(0, Math.min(1, current + lr * (reward - current)));
+
+  // Exploration bonus: styles tried < 3 times get a slight uplift
+  // to prevent premature convergence on a single style
+  for (const [s, pref] of Object.entries(updated)) {
+    const obs = styleObsCounts[s] ?? 0;
+    if (obs < 3 && pref < 0.5) {
+      updated[s] = Math.min(0.5, pref + 0.02);
+    }
+  }
+
   return updated;
 }
