@@ -15,6 +15,7 @@ import { log } from './log';
 import {
   DISPLAY_WIDTH,
   buildActionBar,
+  buildHeaderLine,
   truncateLines,
   wordWrap,
   applyScrollIndicators,
@@ -112,7 +113,7 @@ async function rebuildPage(config: PageConfig): Promise<void> {
 // ── Screen builders ──────────────────────────────────────────
 
 function buildWelcome(): PageConfig {
-  const title = 'Welcome to StudyHub';
+  const title = buildHeaderLine('Welcome to StudyHub');
   const body = [
     '',
     'Click: Planned Study',
@@ -122,14 +123,14 @@ function buildWelcome(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 80, DISPLAY_WIDTH, 48),
-      textContainer(2, 'body', body, 0, 140, DISPLAY_WIDTH, 120),
+      textContainer(1, 'title', title, 0, 100, DISPLAY_WIDTH, 64),
+      textContainer(2, 'body', body, 0, 170, DISPLAY_WIDTH, 100),
     ],
   };
 }
 
 function buildNoDecks(): PageConfig {
-  const title = 'Welcome to StudyHub';
+  const title = buildHeaderLine('Welcome to StudyHub');
   const body = [
     'No study material found.',
     '',
@@ -141,7 +142,7 @@ function buildNoDecks(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 60, DISPLAY_WIDTH, 48),
+      textContainer(1, 'title', title, 0, 50, DISPLAY_WIDTH, 64),
       textContainer(2, 'body', body, 0, 120, DISPLAY_WIDTH, 160),
     ],
   };
