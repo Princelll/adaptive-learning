@@ -15,6 +15,7 @@ let rateCardFn: (idx: number) => Promise<void> = async () => {};
 let returnToDashboardFn: () => Promise<void> = async () => {};
 let selectDeckFn: (idx: number) => Promise<void> = async () => {};
 let startPlannedStudyFn: () => Promise<void> = async () => {};
+let showModelInsightsFn: () => void = () => {};
 
 export function setAppActions(actions: {
   startSession: () => Promise<void>;
@@ -23,6 +24,7 @@ export function setAppActions(actions: {
   returnToDashboard: () => Promise<void>;
   selectDeck: (idx: number) => Promise<void>;
   startPlannedStudy: () => Promise<void>;
+  showModelInsights: () => void;
 }): void {
   startSessionFn = actions.startSession;
   revealAnswerFn = actions.revealAnswer;
@@ -30,6 +32,7 @@ export function setAppActions(actions: {
   returnToDashboardFn = actions.returnToDashboard;
   selectDeckFn = actions.selectDeck;
   startPlannedStudyFn = actions.startPlannedStudy;
+  showModelInsightsFn = actions.showModelInsights;
 }
 
 // ── Gesture debouncing (tuned for G2 hardware per even-toolkit) ──
@@ -189,6 +192,12 @@ function handleClick(): void {
       void safeShowScreen();
       break;
 
+    case 'model_insights':
+      // Click on model insights → back to dashboard
+      state.screen = 'dashboard';
+      void safeShowScreen();
+      break;
+
     case 'summary':
       void returnToDashboardFn();
       break;
@@ -202,6 +211,12 @@ function handleScrollUp(): void {
     case 'welcome':
       // Any scroll on welcome → go to deck select
       state.screen = 'deck_select';
+      void safeShowScreen();
+      break;
+
+    case 'model_insights':
+      // Scroll up on model insights → back to dashboard
+      state.screen = 'dashboard';
       void safeShowScreen();
       break;
     case 'deck_select':
@@ -230,6 +245,11 @@ function handleScrollDown(): void {
       // Any scroll on welcome → go to deck select
       state.screen = 'deck_select';
       void safeShowScreen();
+      break;
+
+    case 'dashboard':
+      // Scroll down on dashboard → ML insights
+      showModelInsightsFn();
       break;
     case 'deck_select': {
       const deckMax = state.deckNames.length - 1;

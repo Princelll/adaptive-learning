@@ -257,6 +257,8 @@ export interface LearningProfile {
   stylePreferences: Record<string, number>;
   /** OLS model status string */
   modelStatus: string;
+  /** Last known OLS R² – persisted so dashboard can display without re-running regression */
+  modelR2?: number;
   createdAt: number;
   updatedAt: number;
 }

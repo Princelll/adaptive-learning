@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>StudyHub Mobile</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --accent: #6c8bef;
+      --accent2: #a78bfa;
+      --green: #34d399;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --border: #2d3148;
+      --radius: 12px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      min-height: 100dvh;
+    }
+
+    /* ── Layout ── */
+    .app { max-width: 420px; margin: 0 auto; padding-bottom: 80px; }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px 0;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .header-top h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .g2-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 4px; }
+    .tab {
+      flex: 1; padding: 8px; text-align: center;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      border-bottom: 2px solid transparent;
+      cursor: pointer; transition: all 0.15s;
+      background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Tab panels ── */
+    .panel { display: none; padding: 20px; }
+    .panel.active { display: block; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--muted); margin-bottom: 12px;
+    }
+
+    /* ── Status row ── */
+    .stat-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .stat {
+      flex: 1; background: var(--surface2); border-radius: 8px; padding: 10px 12px;
+    }
+    .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.yellow { color: var(--yellow); }
+    .stat-value.muted { color: var(--muted); font-size: 14px; }
+
+    /* ── Status chip ── */
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .status-chip.collecting { background: rgba(100,116,139,0.2); color: var(--muted); }
+    .status-chip.initial { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .status-chip.refined { background: rgba(108,139,239,0.15); color: var(--accent); }
+    .status-chip.mature { background: rgba(52,211,153,0.15); color: var(--green); }
+    .status-chip::before { content: '●'; font-size: 8px; }
+
+    /* ── Progress bar ── */
+    .progress-wrap { margin-bottom: 4px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .progress-track {
+      height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.4s ease;
+    }
+
+    /* ── Style ranking ── */
+    .style-list { display: flex; flex-direction: column; gap: 8px; }
+    .style-item { display: flex; align-items: center; gap: 10px; }
+    .style-rank { font-size: 11px; font-weight: 700; color: var(--muted); width: 16px; }
+    .style-name { font-size: 13px; flex: 1; text-transform: capitalize; }
+    .style-bar-wrap { width: 100px; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .style-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    .style-score { font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
+
+    /* ── Deck list ── */
+    .deck-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .deck-item:last-child { border-bottom: none; }
+    .deck-name { font-weight: 600; font-size: 14px; }
+    .deck-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .deck-due {
+      background: var(--accent); color: white;
+      border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 700;
+      min-width: 28px; text-align: center;
+    }
+    .deck-due.zero { background: var(--surface2); color: var(--muted); }
+
+    /* ── Refresh button ── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 12px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      border: none; transition: opacity 0.15s;
+    }
+    .btn:active { opacity: 0.8; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center; padding: 40px 20px; color: var(--muted);
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty p { font-size: 13px; line-height: 1.6; }
+
+    /* ── Observation progress ── */
+    .obs-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    /* ── How to connect note ── */
+    .connect-note {
+      background: rgba(108,139,239,0.08);
+      border: 1px solid rgba(108,139,239,0.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-top">
+      <h1>StudyHub Mobile</h1>
+      <span class="g2-badge">Even G2</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="insights">ML Insights</button>
+      <button class="tab" data-tab="decks">Decks</button>
+      <button class="tab" data-tab="flow">App Flow</button>
+    </nav>
+  </header>
+
+  <!-- ── ML Insights panel ── -->
+  <div id="tab-insights" class="panel active">
+
+    <div class="connect-note" id="connect-note" style="display:none">
+      ⚠️ Open this page from the same browser where the G2 simulator is running
+      (e.g. <code>localhost:5173/companion/index.html</code>) to read live data.
+    </div>
+
+    <!-- Model status card -->
+    <div class="card">
+      <div class="card-title">Model Status</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <span class="status-chip" id="status-chip">collecting</span>
+        <span id="r2-display" style="font-size:13px;color:var(--muted)">R² pending</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Observations collected</span>
+          <span id="obs-label">0 / 15</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="obs-bar" style="width:0%"></div>
+        </div>
+        <p class="obs-note" id="obs-note">Collect 15 observations to train the model</p>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-label">Observations</div>
+        <div class="stat-value accent" id="obs-count">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">R²</div>
+        <div class="stat-value green" id="r2-value">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Best Style</div>
+        <div class="stat-value muted" id="best-style">—</div>
+      </div>
+    </div>
+
+    <!-- Style ranking card -->
+    <div class="card">
+      <div class="card-title">Presentation Style Preferences</div>
+      <div class="style-list" id="style-list">
+        <div class="empty">
+          <div class="empty-icon">🧠</div>
+          <p>Style preferences will appear here after you complete study sessions with the G2 glasses.</p>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="loadData()">
+      ↺ Refresh from G2 Simulator
+    </button>
+  </div>
+
+  <!-- ── Decks panel ── -->
+  <div id="tab-decks" class="panel">
+    <div class="card">
+      <div class="card-title">Your Decks</div>
+      <div id="deck-list">
+        <div class="empty">
+          <div class="empty-icon">📚</div>
+          <p>No decks found. Load sample decks by opening the G2 simulator first.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── App Flow panel ── -->
+  <div id="tab-flow" class="panel">
+    <div class="card">
+      <div class="card-title">Screen Navigation Flow</div>
+      <div id="flow-diagram" style="font-family:monospace;font-size:12px;line-height:1.8;color:var(--text)">
+        <pre style="white-space:pre-wrap;overflow-x:auto">
+welcome
+  ├─ scroll (any) ──► deck_select
+  │                     └─ click ──► dashboard ◄── NEW
+  │                                    ├─ click ──► bio_sleep
+  │                                    │              ├─ click ──► bio_stress
+  │                                    │              │              ├─ click ──► bio_load
+  │                                    │              │              │              └─ click ──► bio_confirm
+  │                                    │              │              │                              └─ click ──► [session]
+  │                                    │              │              │                                              ├─ question
+  │                                    │              │              │                                              │    └─ click ──► answer
+  │                                    │              │              │                                              │                  └─ click ──► rating
+  │                                    │              │              │                                              │                                  └─ click ──► [next card]
+  │                                    │              │              │                                              └─ (auto end) ──► summary
+  │                                    └─ scroll↓ ──► model_insights ◄── NEW
+  │                                                     ├─ scroll↑ / click ──► dashboard
+  │                                                     └─ dbl-tap ──► welcome
+  └─ dbl-tap (from anywhere) ──► welcome
+
+ML Data Flow:
+  card rated ──► observation recorded
+              └─► every 5th obs (≥15 total)
+                    └─► runAnalysis() ──► R², style ranking
+                                      └─► saved to LearningProfile
+                                            └─► shown on dashboard &amp; model_insights
+        </pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Gesture Reference</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <div style="display:flex;justify-content:space-between"><span>Click (single tap)</span><span style="color:var(--accent)">Confirm / Next</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Scroll up / down</span><span style="color:var(--accent)">Navigate lists</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Double-tap</span><span style="color:var(--accent)">Back to Home</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Scroll↓ on dashboard</span><span style="color:var(--accent2)">ML Insights screen</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Tab switching ──
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── Read data from localStorage (same origin as Vite dev server) ──
+  function readStorage() {
+    try {
+      const raw = localStorage.getItem('adaptive_learning_data');
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  // ── Status chip helper ──
+  function statusChipClass(status) {
+    if (status === 'mature') return 'mature';
+    if (status === 'refined') return 'refined';
+    if (status === 'initial_model') return 'initial';
+    return 'collecting';
+  }
+
+  function statusLabel(status) {
+    const map = {
+      collecting_data: 'Collecting data',
+      initial_model: 'Initial model',
+      refined: 'Refined model',
+      mature: 'Mature model',
+      error: 'Error',
+    };
+    return map[status] || status;
+  }
+
+  // ── Bar width for style preference (0-1 → 0-100%) ──
+  function barWidth(score, max) {
+    return max > 0 ? Math.round((score / max) * 100) : 0;
+  }
+
+  // ── Main data loader ──
+  function loadData() {
+    const data = readStorage();
+
+    // Show connect note if no data
+    const note = document.getElementById('connect-note');
+    if (!data) {
+      note.style.display = 'block';
+      return;
+    }
+    note.style.display = 'none';
+
+    const profile = data.profile;
+    const observations = data.observations || [];
+    const decks = data.decks || [];
+
+    // ── ML Insights ──
+    if (profile) {
+      // Status chip
+      const chip = document.getElementById('status-chip');
+      chip.className = 'status-chip ' + statusChipClass(profile.modelStatus);
+      chip.textContent = statusLabel(profile.modelStatus);
+
+      // R²
+      const r2 = profile.modelR2;
+      const r2Display = document.getElementById('r2-display');
+      const r2Value = document.getElementById('r2-value');
+      if (typeof r2 === 'number') {
+        r2Display.textContent = 'R² = ' + r2.toFixed(3);
+        r2Value.textContent = r2.toFixed(2);
+        r2Value.className = 'stat-value ' + (r2 > 0.5 ? 'green' : r2 > 0.2 ? 'yellow' : 'accent');
+      } else {
+        r2Display.textContent = 'R² pending';
+        r2Value.textContent = '—';
+        r2Value.className = 'stat-value muted';
+      }
+
+      // Observation progress bar
+      const obsCount = observations.length;
+      const target = profile.modelStatus === 'collecting_data' ? 15 :
+                     profile.modelStatus === 'initial_model' ? 30 :
+                     profile.modelStatus === 'refined' ? 50 : 50;
+      const pct = Math.min(100, Math.round((obsCount / target) * 100));
+      document.getElementById('obs-count').textContent = obsCount;
+      document.getElementById('obs-bar').style.width = pct + '%';
+      document.getElementById('obs-label').textContent = obsCount + ' / ' + target;
+      document.getElementById('obs-note').textContent =
+        profile.modelStatus === 'mature'
+          ? '✓ Model fully trained'
+          : `Collect ${Math.max(0, target - obsCount)} more to reach next milestone`;
+
+      // Style preferences
+      const prefs = profile.stylePreferences || {};
+      const entries = Object.entries(prefs).sort(([, a], [, b]) => b - a);
+      const bestStyle = entries[0]?.[0] || '—';
+      document.getElementById('best-style').textContent = bestStyle.replace(/_/g, ' ');
+
+      const maxScore = entries[0]?.[1] || 1;
+      const styleList = document.getElementById('style-list');
+      if (entries.length > 0) {
+        styleList.innerHTML = entries.map(([style, score], i) => `
+          <div class="style-item">
+            <span class="style-rank">${i + 1}</span>
+            <span class="style-name">${style.replace(/_/g, ' ')}</span>
+            <div class="style-bar-wrap">
+              <div class="style-bar" style="width:${barWidth(score, maxScore)}%"></div>
+            </div>
+            <span class="style-score">${score.toFixed(2)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // ── Decks ──
+    const deckList = document.getElementById('deck-list');
+    if (decks.length === 0) {
+      deckList.innerHTML = `<div class="empty"><div class="empty-icon">📚</div>
+        <p>No decks found. Open the G2 simulator first to load sample decks.</p></div>`;
+    } else {
+      const reviewStates = data.reviewStates || [];
+      const now = Date.now();
+      deckList.innerHTML = decks.map(deck => {
+        const deckStates = reviewStates.filter(s => s.deckId === deck.id);
+        const due = deckStates.filter(s => s.dueDate <= now).length ||
+                    deckStates.filter(s => s.totalReviews === 0).length;
+        return `
+          <div class="deck-item">
+            <div>
+              <div class="deck-name">${deck.name}</div>
+              <div class="deck-meta">${deck.cards.length} cards</div>
+            </div>
+            <span class="deck-due ${due === 0 ? 'zero' : ''}">${due}</span>
+          </div>`;
+      }).join('');
+    }
+  }
+
+  // Auto-load on page open
+  loadData();
+</script>
+</body>
+</html>

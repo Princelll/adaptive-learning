@@ -103,6 +103,11 @@ async function rateCard(idx: number): Promise<void> {
   await sessionManager.rateCard(rating, null);
 }
 
+function showModelInsights(): void {
+  state.screen = 'model_insights';
+  void safeShowScreen();
+}
+
 async function returnToDashboard(): Promise<void> {
   await refreshDashboard();
   state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
@@ -124,8 +129,8 @@ async function selectDeck(idx: number): Promise<void> {
 
   log(`Selected deck: ${state.deckName} (${state.cardsDue} due)`);
 
-  // Go straight to bio checkin for this deck
-  state.screen = 'bio_sleep';
+  // Show dashboard with deck info + ML status before bio checkin
+  state.screen = 'dashboard';
   void safeShowScreen();
 }
 
@@ -166,9 +171,17 @@ async function refreshDashboard(): Promise<void> {
 
   const profile = await storage.getProfile();
   state.modelStatus = profile.modelStatus;
+  state.modelR2 = profile.modelR2 ?? 0;
 
   const obs = await storage.getAllObservations();
   state.obsCount = obs.length;
+
+  // Compute top 3 styles from persisted learned preferences
+  const prefs = profile.stylePreferences as Record<string, number>;
+  state.topStyles = Object.entries(prefs)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([s]) => s);
 }
 
 // ── Browser status panel ─────────────────────────────────────
@@ -212,6 +225,7 @@ export async function initApp(): Promise<void> {
     returnToDashboard,
     selectDeck,
     startPlannedStudy,
+    showModelInsights,
   });
 
   // Connect to glasses bridge with error recovery
