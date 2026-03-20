@@ -242,9 +242,17 @@
       </div>
     </div>
 
-    <button class="btn btn-primary" onclick="loadData()">
+    <button class="btn btn-primary" id="btn-refresh" onclick="loadData()">
       ↺ Refresh from G2 Simulator
     </button>
+
+    <!-- Video slots (hidden until config.json has URLs) -->
+    <div id="video-section" style="display:none">
+      <div class="card" style="margin-top:12px">
+        <div class="card-title">Videos</div>
+        <div id="video-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ── Decks panel ── -->
@@ -307,6 +315,56 @@ ML Data Flow:
 </div>
 
 <script>
+  // ── Load config.json and apply to UI ──
+  async function loadConfig() {
+    try {
+      const res = await fetch('./config.json');
+      if (!res.ok) return;
+      const cfg = await res.json();
+
+      // App title
+      if (cfg.app?.title) document.querySelector('h1').textContent = cfg.app.title;
+      if (cfg.app?.subtitle) document.querySelector('.g2-badge').textContent = cfg.app.subtitle;
+
+      // Tabs
+      if (Array.isArray(cfg.tabs)) {
+        const tabEls = document.querySelectorAll('.tab');
+        cfg.tabs.forEach((t, i) => {
+          if (tabEls[i]) tabEls[i].textContent = t.label;
+        });
+      }
+
+      // Refresh button label
+      const btn = document.getElementById('btn-refresh');
+      if (btn && cfg.buttons?.refresh?.label) btn.textContent = cfg.buttons.refresh.label;
+
+      // Videos
+      if (cfg.videos) {
+        const videoEntries = Object.values(cfg.videos).filter(v => v.url && v.url.trim());
+        if (videoEntries.length > 0) {
+          const section = document.getElementById('video-section');
+          const list = document.getElementById('video-list');
+          section.style.display = 'block';
+          list.innerHTML = videoEntries.map(v => {
+            // Convert YouTube watch URL to embed
+            let embedUrl = v.url;
+            const ytMatch = v.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+            if (ytMatch) embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+            return `
+              <div>
+                <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--muted)">${v.title}</div>
+                <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px;background:var(--surface2)">
+                  <iframe src="${embedUrl}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+                </div>
+              </div>`;
+          }).join('');
+        }
+      }
+    } catch { /* config.json missing — use defaults */ }
+  }
+
   // ── Tab switching ──
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -450,6 +508,7 @@ ML Data Flow:
   }
 
   // Auto-load on page open
+  loadConfig();
   loadData();
 </script>
 </body>

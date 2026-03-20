@@ -1,0 +1,51 @@
+{
+  "_comment": "Edit this file to customize the companion app — no coding needed",
+
+  "app": {
+    "title": "StudyHub Mobile",
+    "subtitle": "Even G2 Companion"
+  },
+
+  "tabs": [
+    { "id": "insights", "label": "ML Insights" },
+    { "id": "decks",    "label": "Decks" },
+    { "id": "flow",     "label": "App Flow" }
+  ],
+
+  "buttons": {
+    "refresh": {
+      "label": "↺ Refresh from G2 Simulator",
+      "description": "Reads the latest study data from the glasses simulator (same browser localStorage)",
+      "style": "primary"
+    }
+  },
+
+  "videos": {
+    "how_to_open": {
+      "title": "How to open the companion app",
+      "url": "",
+      "_instructions": "Paste a YouTube URL or local video path here, e.g. https://youtube.com/watch?v=..."
+    },
+    "how_to_read_insights": {
+      "title": "How to read ML insights",
+      "url": "",
+      "_instructions": "Paste a YouTube URL or local video path here"
+    },
+    "how_to_use_g2": {
+      "title": "How to use the G2 glasses for a study session",
+      "url": "",
+      "_instructions": "Paste a YouTube URL or local video path here"
+    }
+  },
+
+  "milestones": {
+    "initial_model": 15,
+    "refined":       30,
+    "mature":        50
+  },
+
+  "style_display": {
+    "max_styles_shown": 11,
+    "highlight_top": true
+  }
+}
