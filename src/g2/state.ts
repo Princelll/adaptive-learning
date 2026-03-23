@@ -11,6 +11,7 @@ export type Screen =
   | 'no_decks'
   | 'deck_select'
   | 'dashboard'
+  | 'model_insights'
   | 'bio_sleep'
   | 'bio_stress'
   | 'bio_load'
@@ -62,6 +63,8 @@ export interface AppState {
   cardsDue: number;
   modelStatus: string;
   obsCount: number;
+  modelR2: number;
+  topStyles: string[];
 
   // Deck selection
   deckNames: string[];
@@ -90,6 +93,8 @@ export const state: AppState = {
   cardsDue: 0,
   modelStatus: 'collecting_data',
   obsCount: 0,
+  modelR2: 0,
+  topStyles: [],
 
   deckNames: [],
   deckIds: [],

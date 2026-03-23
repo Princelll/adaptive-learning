@@ -306,6 +306,9 @@ export class SessionManager {
     if (allObs.length >= 15 && allObs.length % 5 === 0 && this.profile) {
       const result = runAnalysis(allObs);
       this.profile.modelStatus = result.status;
+      if (result.r_squared !== undefined) {
+        this.profile.modelR2 = result.r_squared;
+      }
       if (result.recommendations?.bestStyle && this.profile) {
         this.events.onLog(
           `Model updated: R²=${result.r_squared?.toFixed(3) ?? 'N/A'}, best style: ${result.recommendations.bestStyle}`,

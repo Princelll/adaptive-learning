@@ -174,16 +174,50 @@ function buildDeckSelect(): PageConfig {
 
 function buildDashboard(): PageConfig {
   const title = 'Adaptive Learning';
+  const hasModel = state.modelStatus !== 'collecting_data' && state.modelStatus !== 'error';
+  const r2Suffix = hasModel ? ` | R²: ${state.modelR2.toFixed(2)}` : '';
+  const topStyle = state.topStyles[0] ?? '—';
   const body = [
     state.deckName || 'No deck loaded',
     separator(24),
     `Cards due: ${state.cardsDue}`,
-    `Model: ${state.modelStatus}`,
+    `Model: ${state.modelStatus}${r2Suffix}`,
+    `Best style: ${topStyle}`,
     `Observations: ${state.obsCount}`,
   ].join('\n');
   const hint = buildActionBar([
     { gesture: 'Click', action: 'Start' },
-    { gesture: 'Double-tap', action: 'Back' },
+    { gesture: 'Scroll↓', action: 'ML info' },
+  ]);
+
+  return {
+    textObject: [
+      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
+      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
+      textContainer(2, 'body', body, 0, 44, DISPLAY_WIDTH, 200),
+      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
+    ],
+  };
+}
+
+function buildModelInsights(): PageConfig {
+  const title = 'ML Model Insights';
+  const hasModel = state.modelStatus !== 'collecting_data' && state.modelStatus !== 'error';
+  const r2Text = hasModel ? `R²: ${state.modelR2.toFixed(2)}` : 'R²: pending';
+  const obsNeeded = state.obsCount < 15 ? ` (${15 - state.obsCount} more needed)` : '';
+  const styleLines = state.topStyles.length > 0
+    ? state.topStyles.map((s, i) => `${i + 1}. ${s}`)
+    : ['(collect 15+ obs to train)'];
+  const body = [
+    `Status: ${state.modelStatus}`,
+    `${r2Text} | Obs: ${state.obsCount}${obsNeeded}`,
+    separator(24),
+    'Top styles:',
+    ...styleLines,
+  ].join('\n');
+  const hint = buildActionBar([
+    { gesture: 'Scroll↑', action: 'Back' },
+    { gesture: 'Dbl-tap', action: 'Home' },
   ]);
 
   return {
@@ -302,6 +336,7 @@ const SCREEN_BUILDERS: Record<string, () => PageConfig> = {
   no_decks: buildNoDecks,
   deck_select: buildDeckSelect,
   dashboard: buildDashboard,
+  model_insights: buildModelInsights,
   bio_sleep: () => buildBioScreen('Sleep quality', BIO_OPTIONS, state.bioSleepIdx),
   bio_stress: () => buildBioScreen('Stress level', BIO_OPTIONS, state.bioStressIdx),
   bio_load: () => buildBioScreen('Cognitive load', BIO_OPTIONS, state.bioLoadIdx),
