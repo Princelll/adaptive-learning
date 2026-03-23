@@ -48,12 +48,14 @@ export interface Confounders {
 export interface DailyBiometric {
   /** ISO date string YYYY-MM-DD */
   date: string;
-  /** RMSSD in ms */
+  /** Overnight RMSSD from G1 (ms) — nocturnal baseline reflecting accumulated stress load */
   rmssd: number;
   /** Resting heart rate in bpm */
   restingHR: number;
-  /** SpO2 nocturnal dip severity score 0-1 */
+  /** SpO2 nocturnal dip severity score 0-1 (derived from spo2Readings if available) */
   spo2Dip: number;
+  /** Hourly SpO2 readings with timestamps (ISO time string HH:mm) — from G1 */
+  spo2Readings?: { time: string; value: number }[];
 }
 
 /** Session recommendation from biometric analysis */
@@ -202,11 +204,14 @@ export interface ReviewEvent {
   correct: boolean;
 }
 
-/** Biometric data snapshot – updated to use rmssd + zScores */
+/**
+ * Biometric data snapshot from R1 PPG — captured at session start, mid-point, and end.
+ * Each reading is a short 15–30s processed window, transmitted on-device.
+ */
 export interface BiometricSnapshot {
   timestamp: number;
   heartRate: number | null;
-  /** RMSSD in ms (replaces legacy hrv field) */
+  /** RMSSD in ms from R1 PPG (replaces legacy hrv field) */
   rmssd: number | null;
   /** Legacy alias kept for backwards compat */
   hrv: number | null;
@@ -233,6 +238,15 @@ export interface StudySession {
     avgHrv: number | null;
     avgSpo2: number | null;
   };
+  /**
+   * HRV snapshots from R1 PPG at three session points.
+   * Each is a 15–30s processed RMSSD window captured on-device.
+   */
+  hrvSnapshots?: {
+    phase: 'start' | 'mid' | 'end';
+    rmssd: number;
+    timestamp: number;
+  }[];
   reviewEvents: string[];
 }
 
