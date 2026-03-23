@@ -24,6 +24,13 @@ export interface BiometricZScores {
   rmssdZ: number;
   /** SpO2 nocturnal dip severity z-score. Positive = worse than usual dipping */
   spo2DipZ: number;
+  /**
+   * SpO2 absolute level z-score vs personal baseline mean.
+   * Negative = lower than usual (e.g. personal norm 98%, today 95% → negative z).
+   * Complements spo2DipZ: dip captures sleep-disordered breathing,
+   * this captures general oxygenation state throughout the day.
+   */
+  spo2Z: number;
   /** Resting HR z-score. Positive = elevated above personal baseline */
   restingHRZ: number;
   /** Self-reported sleep quality 0-1 (0=poor, 1=excellent) */
@@ -54,6 +61,8 @@ export interface DailyBiometric {
   restingHR: number;
   /** SpO2 nocturnal dip severity score 0-1 (derived from spo2Readings if available) */
   spo2Dip: number;
+  /** Mean SpO2 across hourly readings — used for absolute z-score vs personal baseline */
+  spo2Avg?: number;
   /** Hourly SpO2 readings with timestamps (ISO time string HH:mm) — from G1 */
   spo2Readings?: { time: string; value: number }[];
 }

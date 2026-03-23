@@ -90,6 +90,13 @@ export class Scheduler {
         reason: 'SpO2 dipping severely elevated (z > 3σ) — consult a physician',
       };
     }
+    if (zScores.spo2Z < -3) {
+      return {
+        mode: 'stop',
+        cards: 0,
+        reason: 'SpO2 critically below personal baseline (z < -3σ) — rest recommended',
+      };
+    }
 
     // Review-only conditions
     if (zScores.rmssdZ < -2) {
@@ -134,10 +141,15 @@ export class Scheduler {
     else if (zScores.rmssdZ < -0.5) modifier = Math.min(modifier, 0.90);
     else if (zScores.rmssdZ > 1) modifier = Math.min(1.05, modifier * 1.05);
 
-    // SpO2 dip z-score
+    // SpO2 dip z-score (nocturnal dip severity)
     if (zScores.spo2DipZ > 2) modifier = Math.min(modifier, 0.65);
     else if (zScores.spo2DipZ > 1) modifier = Math.min(modifier, 0.80);
     else if (zScores.spo2DipZ > 0.5) modifier = Math.min(modifier, 0.90);
+
+    // SpO2 absolute level z-score vs personal baseline (negative = lower than usual)
+    if (zScores.spo2Z < -2) modifier = Math.min(modifier, 0.65);
+    else if (zScores.spo2Z < -1) modifier = Math.min(modifier, 0.80);
+    else if (zScores.spo2Z < -0.5) modifier = Math.min(modifier, 0.92);
 
     // Resting HR z-score
     if (zScores.restingHRZ > 2) modifier = Math.min(modifier, 0.75);
