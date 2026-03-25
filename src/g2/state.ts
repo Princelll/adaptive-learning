@@ -106,6 +106,7 @@ export function buildZScores(): BiometricZScores {
   return {
     rmssdZ: 0,
     spo2DipZ: 0,
+    spo2Z: 0,
     restingHRZ: 0,
     sleepQuality: bioLevelToFloat(BIO_OPTIONS[state.bioSleepIdx]),
     stressState: 1 - bioLevelToFloat(BIO_OPTIONS[state.bioStressIdx]),

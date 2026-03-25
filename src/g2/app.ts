@@ -18,6 +18,7 @@ import { Scheduler } from '../core/scheduler';
 import { SessionManager, SessionEvents } from '../core/session';
 import { createSampleDecks } from '../data/sample-decks';
 import type { ConfidenceRating, StudySession } from '../core/models';
+import { State } from 'ts-fsrs';
 
 let storage: Storage;
 let scheduler: Scheduler;
@@ -122,7 +123,7 @@ async function selectDeck(idx: number): Promise<void> {
   // Refresh due count for the selected deck
   const reviewStates = await storage.getReviewStatesForDeck(currentDeckId);
   const now = Date.now();
-  state.cardsDue = reviewStates.filter(s => s.dueDate <= now).length;
+  state.cardsDue = reviewStates.filter(s => s.fsrs.due.getTime() <= now).length;
   if (state.cardsDue === 0) {
     state.cardsDue = reviewStates.filter(s => s.totalReviews === 0).length;
   }
@@ -163,9 +164,9 @@ async function refreshDashboard(): Promise<void> {
 
     const reviewStates = await storage.getReviewStatesForDeck(deck.id);
     const now = Date.now();
-    state.cardsDue = reviewStates.filter(s => s.dueDate <= now).length;
+    state.cardsDue = reviewStates.filter(s => s.fsrs.due.getTime() <= now).length;
     if (state.cardsDue === 0) {
-      state.cardsDue = reviewStates.filter(s => s.totalReviews === 0).length;
+      state.cardsDue = reviewStates.filter(s => s.fsrs.state === State.New).length;
     }
   }
 

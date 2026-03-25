@@ -2,6 +2,10 @@
 // Adaptive Learning Data Models
 // ============================================================
 
+import { createEmptyCard } from 'ts-fsrs';
+import type { Card as FSRSCard } from 'ts-fsrs';
+export type { FSRSCard };
+
 /** Card presentation modes - different ways to display the same content */
 export type PresentationMode =
   | 'definition'
@@ -184,16 +188,15 @@ export interface Deck {
   updatedAt: number;
 }
 
-/** SM-2+ review state for a single card */
+/** FSRS-based review state for a single card */
 export interface CardReviewState {
   cardId: string;
   deckId: string;
-  repetitions: number;
-  easeFactor: number;
-  interval: number;
-  dueDate: number;
-  lastReview: number | null;
+  /** FSRS owns all scheduling state (stability, difficulty, due, reps, lapses, state) */
+  fsrs: FSRSCard;
+  /** Running count for analytics */
   totalReviews: number;
+  /** Consecutive correct streak */
   streak: number;
   bestPresentationMode: PresentationMode | null;
   modePerformance: Partial<Record<PresentationMode, { correct: number; total: number }>>;
@@ -296,11 +299,7 @@ export function createDefaultReviewState(cardId: string, deckId: string): CardRe
   return {
     cardId,
     deckId,
-    repetitions: 0,
-    easeFactor: 2.5,
-    interval: 0,
-    dueDate: Date.now(),
-    lastReview: null,
+    fsrs: createEmptyCard(),
     totalReviews: 0,
     streak: 0,
     bestPresentationMode: null,

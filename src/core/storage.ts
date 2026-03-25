@@ -51,6 +51,15 @@ export class Storage {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         this.data = { ...emptyData(), ...JSON.parse(raw) };
+        // Revive FSRS Date objects (JSON serializes them as strings)
+        for (const state of this.data.reviewStates) {
+          if (state.fsrs) {
+            state.fsrs.due = new Date(state.fsrs.due);
+            if (state.fsrs.last_review) {
+              state.fsrs.last_review = new Date(state.fsrs.last_review);
+            }
+          }
+        }
       }
     } catch {
       this.data = emptyData();

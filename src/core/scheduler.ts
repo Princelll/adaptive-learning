@@ -1,12 +1,15 @@
 // ============================================================
-// Adaptive Learning SM-2+ Spaced Repetition Scheduler
+// Adaptive Learning FSRS Spaced Repetition Scheduler
 // with Z-Score Biometric Modifiers (Cheng 2022, Schiweck 2018)
 // ============================================================
+
+import { fsrs, Rating, type Grade, type RecordLogItem } from 'ts-fsrs';
+export { Rating };
+export type { Grade };
 
 import {
   CardReviewState,
   ConfidenceRating,
-  CONFIDENCE_QUALITY,
   BiometricSnapshot,
   BiometricZScores,
   Confounders,
@@ -18,31 +21,17 @@ import {
   ComplexityTag,
 } from './models';
 
-/** Scheduler configuration */
-export interface SchedulerConfig {
-  maxInterval: number;
-  minEaseFactor: number;
-  fuzzPercent: number;
-  biometricWeight: number;
-  learningSteps: number[];
-}
-
-const DEFAULT_CONFIG: SchedulerConfig = {
-  maxInterval: 365,
-  minEaseFactor: 1.3,
-  fuzzPercent: 0.05,
-  biometricWeight: 0.3,
-  learningSteps: [1, 10],
+const RATING_MAP: Record<ConfidenceRating, Grade> = {
+  again: Rating.Again,
+  hard: Rating.Hard,
+  good: Rating.Good,
+  easy: Rating.Easy,
 };
 
 const CALIBRATION_DAYS = 7;
 
 export class Scheduler {
-  private config: SchedulerConfig;
-
-  constructor(config: Partial<SchedulerConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
-  }
+  private f = fsrs();
 
   // ── Z-score utilities ──────────────────────────────────────
 
@@ -168,78 +157,45 @@ export class Scheduler {
     return Math.max(0.5, Math.min(1.05, modifier));
   }
 
-  // ── Core SM-2+ scheduler ───────────────────────────────────
+  // ── Core FSRS scheduler ────────────────────────────────────
 
   schedule(
     state: CardReviewState,
     rating: ConfidenceRating,
     biometrics: BiometricSnapshot | null,
     profile: LearningProfile | null,
-    responseLatencyMs: number,
+    _responseLatencyMs: number,
   ): CardReviewState {
-    const quality = CONFIDENCE_QUALITY[rating];
-    const now = Date.now();
-    const newState = { ...state };
-    newState.lastReview = now;
-    newState.totalReviews++;
+    const grade = RATING_MAP[rating];
+    const record = this.f.repeat(state.fsrs, new Date());
+    const item: RecordLogItem = record[grade];
+    let updatedCard = item.card;
 
-    const correct = quality >= 3;
-    newState.streak = correct ? state.streak + 1 : 0;
-
-    // SM-2 ease factor
-    let newEase = state.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-    newEase = Math.max(this.config.minEaseFactor, newEase);
-    newState.easeFactor = newEase;
-
-    // Interval calculation
-    let newInterval: number;
-
-    if (!correct) {
-      newState.repetitions = 0;
-      newInterval = 0;
-      newState.dueDate = now + this.config.learningSteps[0] * 60 * 1000;
-      newState.interval = 0;
-      return newState;
-    } else if (state.repetitions === 0) {
-      newState.repetitions = 1;
-      newInterval = 1;
-    } else if (state.repetitions === 1) {
-      newState.repetitions = 2;
-      newInterval = 6;
-    } else {
-      newState.repetitions = state.repetitions + 1;
-      newInterval = Math.round(state.interval * newEase);
-      newInterval = Math.round(newInterval * this.computeLatencyModifier(responseLatencyMs));
-      newInterval = this.applyFuzz(newInterval);
-    }
-
-    // Apply z-score biometric modifier to interval (not ease factor)
+    // Apply z-score biometric modifier to FSRS-computed interval
     if (biometrics?.zScores && profile?.confounders) {
       const bioMod = this.computeBiometricModifierFromZScores(
         biometrics.zScores,
         profile.confounders,
       );
-      newInterval = Math.round(newInterval * bioMod);
-    } else if (biometrics) {
-      // Legacy absolute modifier
-      const legacyMod = this.computeLegacyBiometricModifier(biometrics, profile);
-      newEase = Math.max(
-        this.config.minEaseFactor,
-        newEase * (1 + legacyMod * this.config.biometricWeight),
-      );
-      newState.easeFactor = newEase;
+      const now = Date.now();
+      const baseInterval = updatedCard.due.getTime() - now;
+      if (baseInterval > 0) {
+        updatedCard = { ...updatedCard, due: new Date(now + baseInterval * bioMod) };
+      }
     }
 
-    // Easy bonus
-    if (rating === 'easy') {
-      newInterval = Math.round(newInterval * 1.3);
-    }
+    const correct = rating !== 'again';
+    return {
+      ...state,
+      fsrs: updatedCard,
+      totalReviews: state.totalReviews + 1,
+      streak: correct ? state.streak + 1 : 0,
+    };
+  }
 
-    newInterval = Math.min(Math.max(1, newInterval), this.config.maxInterval);
-    newState.interval = newInterval;
-    newState.dueDate = now + newInterval * 24 * 60 * 60 * 1000;
-
-    return newState;
+  /** Probability of recall right now (0.0–1.0). Native FSRS forgetting curve. */
+  getRetrievability(state: CardReviewState): number {
+    return this.f.get_retrievability(state.fsrs, new Date(), false);
   }
 
   /**
@@ -295,8 +251,8 @@ export class Scheduler {
 
   getDueCards(states: CardReviewState[], now: number = Date.now()): CardReviewState[] {
     return states
-      .filter(s => s.dueDate <= now)
-      .sort((a, b) => (now - b.dueDate) - (now - a.dueDate));
+      .filter(s => s.fsrs.due.getTime() <= now)
+      .sort((a, b) => a.fsrs.due.getTime() - b.fsrs.due.getTime());
   }
 
   shouldEndSession(
@@ -343,45 +299,4 @@ export class Scheduler {
     return updated;
   }
 
-  // ── Private helpers ────────────────────────────────────────
-
-  private computeLegacyBiometricModifier(
-    biometrics: BiometricSnapshot,
-    profile: LearningProfile | null,
-  ): number {
-    let modifier = 0;
-    let factors = 0;
-
-    const hrv = biometrics.rmssd ?? biometrics.hrv;
-    if (hrv !== null && profile?.hrvThreshold) {
-      const ratio = hrv / profile.hrvThreshold;
-      modifier += Math.max(-0.5, Math.min(0.5, (ratio - 1) * 0.5));
-      factors++;
-    }
-    if (biometrics.selfReportedState) {
-      const map = { good: 0.2, tired: -0.3, stressed: -0.2 };
-      modifier += map[biometrics.selfReportedState];
-      factors++;
-    }
-    if (biometrics.heartRate !== null) {
-      if (biometrics.heartRate > 90) modifier -= 0.15;
-      else if (biometrics.heartRate < 65) modifier += 0.1;
-      factors++;
-    }
-    return factors > 0 ? modifier / factors : 0;
-  }
-
-  private computeLatencyModifier(latencyMs: number): number {
-    const s = latencyMs / 1000;
-    if (s < 3) return 1.15;
-    if (s < 8) return 1.0;
-    if (s < 15) return 0.9;
-    return 0.8;
-  }
-
-  private applyFuzz(interval: number): number {
-    if (interval <= 2) return interval;
-    const fuzz = 1 + (Math.random() * 2 - 1) * this.config.fuzzPercent;
-    return Math.max(1, Math.round(interval * fuzz));
-  }
 }

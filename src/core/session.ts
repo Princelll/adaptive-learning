@@ -21,6 +21,7 @@ import {
 import { Scheduler } from './scheduler';
 import { Storage } from './storage';
 import { runAnalysis, updateStylePreferences } from './regression';
+import { State } from 'ts-fsrs';
 
 export type SessionPhase =
   | 'idle'
@@ -118,7 +119,8 @@ export class SessionManager {
     this.dueCards = this.scheduler.getDueCards(allStates);
 
     if (this.dueCards.length === 0) {
-      this.dueCards = allStates.filter(s => s.totalReviews === 0);
+      // Fall back to cards that have never been reviewed (new cards)
+      this.dueCards = allStates.filter(s => s.fsrs.state === State.New);
     }
 
     if (this.dueCards.length === 0) {
@@ -322,8 +324,11 @@ export class SessionManager {
     }
 
     this.currentCardIndex++;
+    const daysUntilReview = Math.round(
+      (newState.fsrs.due.getTime() - Date.now()) / 86400000,
+    );
     this.events.onLog(
-      `Card rated: ${rating} (${correct ? 'correct' : 'incorrect'}) — next review in ${newState.interval} day(s)`,
+      `Card rated: ${rating} (${correct ? 'correct' : 'incorrect'}) — next review in ${daysUntilReview} day(s)`,
     );
 
     await this.showNextCard();
@@ -379,10 +384,10 @@ export class SessionManager {
         timeOfDay,
         topicPosition: this.currentCardIndex,
         minutesIntoSession: sessionDurationMin,
-        daysSinceLastStudy: this.currentReviewState?.lastReview
-          ? (Date.now() - this.currentReviewState.lastReview) / 86400000
+        daysSinceLastStudy: this.currentReviewState?.fsrs.last_review
+          ? (Date.now() - this.currentReviewState.fsrs.last_review.getTime()) / 86400000
           : 0,
-        priorLevel: this.currentReviewState?.easeFactor ?? 2.5,
+        priorLevel: this.currentReviewState?.fsrs.difficulty ?? 5,
         complexity: this.currentCard.complexity,
         course: this.currentCard.deckId,
       },
