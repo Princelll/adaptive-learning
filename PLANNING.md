@@ -19,9 +19,12 @@ A biometric-adaptive learning system built on Even G1/R1 hardware that uses phys
 - Keeps content evidence-based and current
 
 ### 3. Spaced Repetition Engine
-- Core scheduling algorithm (based on Tom's work)
+- Core scheduling algorithm (based on Tom's work) — forked at `Princelll/g2-flashcards`
 - Determines when to surface each card
 - Biometric layer acts as a runtime modifier on top
+- `getRetrievability()` added to `scheduler.ts` — returns raw 0.0–1.0 recall probability (this is the RL reward signal)
+- `formatRetrievability()` added — human-readable % shown in card UI
+- **Status: fork done, retrievability display live, build clean**
 
 ### 4. Biometric Layer
 - Signals: HRV, sleep quality, SpO2
@@ -58,10 +61,14 @@ A biometric-adaptive learning system built on Even G1/R1 hardware that uses phys
 ## Phases
 
 ### Phase 1 — Core Learning App
-- Spaced repetition with document upload and PubMed integration
-- HRV + sleep quality as biometric modifiers
-- Unsupervised clustering discovers physiological states from retention data
-- RL optimizes presentation style per state
+- [x] Fork Tom's g2-flashcards — `Princelll/g2-flashcards`
+- [x] Add retrievability display — recall probability shown per card in UI
+- [ ] Wire biometrics from Even Hub SDK (HRV, sleep quality, SpO2)
+- [ ] Store session data: card reviewed + biometric snapshot + grade + retrievability
+- [ ] PubMed integration — search and pull articles directly
+- [ ] Document upload — PDF parsing → auto-generate flashcards
+- [ ] Unsupervised clustering on accumulated biometric + retention data
+- [ ] RL layer — presentation style optimization per physiological state
 
 ### Phase 2 — Context and Insights
 - Accumulate longitudinal data per user
@@ -90,7 +97,7 @@ A biometric-adaptive learning system built on Even G1/R1 hardware that uses phys
 
 - What biometric data is currently accessible in the Even Hub SDK?
 - How to structure the continuous biometric data stream for efficient clustering
-- Optimal RL reward shaping for retention signal (immediate recall vs delayed recall)
+- Optimal RL reward shaping for retention signal (immediate recall vs delayed recall) — `getRetrievability()` is the candidate signal
 - Storage architecture for longitudinal user data
 
 ---
