@@ -57,6 +57,33 @@ export interface Confounders {
   smoker: boolean;
 }
 
+/**
+ * A single period of wakefulness during the sleep window.
+ * Interruptions are ordered chronologically between sleep segments.
+ */
+export interface SleepInterruption {
+  /** Minutes spent awake during this interruption */
+  awakeMin: number;
+  /**
+   * True if the person took >20 min to fall back asleep (clinical threshold
+   * for sleep-onset difficulty — American Academy of Sleep Medicine).
+   */
+  difficultReturn: boolean;
+  /**
+   * Minutes of continuous sleep accumulated after returning to sleep,
+   * until the next interruption or final wake-up.
+   */
+  sleepAfterMin: number;
+}
+
+/** A single continuous block of uninterrupted sleep */
+export interface SleepSegment {
+  /** Time of day the person fell asleep, as fractional hour (e.g. 23.5 = 11:30 PM) */
+  startHour: number;
+  /** Duration of this uninterrupted block in minutes */
+  durationMin: number;
+}
+
 /** One day of biometric readings for personal baseline calculation */
 export interface DailyBiometric {
   /** ISO date string YYYY-MM-DD */
@@ -75,6 +102,17 @@ export interface DailyBiometric {
   sleepHours: number | null;
   /** REM sleep hours last night — populated from ring or external source */
   remHours: number | null;
+  /**
+   * Ordered list of continuous sleep blocks for the night.
+   * Gaps between segments are the interruptions.
+   * Null if ring data not available or sleep was uninterrupted (use sleepHours instead).
+   */
+  sleepSegments: SleepSegment[] | null;
+  /**
+   * Details for each interruption between sleep segments.
+   * Length is always sleepSegments.length - 1 when segments are present.
+   */
+  sleepInterruptions: SleepInterruption[] | null;
 }
 
 /** Session recommendation from biometric analysis */
@@ -120,6 +158,22 @@ export interface Observation {
     rmssdZ: number | null;
     restingHRZ: number | null;
     spo2Z: number | null;
+    /** Number of wake-ups during the sleep window */
+    sleepInterruptionCount: number | null;
+    /** Total minutes spent awake across all interruptions */
+    totalAwakeMin: number | null;
+    /** Longest single unbroken sleep block in hours */
+    longestContinuousBlockHours: number | null;
+    /** True if any interruption took >20 min to fall back asleep */
+    hadDifficultReturn: boolean | null;
+    /**
+     * True if the longest continuous block was >= 6 hours,
+     * or (no interruptions and total sleep >= 6h).
+     * The primary restorative threshold.
+     */
+    metSixHourThreshold: boolean | null;
+    /** Hours slept in the final block after the last interruption */
+    sleepAfterLastInterruptionHours: number | null;
   };
   confounders: Confounders;
   outcomes: {

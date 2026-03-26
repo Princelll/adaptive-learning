@@ -16,12 +16,68 @@ import {
   Observation,
   ConfidenceRating,
   PresentationMode,
+  DailyBiometric,
   generateId,
 } from './models';
 import { Scheduler } from './scheduler';
 import { Storage } from './storage';
 import { runAnalysis, updateStylePreferences } from './regression';
 import { State } from 'ts-fsrs';
+
+// ── Sleep interruption analysis ──────────────────────────────
+
+interface SleepQualityFeatures {
+  sleepInterruptionCount: number | null;
+  totalAwakeMin: number | null;
+  longestContinuousBlockHours: number | null;
+  hadDifficultReturn: boolean | null;
+  metSixHourThreshold: boolean | null;
+  sleepAfterLastInterruptionHours: number | null;
+}
+
+function deriveSleepFeatures(bio: DailyBiometric | null): SleepQualityFeatures {
+  const none: SleepQualityFeatures = {
+    sleepInterruptionCount: null,
+    totalAwakeMin: null,
+    longestContinuousBlockHours: null,
+    hadDifficultReturn: null,
+    metSixHourThreshold: null,
+    sleepAfterLastInterruptionHours: null,
+  };
+
+  if (!bio) return none;
+
+  // No segment data — use totals only for the 6h threshold check
+  if (!bio.sleepSegments || bio.sleepSegments.length === 0) {
+    if (bio.sleepHours === null) return none;
+    return {
+      sleepInterruptionCount: 0,
+      totalAwakeMin: 0,
+      longestContinuousBlockHours: bio.sleepHours,
+      hadDifficultReturn: false,
+      metSixHourThreshold: bio.sleepHours >= 6,
+      sleepAfterLastInterruptionHours: null,
+    };
+  }
+
+  const segments = bio.sleepSegments;
+  const interruptions = bio.sleepInterruptions ?? [];
+
+  const longestMin = Math.max(...segments.map(s => s.durationMin));
+  const totalAwakeMin = interruptions.reduce((s, i) => s + i.awakeMin, 0);
+  const hadDifficultReturn = interruptions.some(i => i.difficultReturn);
+  const lastSegmentHours = segments[segments.length - 1].durationMin / 60;
+  const metSixHour = longestMin / 60 >= 6;
+
+  return {
+    sleepInterruptionCount: interruptions.length,
+    totalAwakeMin,
+    longestContinuousBlockHours: longestMin / 60,
+    hadDifficultReturn,
+    metSixHourThreshold: metSixHour,
+    sleepAfterLastInterruptionHours: interruptions.length > 0 ? lastSegmentHours : null,
+  };
+}
 
 export type SessionPhase =
   | 'idle'
@@ -377,6 +433,7 @@ export class SessionManager {
       ? this.profile.biometricHistory[this.profile.biometricHistory.length - 1]
       : null;
     const cardAgeDays = (Date.now() - this.currentCard.createdAt) / 86400000;
+    const sleepFeatures = deriveSleepFeatures(lastBio);
 
     const obs: Observation = {
       id: generateId(),
@@ -407,6 +464,12 @@ export class SessionManager {
         rmssdZ: this.zScores?.rmssdZ ?? null,
         restingHRZ: this.zScores?.restingHRZ ?? null,
         spo2Z: this.zScores?.spo2Z ?? null,
+        sleepInterruptionCount: sleepFeatures.sleepInterruptionCount,
+        totalAwakeMin: sleepFeatures.totalAwakeMin,
+        longestContinuousBlockHours: sleepFeatures.longestContinuousBlockHours,
+        hadDifficultReturn: sleepFeatures.hadDifficultReturn,
+        metSixHourThreshold: sleepFeatures.metSixHourThreshold,
+        sleepAfterLastInterruptionHours: sleepFeatures.sleepAfterLastInterruptionHours,
       },
       confounders: this.confounders ?? {
         onSSRI: false,
