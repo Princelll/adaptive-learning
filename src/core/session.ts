@@ -400,8 +400,13 @@ export class SessionManager {
         course: this.currentCard.deckId,
         sleepHoursActual: lastBio?.sleepHours ?? null,
         remHoursActual: lastBio?.remHours ?? null,
+        sleepHoursZ: this.zScores?.sleepHoursZ ?? null,
+        remHoursZ: this.zScores?.remHoursZ ?? null,
         currentHrv: biometrics?.hrv ?? null,
         currentRmssd: biometrics?.rmssd ?? null,
+        rmssdZ: this.zScores?.rmssdZ ?? null,
+        restingHRZ: this.zScores?.restingHRZ ?? null,
+        spo2Z: this.zScores?.spo2Z ?? null,
       },
       confounders: this.confounders ?? {
         onSSRI: false,

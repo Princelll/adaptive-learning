@@ -113,8 +113,13 @@ export interface Observation {
     course: string;
     sleepHoursActual: number | null;
     remHoursActual: number | null;
+    sleepHoursZ: number | null;
+    remHoursZ: number | null;
     currentHrv: number | null;
     currentRmssd: number | null;
+    rmssdZ: number | null;
+    restingHRZ: number | null;
+    spo2Z: number | null;
   };
   confounders: Confounders;
   outcomes: {
