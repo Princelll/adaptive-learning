@@ -380,7 +380,7 @@ export class SessionManager {
       features: {
         explanationStyle: this.currentMode,
         stressLevel: this.zScores?.stressState ?? 0.5,
-        energyLevel: this.zScores ? 1 - this.zScores.cognitiveLoad : 0.5,
+        energyLevel: this.zScores?.cognitiveLoad != null ? 1 - this.zScores.cognitiveLoad : 0.5,
         timeOfDay,
         topicPosition: this.currentCardIndex,
         minutesIntoSession: sessionDurationMin,

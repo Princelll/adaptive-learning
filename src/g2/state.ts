@@ -3,7 +3,7 @@
 // ============================================================
 
 import type { EvenAppBridge } from '@evenrealities/even_hub_sdk';
-import type { ConfidenceRating, BiometricZScores } from '../core/models';
+import type { ConfidenceRating } from '../core/models';
 
 /** All screens the glasses can show */
 export type Screen =
@@ -12,28 +12,10 @@ export type Screen =
   | 'deck_select'
   | 'dashboard'
   | 'model_insights'
-  | 'bio_sleep'
-  | 'bio_stress'
-  | 'bio_load'
-  | 'bio_confirm'
   | 'question'
   | 'answer'
   | 'rating'
   | 'summary';
-
-/** Biometric self-report options */
-export const BIO_OPTIONS = ['poor', 'fair', 'good', 'great'] as const;
-export type BioLevel = typeof BIO_OPTIONS[number];
-
-/** Map BioLevel to a 0-1 float */
-export function bioLevelToFloat(level: BioLevel): number {
-  switch (level) {
-    case 'poor': return 0.1;
-    case 'fair': return 0.4;
-    case 'good': return 0.7;
-    case 'great': return 0.95;
-  }
-}
 
 /** Rating options for the list */
 export const RATING_OPTIONS: ConfidenceRating[] = ['again', 'hard', 'good', 'easy'];
@@ -41,11 +23,6 @@ export const RATING_OPTIONS: ConfidenceRating[] = ['again', 'hard', 'good', 'eas
 export interface AppState {
   screen: Screen;
   startupRendered: boolean;
-
-  // Biometric self-report
-  bioSleepIdx: number;
-  bioStressIdx: number;
-  bioLoadIdx: number;
 
   // Session
   questionText: string;
@@ -76,10 +53,6 @@ export const state: AppState = {
   screen: 'welcome',
   startupRendered: false,
 
-  bioSleepIdx: 2,
-  bioStressIdx: 2,
-  bioLoadIdx: 1,
-
   questionText: '',
   answerText: '',
   cardNumber: 0,
@@ -100,19 +73,6 @@ export const state: AppState = {
   deckIds: [],
   deckSelectIdx: 0,
 };
-
-/** Build z-scores from self-reported biometric levels */
-export function buildZScores(): BiometricZScores {
-  return {
-    rmssdZ: 0,
-    spo2DipZ: 0,
-    spo2Z: 0,
-    restingHRZ: 0,
-    sleepQuality: bioLevelToFloat(BIO_OPTIONS[state.bioSleepIdx]),
-    stressState: 1 - bioLevelToFloat(BIO_OPTIONS[state.bioStressIdx]),
-    cognitiveLoad: 1 - bioLevelToFloat(BIO_OPTIONS[state.bioLoadIdx]),
-  };
-}
 
 // Bridge reference — set once at init
 let _bridge: EvenAppBridge | null = null;

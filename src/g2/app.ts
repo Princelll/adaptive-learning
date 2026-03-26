@@ -3,7 +3,7 @@
 // Connects SDK bridge, storage, session manager, and renderer
 // ============================================================
 
-import { state, buildZScores, RATING_OPTIONS } from './state';
+import { state, RATING_OPTIONS } from './state';
 import { showScreen } from './renderer';
 import { onEvenHubEvent, setAppActions } from './events';
 import { log } from './log';
@@ -73,16 +73,15 @@ async function startSession(): Promise<void> {
     return;
   }
 
-  const zScores = buildZScores();
   const profile = await storage.getProfile();
 
-  log(`Starting session: sleep=${state.bioSleepIdx} stress=${state.bioStressIdx} load=${state.bioLoadIdx}`);
+  log('Starting session');
 
   try {
     await sessionManager.startSession(
       currentDeckId,
       null,
-      zScores,
+      null,   // zScores — null until ring data available
       profile.confounders,
     );
   } catch (err) {
@@ -142,8 +141,8 @@ async function startPlannedStudy(): Promise<void> {
     void safeShowScreen();
     return;
   }
-  // Go to bio checkin with the default (first) deck
-  state.screen = 'bio_sleep';
+  // Go to dashboard with the default (first) deck
+  state.screen = 'dashboard';
   void safeShowScreen();
 }
 

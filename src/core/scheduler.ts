@@ -62,51 +62,39 @@ export class Scheduler {
 
   // ── Session recommendation ─────────────────────────────────
 
-  /** Hard stops and review-only modes based on z-scores */
+  /** Hard stops and review-only modes based on z-scores. All comparisons are null-safe. */
   getSessionRecommendation(zScores: BiometricZScores): SessionRecommendation {
     // Hard stops
-    if (zScores.rmssdZ < -3) {
-      return {
-        mode: 'stop',
-        cards: 0,
-        reason: 'HRV critically low (RMSSD z < -3σ) — rest recommended',
-      };
+    if (zScores.rmssdZ !== null && zScores.rmssdZ < -3) {
+      return { mode: 'stop', cards: 0, reason: 'HRV critically low (RMSSD z < -3σ) — rest recommended' };
     }
-    if (zScores.spo2DipZ > 3) {
-      return {
-        mode: 'stop',
-        cards: 0,
-        reason: 'SpO2 dipping severely elevated (z > 3σ) — consult a physician',
-      };
+    if (zScores.spo2DipZ !== null && zScores.spo2DipZ > 3) {
+      return { mode: 'stop', cards: 0, reason: 'SpO2 dipping severely elevated (z > 3σ) — consult a physician' };
     }
-    if (zScores.spo2Z < -3) {
-      return {
-        mode: 'stop',
-        cards: 0,
-        reason: 'SpO2 critically below personal baseline (z < -3σ) — rest recommended',
-      };
+    if (zScores.spo2Z !== null && zScores.spo2Z < -3) {
+      return { mode: 'stop', cards: 0, reason: 'SpO2 critically below personal baseline (z < -3σ) — rest recommended' };
+    }
+    if (zScores.sleepHoursZ !== null && zScores.sleepHoursZ < -3) {
+      return { mode: 'stop', cards: 0, reason: 'Sleep critically short vs personal baseline — rest recommended' };
     }
 
     // Review-only conditions
-    if (zScores.rmssdZ < -2) {
-      return {
-        mode: 'review_only',
-        cards: 10,
-        reason: 'HRV below baseline (RMSSD z < -2σ) — light review only',
-      };
+    if (zScores.rmssdZ !== null && zScores.rmssdZ < -2) {
+      return { mode: 'review_only', cards: 10, reason: 'HRV below baseline (RMSSD z < -2σ) — light review only' };
     }
-    if (zScores.stressState > 0.8 && zScores.cognitiveLoad > 0.7) {
-      return {
-        mode: 'review_only',
-        cards: 10,
-        reason: 'High stress and cognitive load — reviewing known cards only',
-      };
+    if (zScores.stressState !== null && zScores.cognitiveLoad !== null &&
+        zScores.stressState > 0.8 && zScores.cognitiveLoad > 0.7) {
+      return { mode: 'review_only', cards: 10, reason: 'High stress and cognitive load — reviewing known cards only' };
+    }
+    if (zScores.remHoursZ !== null && zScores.remHoursZ < -2) {
+      return { mode: 'review_only', cards: 10, reason: 'REM sleep significantly below baseline — light review only' };
     }
 
     // Normal — scale cards to biometric state
     let cards = 20;
-    if (zScores.rmssdZ < -1) cards = 15;
-    if (zScores.sleepQuality < 0.5) cards = Math.min(cards, 15);
+    if (zScores.rmssdZ !== null && zScores.rmssdZ < -1) cards = 15;
+    if (zScores.sleepHoursZ !== null && zScores.sleepHoursZ < -1) cards = Math.min(cards, 15);
+    if (zScores.sleepQuality !== null && zScores.sleepQuality < 0.5) cards = Math.min(cards, 15);
 
     return { mode: 'normal', cards, reason: null };
   }
@@ -123,38 +111,76 @@ export class Scheduler {
   ): number {
     let modifier = 1.0;
 
-    // RMSSD z-score (most important)
-    if (zScores.rmssdZ < -2) modifier = Math.min(modifier, 0.55);
-    else if (zScores.rmssdZ < -1.5) modifier = Math.min(modifier, 0.65);
-    else if (zScores.rmssdZ < -1) modifier = Math.min(modifier, 0.78);
-    else if (zScores.rmssdZ < -0.5) modifier = Math.min(modifier, 0.90);
-    else if (zScores.rmssdZ > 1) modifier = Math.min(1.05, modifier * 1.05);
+    // RMSSD z-score (most important) — null = no effect
+    if (zScores.rmssdZ !== null) {
+      if (zScores.rmssdZ < -2) modifier = Math.min(modifier, 0.55);
+      else if (zScores.rmssdZ < -1.5) modifier = Math.min(modifier, 0.65);
+      else if (zScores.rmssdZ < -1) modifier = Math.min(modifier, 0.78);
+      else if (zScores.rmssdZ < -0.5) modifier = Math.min(modifier, 0.90);
+      else if (zScores.rmssdZ > 1) modifier = Math.min(1.05, modifier * 1.05);
+    }
 
-    // SpO2 dip z-score (nocturnal dip severity)
-    if (zScores.spo2DipZ > 2) modifier = Math.min(modifier, 0.65);
-    else if (zScores.spo2DipZ > 1) modifier = Math.min(modifier, 0.80);
-    else if (zScores.spo2DipZ > 0.5) modifier = Math.min(modifier, 0.90);
+    // SpO2 dip z-score
+    if (zScores.spo2DipZ !== null) {
+      if (zScores.spo2DipZ > 2) modifier = Math.min(modifier, 0.65);
+      else if (zScores.spo2DipZ > 1) modifier = Math.min(modifier, 0.80);
+      else if (zScores.spo2DipZ > 0.5) modifier = Math.min(modifier, 0.90);
+    }
 
-    // SpO2 absolute level z-score vs personal baseline (negative = lower than usual)
-    if (zScores.spo2Z < -2) modifier = Math.min(modifier, 0.65);
-    else if (zScores.spo2Z < -1) modifier = Math.min(modifier, 0.80);
-    else if (zScores.spo2Z < -0.5) modifier = Math.min(modifier, 0.92);
+    // SpO2 absolute level z-score
+    if (zScores.spo2Z !== null) {
+      if (zScores.spo2Z < -2) modifier = Math.min(modifier, 0.65);
+      else if (zScores.spo2Z < -1) modifier = Math.min(modifier, 0.80);
+      else if (zScores.spo2Z < -0.5) modifier = Math.min(modifier, 0.92);
+    }
 
     // Resting HR z-score
-    if (zScores.restingHRZ > 2) modifier = Math.min(modifier, 0.75);
-    else if (zScores.restingHRZ > 1) modifier = Math.min(modifier, 0.88);
+    if (zScores.restingHRZ !== null) {
+      if (zScores.restingHRZ > 2) modifier = Math.min(modifier, 0.75);
+      else if (zScores.restingHRZ > 1) modifier = Math.min(modifier, 0.88);
+    }
 
-    // Sleep quality (self-report 0–1)
-    if (zScores.sleepQuality < 0.3) modifier = Math.min(modifier, 0.72);
-    else if (zScores.sleepQuality < 0.5) modifier = Math.min(modifier, 0.85);
-    else if (zScores.sleepQuality < 0.7) modifier = Math.min(modifier, 0.93);
+    // Sleep hours z-score
+    if (zScores.sleepHoursZ !== null) {
+      if (zScores.sleepHoursZ < -2) modifier = Math.min(modifier, 0.65);
+      else if (zScores.sleepHoursZ < -1) modifier = Math.min(modifier, 0.80);
+      else if (zScores.sleepHoursZ < -0.5) modifier = Math.min(modifier, 0.92);
+    }
 
-    // Stress state (self-report 0–1)
-    if (zScores.stressState > 0.8) modifier = Math.min(modifier, 0.78);
-    else if (zScores.stressState > 0.6) modifier = Math.min(modifier, 0.88);
-    else if (zScores.stressState > 0.4) modifier = Math.min(modifier, 0.95);
+    // REM hours z-score
+    if (zScores.remHoursZ !== null) {
+      if (zScores.remHoursZ < -2) modifier = Math.min(modifier, 0.72);
+      else if (zScores.remHoursZ < -1) modifier = Math.min(modifier, 0.85);
+    }
+
+    // Sleep quality (ring-provided 0–1, null = skip)
+    if (zScores.sleepQuality !== null) {
+      if (zScores.sleepQuality < 0.3) modifier = Math.min(modifier, 0.72);
+      else if (zScores.sleepQuality < 0.5) modifier = Math.min(modifier, 0.85);
+      else if (zScores.sleepQuality < 0.7) modifier = Math.min(modifier, 0.93);
+    }
+
+    // Stress state (ring-provided 0–1, null = skip)
+    if (zScores.stressState !== null) {
+      if (zScores.stressState > 0.8) modifier = Math.min(modifier, 0.78);
+      else if (zScores.stressState > 0.6) modifier = Math.min(modifier, 0.88);
+      else if (zScores.stressState > 0.4) modifier = Math.min(modifier, 0.95);
+    }
 
     return Math.max(0.5, Math.min(1.05, modifier));
+  }
+
+  /** Compute 7-day average for a nullable numeric field from biometric history. */
+  computeSevenDayAvg(
+    history: DailyBiometric[],
+    field: 'sleepHours' | 'remHours' | 'rmssd' | 'restingHR',
+  ): number | null {
+    const last7 = history.slice(-7);
+    const values = last7
+      .map(d => d[field])
+      .filter((v): v is number => v !== null && v !== undefined);
+    if (values.length === 0) return null;
+    return values.reduce((s, v) => s + v, 0) / values.length;
   }
 
   // ── Core FSRS scheduler ────────────────────────────────────
@@ -208,7 +234,7 @@ export class Scheduler {
     zScores?: BiometricZScores | null,
   ): PresentationMode {
     const simpleStyles: PresentationMode[] = ['definition', 'example', 'mnemonic'];
-    const highStress = zScores && zScores.stressState > 0.7;
+    const highStress = zScores && zScores.stressState !== null && zScores.stressState > 0.7;
 
     if (state.bestPresentationMode && Math.random() > 0.2) {
       const mode = state.bestPresentationMode;

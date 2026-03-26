@@ -22,27 +22,29 @@ export type PresentationMode =
 
 // ── Z-Score Biometric Model (Cheng 2022, Schiweck 2018) ────────────
 
-/** Biometric z-scores relative to personal baseline */
+/** Biometric z-scores relative to personal baseline. All fields null until ring data available. */
 export interface BiometricZScores {
   /** RMSSD z-score – parasympathetic index. Negative = below personal baseline */
-  rmssdZ: number;
+  rmssdZ: number | null;
   /** SpO2 nocturnal dip severity z-score. Positive = worse than usual dipping */
-  spo2DipZ: number;
+  spo2DipZ: number | null;
   /**
    * SpO2 absolute level z-score vs personal baseline mean.
    * Negative = lower than usual (e.g. personal norm 98%, today 95% → negative z).
-   * Complements spo2DipZ: dip captures sleep-disordered breathing,
-   * this captures general oxygenation state throughout the day.
    */
-  spo2Z: number;
+  spo2Z: number | null;
   /** Resting HR z-score. Positive = elevated above personal baseline */
-  restingHRZ: number;
-  /** Self-reported sleep quality 0-1 (0=poor, 1=excellent) */
-  sleepQuality: number;
-  /** Self-reported stress state 0-1 (0=low, 1=extreme) */
-  stressState: number;
-  /** Self-reported cognitive load 0-1 (0=low, 1=high) */
-  cognitiveLoad: number;
+  restingHRZ: number | null;
+  /** Sleep hours z-score — last night's total sleep vs personal baseline */
+  sleepHoursZ: number | null;
+  /** REM sleep hours z-score — last night's REM vs personal baseline */
+  remHoursZ: number | null;
+  /** Sleep quality 0-1 — populated by ring when available, otherwise null */
+  sleepQuality: number | null;
+  /** Stress state 0-1 — populated by ring when available, otherwise null */
+  stressState: number | null;
+  /** Cognitive load 0-1 — populated by ring when available, otherwise null */
+  cognitiveLoad: number | null;
 }
 
 /** Structural confounders – collected once, affect HRV baseline (Licht 2008) */
@@ -59,16 +61,20 @@ export interface Confounders {
 export interface DailyBiometric {
   /** ISO date string YYYY-MM-DD */
   date: string;
-  /** Overnight RMSSD from G1 (ms) — nocturnal baseline reflecting accumulated stress load */
-  rmssd: number;
-  /** Resting heart rate in bpm */
-  restingHR: number;
-  /** SpO2 nocturnal dip severity score 0-1 (derived from spo2Readings if available) */
-  spo2Dip: number;
-  /** Mean SpO2 across hourly readings — used for absolute z-score vs personal baseline */
-  spo2Avg?: number;
-  /** Hourly SpO2 readings with timestamps (ISO time string HH:mm) — from G1 */
-  spo2Readings?: { time: string; value: number }[];
+  /** Overnight RMSSD in ms — null until ring data available */
+  rmssd: number | null;
+  /** Resting heart rate in bpm — null until ring data available */
+  restingHR: number | null;
+  /** SpO2 nocturnal dip severity score 0-1 — null until ring data available */
+  spo2Dip: number | null;
+  /** Mean SpO2 across hourly readings */
+  spo2Avg?: number | null;
+  /** Hourly SpO2 readings with timestamps (ISO time string HH:mm) */
+  spo2Readings?: { time: string; value: number }[] | null;
+  /** Total sleep hours last night — populated from ring or external source */
+  sleepHours: number | null;
+  /** REM sleep hours last night — populated from ring or external source */
+  remHours: number | null;
 }
 
 /** Session recommendation from biometric analysis */

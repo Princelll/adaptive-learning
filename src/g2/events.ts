@@ -4,7 +4,7 @@
 // ============================================================
 
 import { OsEventTypeList, type EvenHubEvent } from '@evenrealities/even_hub_sdk';
-import { state, RATING_OPTIONS, BIO_OPTIONS } from './state';
+import { state, RATING_OPTIONS } from './state';
 import { safeShowScreen } from './connection';
 import { log } from './log';
 
@@ -37,9 +37,9 @@ export function setAppActions(actions: {
 
 // ── Gesture debouncing (tuned for G2 hardware per even-toolkit) ──
 
-const SCROLL_COOLDOWN_MS = 250;  // toolkit-tuned scroll debounce
-const TAP_COOLDOWN_MS = 400;     // prevent double-fire on single taps
-const DOUBLE_TAP_COOLDOWN_MS = 600; // prevent repeated double-tap triggers
+const SCROLL_COOLDOWN_MS = 250;
+const TAP_COOLDOWN_MS = 400;
+const DOUBLE_TAP_COOLDOWN_MS = 600;
 let lastScrollTime = 0;
 let lastTapTime = 0;
 let lastDoubleTapTime = 0;
@@ -117,7 +117,6 @@ export function onEvenHubEvent(event: EvenHubEvent): void {
       void rateCardFn(listIdx);
       return;
     }
-    // List scrolling is handled natively by firmware
     return;
   }
 
@@ -137,7 +136,6 @@ export function onEvenHubEvent(event: EvenHubEvent): void {
       break;
 
     case OsEventTypeList.DOUBLE_CLICK_EVENT:
-      // Double-click = back to dashboard from any screen
       if (!doubleTapThrottled()) void returnToDashboardFn();
       break;
   }
@@ -148,37 +146,15 @@ export function onEvenHubEvent(event: EvenHubEvent): void {
 function handleClick(): void {
   switch (state.screen) {
     case 'welcome':
-      // Click = planned study (go to dashboard then bio checkin)
       void startPlannedStudyFn();
       break;
 
     case 'deck_select':
-      // Click = select the highlighted deck
       void selectDeckFn(state.deckSelectIdx);
       break;
 
     case 'dashboard':
-      // Start biometric checkin
-      state.screen = 'bio_sleep';
-      void safeShowScreen();
-      break;
-
-    case 'bio_sleep':
-      state.screen = 'bio_stress';
-      void safeShowScreen();
-      break;
-
-    case 'bio_stress':
-      state.screen = 'bio_load';
-      void safeShowScreen();
-      break;
-
-    case 'bio_load':
-      state.screen = 'bio_confirm';
-      void safeShowScreen();
-      break;
-
-    case 'bio_confirm':
+      // Start session directly — no bio check-in
       void startSessionFn();
       break;
 
@@ -188,12 +164,11 @@ function handleClick(): void {
 
     case 'answer':
       state.screen = 'rating';
-      state.ratingIdx = 2; // default to 'good'
+      state.ratingIdx = 2;
       void safeShowScreen();
       break;
 
     case 'model_insights':
-      // Click on model insights → back to dashboard
       state.screen = 'dashboard';
       void safeShowScreen();
       break;
@@ -204,70 +179,43 @@ function handleClick(): void {
   }
 }
 
-// ── Scroll handlers (for biometric text screens) ─────────────
+// ── Scroll handlers ──────────────────────────────────────────
 
 function handleScrollUp(): void {
   switch (state.screen) {
     case 'welcome':
-      // Any scroll on welcome → go to deck select
       state.screen = 'deck_select';
       void safeShowScreen();
       break;
 
     case 'model_insights':
-      // Scroll up on model insights → back to dashboard
       state.screen = 'dashboard';
       void safeShowScreen();
       break;
+
     case 'deck_select':
       state.deckSelectIdx = Math.max(0, state.deckSelectIdx - 1);
-      void safeShowScreen();
-      break;
-    case 'bio_sleep':
-      state.bioSleepIdx = Math.max(0, state.bioSleepIdx - 1);
-      void safeShowScreen();
-      break;
-    case 'bio_stress':
-      state.bioStressIdx = Math.max(0, state.bioStressIdx - 1);
-      void safeShowScreen();
-      break;
-    case 'bio_load':
-      state.bioLoadIdx = Math.max(0, state.bioLoadIdx - 1);
       void safeShowScreen();
       break;
   }
 }
 
 function handleScrollDown(): void {
-  const max = BIO_OPTIONS.length - 1;
   switch (state.screen) {
     case 'welcome':
-      // Any scroll on welcome → go to deck select
       state.screen = 'deck_select';
       void safeShowScreen();
       break;
 
     case 'dashboard':
-      // Scroll down on dashboard → ML insights
       showModelInsightsFn();
       break;
+
     case 'deck_select': {
       const deckMax = state.deckNames.length - 1;
       state.deckSelectIdx = Math.min(deckMax, state.deckSelectIdx + 1);
       void safeShowScreen();
       break;
     }
-    case 'bio_sleep':
-      state.bioSleepIdx = Math.min(max, state.bioSleepIdx + 1);
-      void safeShowScreen();
-      break;
-    case 'bio_stress':
-      state.bioStressIdx = Math.min(max, state.bioStressIdx + 1);
-      void safeShowScreen();
-      break;
-    case 'bio_load':
-      state.bioLoadIdx = Math.min(max, state.bioLoadIdx + 1);
-      void safeShowScreen();
-      break;
   }
 }

@@ -10,7 +10,7 @@ import {
   ListContainerProperty,
   ListItemContainerProperty,
 } from '@evenrealities/even_hub_sdk';
-import { state, getBridge, BIO_OPTIONS, RATING_OPTIONS } from './state';
+import { state, getBridge, RATING_OPTIONS } from './state';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -230,31 +230,6 @@ function buildModelInsights(): PageConfig {
   };
 }
 
-function buildBioScreen(
-  label: string,
-  options: readonly string[],
-  selectedIdx: number,
-): PageConfig {
-  const title = `Pre-session: ${label}`;
-  const lines = options.map(
-    (opt, i) => (i === selectedIdx ? '> ' : '  ') + opt,
-  );
-  const body = lines.join('\n');
-  const hint = buildActionBar([
-    { gesture: 'Up/Down', action: 'select' },
-    { gesture: 'Click', action: 'confirm' },
-  ]);
-
-  return {
-    textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(2, 'body', body, 0, 44, DISPLAY_WIDTH, 200),
-      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
-    ],
-  };
-}
-
 function buildQuestion(): PageConfig {
   const title = `Card ${state.cardNumber}/${state.totalCards}`;
   // Word-wrap and apply scroll indicators for long questions
@@ -337,23 +312,6 @@ const SCREEN_BUILDERS: Record<string, () => PageConfig> = {
   deck_select: buildDeckSelect,
   dashboard: buildDashboard,
   model_insights: buildModelInsights,
-  bio_sleep: () => buildBioScreen('Sleep quality', BIO_OPTIONS, state.bioSleepIdx),
-  bio_stress: () => buildBioScreen('Stress level', BIO_OPTIONS, state.bioStressIdx),
-  bio_load: () => buildBioScreen('Cognitive load', BIO_OPTIONS, state.bioLoadIdx),
-  bio_confirm: () => ({
-    textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', 'Ready to study?', 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(2, 'body', [
-        `Sleep: ${BIO_OPTIONS[state.bioSleepIdx]}`,
-        `Stress: ${BIO_OPTIONS[state.bioStressIdx]}`,
-        `Load: ${BIO_OPTIONS[state.bioLoadIdx]}`,
-        separator(24),
-        'Click to start session',
-      ].join('\n'), 0, 44, DISPLAY_WIDTH, 200),
-      textContainer(3, 'hint', buildActionBar([{ gesture: 'Click', action: 'Begin' }]), 0, 252, DISPLAY_WIDTH, 32),
-    ],
-  }),
   question: buildQuestion,
   answer: buildAnswer,
   rating: buildRating,
