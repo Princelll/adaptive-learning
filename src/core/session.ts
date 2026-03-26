@@ -272,7 +272,7 @@ export class SessionManager {
     this.reviewEventIds.push(event.id);
 
     // Record observation for OLS regression
-    await this.recordObservation(correct, responseLatencyMs, rating);
+    await this.recordObservation(correct, responseLatencyMs, rating, enrichedBiometrics);
 
     // Session stats
     this.session.cardsReviewed++;
@@ -362,6 +362,7 @@ export class SessionManager {
     correct: boolean,
     latencyMs: number,
     rating: ConfidenceRating,
+    biometrics: BiometricSnapshot | null = null,
   ): Promise<void> {
     if (!this.currentCard || !this.session || !this.profile) return;
 
@@ -371,6 +372,11 @@ export class SessionManager {
     if (hour >= 12 && hour < 17) timeOfDay = 'afternoon';
     else if (hour >= 17 && hour < 21) timeOfDay = 'evening';
     else if (hour >= 21 || hour < 5) timeOfDay = 'night';
+
+    const lastBio = this.profile.biometricHistory.length > 0
+      ? this.profile.biometricHistory[this.profile.biometricHistory.length - 1]
+      : null;
+    const cardAgeDays = (Date.now() - this.currentCard.createdAt) / 86400000;
 
     const obs: Observation = {
       id: generateId(),
@@ -384,12 +390,18 @@ export class SessionManager {
         timeOfDay,
         topicPosition: this.currentCardIndex,
         minutesIntoSession: sessionDurationMin,
+        responseLatencyMs: latencyMs,
         daysSinceLastStudy: this.currentReviewState?.fsrs.last_review
           ? (Date.now() - this.currentReviewState.fsrs.last_review.getTime()) / 86400000
           : 0,
+        cardAgeDays,
         priorLevel: this.currentReviewState?.fsrs.difficulty ?? 5,
         complexity: this.currentCard.complexity,
         course: this.currentCard.deckId,
+        sleepHoursActual: lastBio?.sleepHours ?? null,
+        remHoursActual: lastBio?.remHours ?? null,
+        currentHrv: biometrics?.hrv ?? null,
+        currentRmssd: biometrics?.rmssd ?? null,
       },
       confounders: this.confounders ?? {
         onSSRI: false,

@@ -105,10 +105,16 @@ export interface Observation {
     timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
     topicPosition: number;
     minutesIntoSession: number;
+    responseLatencyMs: number;
     daysSinceLastStudy: number;
+    cardAgeDays: number;
     priorLevel: number;
     complexity: string;
     course: string;
+    sleepHoursActual: number | null;
+    remHoursActual: number | null;
+    currentHrv: number | null;
+    currentRmssd: number | null;
   };
   confounders: Confounders;
   outcomes: {
