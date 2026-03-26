@@ -33,19 +33,44 @@ A biometric-adaptive learning system built on Even G1/R1 hardware that uses phys
 
 ### 5. ML Stack
 
-#### Physiological State Clustering
+#### Current implementation (OLS ridge regression)
+- Runs as batch job every 5 observations when n ≥ 15
+- Target: `masteryGain` (0, 0.5, 1 based on rating)
+- Features: explanationStyle (one-hot), stressLevel, energyLevel, timeOfDay, etc.
+- Output: beta coefficients per style → stylePreferences ranking
+- Online update: `updateStylePreferences()` adjusts weights after each card
+- **Limitation**: additive features only — cannot learn "analogy works under stress, definition works when rested"
+
+#### Planned: Two-layer architecture (not yet implemented)
+
+**Layer 1 — Contextual Bandit (LinUCB)** — the decision maker
+- One ridge regression per presentation style (11 arms)
+- Context vector: `[stressLevel, rmssdZ, sleepHoursActual, metSixHourThreshold, timeOfDay, minutesIntoSession, complexity, ...]`
+- At card time: `score_s = θ_s · context + α * uncertainty_s` — picks style with highest UCB score
+- Reward: `recalledCorrectly` (binary) or `masteryGain` (0–1)
+- Updates online after every rated card
+- Replaces `weightedRandomSelect()` in `selectPresentationMode()`
+- Implementation: `src/core/bandit.ts` (~120 lines)
+
+**Layer 2 — Global OLS** — the insight reporter (keep existing)
+- Batch run every 5 observations as now
+- Job: produce interpretable betas for `modelInsights` screen
+- Not used for decisions, only for display
+
+**Testing plan for bandit (when implemented)**
+- Unit: after 10 synthetic observations where "analogy always wins under stress", analogy arm should score highest when `stressState=0.8`
+- Simulation: 100 synthetic obs with conditional correctness — verify model selects right style >80% of time by obs 40
+- Offline replay: record a real session fixture, replay through bandit, assert reward accumulates faster than random baseline
+- Shadow mode: run both old selector and new bandit in parallel, log both choices, compare accuracy after 50 obs
+
+#### Physiological State Clustering (Phase 2)
 - Use **DBSCAN** or **Gaussian Mixture Models (GMM)**
 - Why: avoids forcing a fixed number of clusters upfront
 - GMM allows soft boundaries (e.g. "mostly recovered with some stress load")
 - Continuous dataset — clusters emerge from retention rate outcomes, not assumptions
 - Hypothesis: natural groupings will appear (high readiness / moderate / depleted) but data confirms this
 
-#### Reinforcement Learning — Presentation Style
-- System tries different presentation styles (analogy, clinical example, step-by-step)
-- Learns over time which style produces best recall in each physiological cluster
-- Reward signal = retention rate
-
-#### Content Clustering (Phase 2)
+#### Content Clustering (Phase 3)
 - After RL system matures, cluster content by learning curve difficulty under matched physiological conditions
 - Group: slow learners vs fast learners under same state conditions
 - Analyze differences to generate hypotheses about why certain content is harder to consolidate
@@ -63,12 +88,16 @@ A biometric-adaptive learning system built on Even G1/R1 hardware that uses phys
 ### Phase 1 — Core Learning App
 - [x] Fork Tom's g2-flashcards — `Princelll/g2-flashcards`
 - [x] Add retrievability display — recall probability shown per card in UI
-- [ ] Wire biometrics from Even Hub SDK (HRV, sleep quality, SpO2)
-- [ ] Store session data: card reviewed + biometric snapshot + grade + retrievability
+- [x] Migrate scheduler from SM-2+ to FSRS (ts-fsrs) — aligns with Tom's fork
+- [x] Remove self-reported bio check-ins — biometrics all null until ring data available
+- [x] BiometricZScores + DailyBiometric — all fields null-safe, sleepHours/remHours added
+- [x] Per-question observation captures: latency, sleep actual+z, REM actual+z, HRV actual+z, RMSSD actual+z, card age, sleep interruption analysis (metSixHourThreshold, longestBlock, difficultReturn)
+- [x] Z-score null guards throughout scheduler — no hard stops when all null
+- [ ] Wire biometrics from Even Ring R1 when pilot data available
+- [ ] Document upload — PDF/text → AI analysis → auto-generate flashcards (companion app — in progress)
+- [ ] LinUCB contextual bandit — replaces weightedRandomSelect() — see ML Stack above
 - [ ] PubMed integration — search and pull articles directly
-- [ ] Document upload — PDF parsing → auto-generate flashcards
 - [ ] Unsupervised clustering on accumulated biometric + retention data
-- [ ] RL layer — presentation style optimization per physiological state
 
 ### Phase 2 — Context and Insights
 - Accumulate longitudinal data per user
