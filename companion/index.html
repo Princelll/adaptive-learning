@@ -8,18 +8,20 @@
     /* ── Reset & base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #22263a;
-      --accent: #6c8bef;
-      --accent2: #a78bfa;
-      --green: #34d399;
-      --yellow: #fbbf24;
-      --red: #f87171;
-      --text: #e2e8f0;
-      --muted: #64748b;
-      --border: #2d3148;
-      --radius: 12px;
+      --bg: #0c0a07;
+      --surface: #161310;
+      --surface2: #201c17;
+      --surface3: #2c2620;
+      --accent: #fef991;
+      --accent-fg: #0c0a07;
+      --accent2: #ffffff;
+      --green: #26a69a;
+      --yellow: #fef991;
+      --red: #ef5350;
+      --text: #f0ebe3;
+      --muted: #8a7f72;
+      --border: #2c2620;
+      --radius: 6px;
       --font: 'Inter', system-ui, -apple-system, sans-serif;
     }
     html, body {
@@ -61,7 +63,7 @@
       cursor: pointer; transition: all 0.15s;
       background: none; border-top: none; border-left: none; border-right: none;
     }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); filter: brightness(0.95); }
 
     /* ── Tab panels ── */
     .panel { display: none; padding: 20px; }
@@ -97,10 +99,10 @@
       display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
     }
-    .status-chip.collecting { background: rgba(100,116,139,0.2); color: var(--muted); }
-    .status-chip.initial { background: rgba(251,191,36,0.15); color: var(--yellow); }
-    .status-chip.refined { background: rgba(108,139,239,0.15); color: var(--accent); }
-    .status-chip.mature { background: rgba(52,211,153,0.15); color: var(--green); }
+    .status-chip.collecting { background: rgba(138,127,114,0.15); color: var(--muted); }
+    .status-chip.initial { background: rgba(254,249,145,0.12); color: var(--yellow); }
+    .status-chip.refined { background: rgba(254,249,145,0.18); color: var(--accent); }
+    .status-chip.mature { background: rgba(38,166,154,0.15); color: var(--green); }
     .status-chip::before { content: '●'; font-size: 8px; }
 
     /* ── Progress bar ── */
@@ -111,7 +113,7 @@
     }
     .progress-fill {
       height: 100%; border-radius: 3px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      background: var(--accent);
       transition: width 0.4s ease;
     }
 
@@ -121,7 +123,7 @@
     .style-rank { font-size: 11px; font-weight: 700; color: var(--muted); width: 16px; }
     .style-name { font-size: 13px; flex: 1; text-transform: capitalize; }
     .style-bar-wrap { width: 100px; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-    .style-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    .style-bar { height: 100%; border-radius: 3px; background: var(--accent); }
     .style-score { font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
 
     /* ── Deck list ── */
@@ -134,8 +136,8 @@
     .deck-name { font-weight: 600; font-size: 14px; }
     .deck-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
     .deck-due {
-      background: var(--accent); color: white;
-      border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 700;
+      background: var(--accent); color: var(--accent-fg);
+      border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 700;
       min-width: 28px; text-align: center;
     }
     .deck-due.zero { background: var(--surface2); color: var(--muted); }
@@ -148,7 +150,7 @@
       border: none; transition: opacity 0.15s;
     }
     .btn:active { opacity: 0.8; }
-    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary { background: var(--accent); color: var(--accent-fg); font-weight: 700; }
     .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 
     /* ── Empty state ── */
@@ -161,11 +163,93 @@
     /* ── Observation progress ── */
     .obs-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
+    /* ── Import tab components ── */
+    .drop-zone {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      font-size: 13px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(254,249,145,0.04);
+      color: var(--text);
+    }
+    .text-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font);
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .text-input:focus { border-color: var(--accent); }
+    .text-input::placeholder { color: var(--muted); }
+    .form-row { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
+    .preview-card-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .preview-front { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .preview-back { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .preview-meta { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+    .tag-pill {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+      padding: 2px 7px; border-radius: 20px;
+      background: var(--surface3); color: var(--muted);
+    }
+    .tag-pill.complexity { background: rgba(254,249,145,0.1); color: var(--accent); }
+
+    /* ── PubMed result card ── */
+    .pubmed-result {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .pubmed-title { font-size: 13px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
+    .pubmed-meta { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+    .pubmed-abstract { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .pubmed-abstract.expanded { display: block; }
+    .pubmed-actions { display: flex; gap: 8px; }
+    .btn-small {
+      padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-small:active { opacity: 0.7; }
+    .btn-small.accent { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+    /* ── Analytics bar chart ── */
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .bar-fill { width: 100%; border-radius: 3px 3px 0 0; background: var(--accent); min-height: 2px; transition: height 0.3s; }
+    .bar-fill.zero { background: var(--surface3); }
+    .bar-day { font-size: 10px; color: var(--muted); }
+    .bar-num { font-size: 10px; color: var(--text); font-weight: 600; }
+    /* ── Accuracy row ── */
+    .acc-row { display: flex; align-items: center; gap: 8px; }
+    .acc-label { font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; }
+    .acc-track { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .acc-fill { height: 100%; border-radius: 3px; background: var(--green); }
+    .acc-pct { font-size: 11px; color: var(--text); width: 34px; text-align: right; }
+
     /* ── How to connect note ── */
     .connect-note {
-      background: rgba(108,139,239,0.08);
-      border: 1px solid rgba(108,139,239,0.2);
-      border-radius: 8px;
+      background: rgba(254,249,145,0.06);
+      border: 1px solid rgba(254,249,145,0.18);
+      border-radius: var(--radius);
       padding: 10px 12px;
       font-size: 12px;
       color: var(--accent);
@@ -182,30 +266,232 @@
       <span class="g2-badge">Even G2</span>
     </div>
     <nav class="tabs">
-      <button class="tab active" data-tab="insights">ML Insights</button>
+      <button class="tab active" data-tab="import">Import</button>
+      <button class="tab" data-tab="pubmed">PubMed</button>
+      <button class="tab" data-tab="insights">Insights</button>
       <button class="tab" data-tab="decks">Decks</button>
-      <button class="tab" data-tab="flow">App Flow</button>
+      <button class="tab" data-tab="flow">Flow</button>
     </nav>
   </header>
 
+  <!-- ── Import panel ── -->
+  <div id="tab-import" class="panel active">
+
+    <!-- API Key -->
+    <div class="card" id="api-key-card">
+      <div class="card-title">Anthropic API Key</div>
+      <div id="api-key-set" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font-size:13px;color:var(--muted);font-family:monospace" id="api-key-display"></span>
+          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;width:auto" onclick="clearApiKey()">Change</button>
+        </div>
+      </div>
+      <div id="api-key-input-wrap">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Enter your Anthropic API key. It is stored only in your browser's localStorage and never sent anywhere except Anthropic's API.</p>
+        <input type="password" id="api-key-input" class="text-input" placeholder="sk-ant-..." autocomplete="off" />
+        <button class="btn btn-primary" style="margin-top:8px" onclick="saveApiKey()">Save Key</button>
+      </div>
+    </div>
+
+    <!-- Study material -->
+    <div class="card">
+      <div class="card-title">Study Material</div>
+      <div class="drop-zone" id="drop-zone">
+        <div style="font-size:24px;margin-bottom:6px">↑</div>
+        <div style="font-weight:600;font-size:14px">Drop a .txt or .md file here</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse &nbsp;·&nbsp; PDF: paste text below</div>
+        <input type="file" id="file-input" accept=".txt,.md" style="display:none" />
+      </div>
+      <div style="margin-top:10px">
+        <textarea id="text-input" class="text-input" placeholder="Or paste your notes / extracted PDF text here…" rows="6" style="resize:vertical;width:100%"></textarea>
+      </div>
+      <div id="text-stats" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right"></div>
+    </div>
+
+    <!-- Deck settings -->
+    <div class="card">
+      <div class="card-title">Deck Settings</div>
+      <div class="form-row">
+        <label class="form-label">Deck name</label>
+        <input type="text" id="deck-name" class="text-input" placeholder="e.g. Cardiac Pharmacology" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">Course / subject</label>
+        <input type="text" id="deck-course" class="text-input" placeholder="e.g. Internal Medicine" />
+      </div>
+      <div class="form-row">
+        <label class="form-label" style="display:flex;justify-content:space-between">
+          <span>Cards to generate</span>
+          <span id="card-count-label" style="color:var(--accent);font-weight:700">15</span>
+        </label>
+        <input type="range" id="card-count" min="5" max="40" value="15"
+          oninput="document.getElementById('card-count-label').textContent=this.value"
+          style="width:100%;accent-color:var(--accent);margin-top:4px" />
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <button class="btn btn-primary" id="btn-generate" onclick="generateCards()">Generate Flashcards</button>
+
+    <!-- Progress -->
+    <div id="gen-status" style="display:none;margin-top:12px">
+      <div class="card">
+        <div id="gen-status-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
+        <div class="progress-track" style="margin-top:10px">
+          <div class="progress-fill" id="gen-progress" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="preview-section" style="display:none;margin-top:12px">
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Preview</span>
+          <span id="preview-count" style="color:var(--accent);font-weight:700;font-size:11px"></span>
+        </div>
+        <div id="preview-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-save" onclick="saveDeck()" style="margin-top:10px">Save to G2 App</button>
+      <div id="save-status" style="font-size:12px;color:var(--green);text-align:center;margin-top:8px;display:none"></div>
+    </div>
+
+  </div><!-- /tab-import -->
+
+  <!-- ── PubMed panel ── -->
+  <div id="tab-pubmed" class="panel">
+
+    <!-- Search -->
+    <div class="card">
+      <div class="card-title">Search PubMed</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="pubmed-query" class="text-input" placeholder="e.g. HRV sleep cognition" style="flex:1"
+          onkeydown="if(event.key==='Enter') searchPubMed()" />
+        <button class="btn btn-primary" style="width:auto;padding:0 16px;white-space:nowrap" onclick="searchPubMed()">Search</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <label class="form-label" style="margin:0;white-space:nowrap">Results</label>
+        <select id="pubmed-retmax" class="text-input" style="width:70px;padding:6px 8px">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+        </select>
+        <label class="form-label" style="margin:0;white-space:nowrap">Cards each</label>
+        <select id="pubmed-cards" class="text-input" style="width:60px;padding:6px 8px">
+          <option value="5">5</option>
+          <option value="8" selected>8</option>
+          <option value="12">12</option>
+          <option value="15">15</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Search status -->
+    <div id="pubmed-search-status" style="display:none;margin-bottom:12px">
+      <div class="card">
+        <div id="pubmed-search-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="pubmed-results" style="display:flex;flex-direction:column;gap:10px"></div>
+
+    <!-- Import progress (per article) -->
+    <div id="pubmed-import-status" style="display:none;margin-top:12px">
+      <div class="card">
+        <div id="pubmed-import-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
+        <div class="progress-track" style="margin-top:10px">
+          <div class="progress-fill" id="pubmed-import-progress" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-pubmed -->
+
   <!-- ── ML Insights panel ── -->
-  <div id="tab-insights" class="panel active">
+  <div id="tab-insights" class="panel">
 
     <div class="connect-note" id="connect-note" style="display:none">
       ⚠️ Open this page from the same browser where the G2 simulator is running
       (e.g. <code>localhost:5173/companion/index.html</code>) to read live data.
     </div>
 
-    <!-- Model status card -->
+    <!-- Key stats row -->
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-label">Streak</div>
+        <div class="stat-value accent" id="an-streak">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Due Today</div>
+        <div class="stat-value yellow" id="an-due">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">All-time Cards</div>
+        <div class="stat-value green" id="an-total">—</div>
+      </div>
+    </div>
+
+    <!-- 7-day review activity -->
     <div class="card">
-      <div class="card-title">Model Status</div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div class="card-title" style="display:flex;justify-content:space-between">
+        <span>Daily Reviews — Last 7 Days</span>
+        <span id="an-week-total" style="color:var(--accent);font-weight:700;font-size:11px"></span>
+      </div>
+      <div id="an-bar-chart" style="display:flex;align-items:flex-end;gap:6px;height:60px;margin-top:8px"></div>
+      <div id="an-bar-labels" style="display:flex;gap:6px;margin-top:4px"></div>
+    </div>
+
+    <!-- Accuracy trend -->
+    <div class="card">
+      <div class="card-title">Accuracy — Last 7 Sessions</div>
+      <div id="an-accuracy-list" style="display:flex;flex-direction:column;gap:6px;margin-top:4px"></div>
+    </div>
+
+    <!-- Best study time -->
+    <div class="card">
+      <div class="card-title">Best Study Time</div>
+      <div id="an-best-time" style="font-size:13px;color:var(--muted);margin-top:4px">Not enough data yet</div>
+    </div>
+
+    <!-- Bandit learning -->
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between">
+        <span>Style Exploration (Bandit)</span>
+        <span id="an-bandit-total" style="color:var(--muted);font-size:11px"></span>
+      </div>
+      <div class="style-list" id="an-bandit-list">
+        <div class="empty" style="padding:16px 0">
+          <p style="font-size:12px">Style exploration data will appear after your first study session.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cognitive State Clustering -->
+    <div class="card" id="cluster-card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Cognitive State Clustering</span>
+        <span id="cluster-status-badge" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span id="cluster-current-chip" class="status-chip collecting">collecting</span>
+        <span id="cluster-current-obs" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div id="cluster-list" style="display:flex;flex-direction:column;gap:8px">
+        <p style="font-size:12px;color:var(--muted)">Clusters appear after 20 observations.</p>
+      </div>
+    </div>
+
+    <!-- OLS model status (secondary) -->
+    <div class="card">
+      <div class="card-title">OLS Model Status</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <span class="status-chip" id="status-chip">collecting</span>
-        <span id="r2-display" style="font-size:13px;color:var(--muted)">R² pending</span>
+        <span id="r2-display" style="font-size:12px;color:var(--muted)">R² pending</span>
       </div>
       <div class="progress-wrap">
         <div class="progress-label">
-          <span>Observations collected</span>
+          <span>Observations</span>
           <span id="obs-label">0 / 15</span>
         </div>
         <div class="progress-track">
@@ -215,38 +501,11 @@
       </div>
     </div>
 
-    <!-- Stats row -->
-    <div class="stat-row">
-      <div class="stat">
-        <div class="stat-label">Observations</div>
-        <div class="stat-value accent" id="obs-count">0</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">R²</div>
-        <div class="stat-value green" id="r2-value">—</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Best Style</div>
-        <div class="stat-value muted" id="best-style">—</div>
-      </div>
-    </div>
-
-    <!-- Style ranking card -->
-    <div class="card">
-      <div class="card-title">Presentation Style Preferences</div>
-      <div class="style-list" id="style-list">
-        <div class="empty">
-          <div class="empty-icon">🧠</div>
-          <p>Style preferences will appear here after you complete study sessions with the G2 glasses.</p>
-        </div>
-      </div>
-    </div>
-
-    <button class="btn btn-primary" id="btn-refresh" onclick="loadData()">
-      ↺ Refresh from G2 Simulator
+    <button class="btn btn-secondary" id="btn-refresh" onclick="loadData()" style="margin-top:4px">
+      ↺ Refresh
     </button>
 
-    <!-- Video slots (hidden until config.json has URLs) -->
+    <!-- Video slots -->
     <div id="video-section" style="display:none">
       <div class="card" style="margin-top:12px">
         <div class="card-title">Videos</div>
@@ -276,21 +535,21 @@
         <pre style="white-space:pre-wrap;overflow-x:auto">
 welcome
   ├─ scroll (any) ──► deck_select
-  │                     └─ click ──► dashboard ◄── NEW
-  │                                    ├─ click ──► bio_sleep
-  │                                    │              ├─ click ──► bio_stress
-  │                                    │              │              ├─ click ──► bio_load
-  │                                    │              │              │              └─ click ──► bio_confirm
-  │                                    │              │              │                              └─ click ──► [session]
-  │                                    │              │              │                                              ├─ question
-  │                                    │              │              │                                              │    └─ click ──► answer
-  │                                    │              │              │                                              │                  └─ click ──► rating
-  │                                    │              │              │                                              │                                  └─ click ──► [next card]
-  │                                    │              │              │                                              └─ (auto end) ──► summary
-  │                                    └─ scroll↓ ──► model_insights ◄── NEW
+  │                     └─ click ──► dashboard
+  │                                    ├─ click ──► [session starts immediately]
+  │                                    │              ├─ question
+  │                                    │              │    └─ click ──► answer
+  │                                    │              │                  └─ click ──► rating
+  │                                    │              │                                  └─ click ──► [next card]
+  │                                    │              └─ (auto end) ──► summary
+  │                                    └─ scroll↓ ──► model_insights
   │                                                     ├─ scroll↑ / click ──► dashboard
   │                                                     └─ dbl-tap ──► welcome
   └─ dbl-tap (from anywhere) ──► welcome
+
+Biometric check-in removed — no self-reported screens.
+Ring data (HRV, sleep, RMSSD) arrives via Even R1 pilot and
+populates automatically. All variables are null-safe until then.
 
 ML Data Flow:
   card rated ──► observation recorded
@@ -315,6 +574,204 @@ ML Data Flow:
 </div>
 
 <script>
+  // ── Utilities ───────────────────────────────────────────────
+
+  function escHtml(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── API Key management ──────────────────────────────────────
+
+  function getApiKey() { return localStorage.getItem('bioloop_api_key') || ''; }
+
+  function saveApiKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    if (!val.startsWith('sk-')) { alert('Key should start with sk-'); return; }
+    localStorage.setItem('bioloop_api_key', val);
+    renderApiKeyState();
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem('bioloop_api_key');
+    renderApiKeyState();
+  }
+
+  function renderApiKeyState() {
+    const key = getApiKey();
+    document.getElementById('api-key-set').style.display = key ? 'block' : 'none';
+    document.getElementById('api-key-input-wrap').style.display = key ? 'none' : 'block';
+    if (key) document.getElementById('api-key-display').textContent =
+      key.slice(0, 10) + '••••••••' + key.slice(-4);
+  }
+
+  // ── File reading ────────────────────────────────────────────
+
+  function handleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      alert('PDF detected — open it in a reader, select all text (Cmd/Ctrl+A), copy, and paste below.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('text-input').value = e.target.result;
+      updateTextStats();
+      if (!document.getElementById('deck-name').value)
+        document.getElementById('deck-name').value =
+          file.name.replace(/\.(txt|md)$/i, '').replace(/[-_]/g, ' ');
+    };
+    reader.readAsText(file);
+  }
+
+  function updateTextStats() {
+    const text = document.getElementById('text-input').value;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    document.getElementById('text-stats').textContent = text.length
+      ? `${words.toLocaleString()} words · ${text.length.toLocaleString()} chars` +
+        (text.length > 80000 ? ' — will be truncated to 80 k' : '')
+      : '';
+  }
+
+  // ── Drag-and-drop wiring ────────────────────────────────────
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const zone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const textArea = document.getElementById('text-input');
+    zone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', function () { handleFile(this); });
+    textArea.addEventListener('input', updateTextStats);
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      const f = e.dataTransfer.files[0];
+      if (!f) return;
+      const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+      handleFile(fileInput);
+    });
+  });
+
+  // ── Card generation ─────────────────────────────────────────
+
+  let _generatedCards = [];
+  let _generatedDeck = null;
+
+  function setGenStatus(text, pct) {
+    document.getElementById('gen-status').style.display = text ? 'block' : 'none';
+    document.getElementById('gen-status-text').textContent = text;
+    document.getElementById('gen-progress').style.width = (pct || 0) + '%';
+  }
+
+  async function generateCards() {
+    const apiKey = getApiKey();
+    if (!apiKey) { alert('Please save your Anthropic API key first.'); return; }
+    const text = document.getElementById('text-input').value.trim();
+    if (!text) { alert('Please add study material first.'); return; }
+    const deckName = document.getElementById('deck-name').value.trim() || 'Imported Deck';
+    const course   = document.getElementById('deck-course').value.trim() || 'General';
+    const n        = parseInt(document.getElementById('card-count').value, 10);
+
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('btn-generate').disabled = true;
+    setGenStatus('Analysing content with Claude…', 20);
+
+    const prompt = `You are an expert educator specialising in spaced repetition and active recall.
+Analyse the following study material and generate exactly ${n} high-quality flashcards.
+
+Guidelines:
+- Each card tests exactly ONE idea — no compound questions
+- Questions probe understanding and mechanism, not just recall
+- Answers explain the WHY with full context (2–4 sentences)
+- High-yield concepts deserve multiple cards from different angles
+- Complexity tags: vocabulary · concept · procedure · application · analysis
+- Include 2–3 alternative presentations per card (analogy, clinical_example, step-by-step, contrast, mnemonic)
+
+MATERIAL:
+"""
+${text.slice(0, 80000)}
+"""
+
+Return ONLY a valid JSON array. No markdown, no commentary.
+[{"front":"…","back":"…","complexity":"concept","tags":["tag"],"presentations":{"analogy":{"front":"…","back":"…"}}}]`;
+
+    try {
+      setGenStatus('Waiting for Claude…', 40);
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }] }),
+      });
+      setGenStatus('Parsing cards…', 80);
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const raw  = data.content?.find(b => b.type === 'text')?.text ?? '';
+      const cards = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      if (!Array.isArray(cards) || !cards.length) throw new Error('No cards returned');
+
+      _generatedCards = cards;
+      const now = Date.now(), deckId = crypto.randomUUID();
+      _generatedDeck = {
+        id: deckId, name: deckName, description: `${course} — AI-generated`,
+        cards: cards.map(c => ({
+          id: crypto.randomUUID(), deckId,
+          front: c.front || '', back: c.back || '',
+          complexity: c.complexity || 'concept',
+          tags: Array.isArray(c.tags) ? c.tags : [],
+          presentations: c.presentations || {},
+          createdAt: now, updatedAt: now,
+        })),
+        createdAt: now, updatedAt: now,
+      };
+      setGenStatus(`Generated ${cards.length} cards`, 100);
+      renderPreview(cards);
+    } catch (err) {
+      setGenStatus('Error: ' + err.message, 0);
+    } finally {
+      document.getElementById('btn-generate').disabled = false;
+    }
+  }
+
+  function renderPreview(cards) {
+    document.getElementById('preview-count').textContent = `${cards.length} cards`;
+    document.getElementById('preview-list').innerHTML = cards.map((c, i) => `
+      <div class="preview-card-item">
+        <div class="preview-front">${i + 1}. ${escHtml(c.front)}</div>
+        <div class="preview-back">${escHtml(c.back)}</div>
+        <div class="preview-meta">
+          <span class="tag-pill complexity">${escHtml(c.complexity || 'concept')}</span>
+          ${(c.tags || []).map(t => `<span class="tag-pill">${escHtml(t)}</span>`).join('')}
+          ${c.presentations ? `<span class="tag-pill">${Object.keys(c.presentations).length} styles</span>` : ''}
+        </div>
+      </div>`).join('');
+    document.getElementById('preview-section').style.display = 'block';
+    document.getElementById('save-status').style.display = 'none';
+    document.getElementById('btn-save').disabled = false;
+  }
+
+  function saveDeck() {
+    if (!_generatedDeck) return;
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    if (!Array.isArray(stored.decks)) stored.decks = [];
+    stored.decks.push(_generatedDeck);
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    const el = document.getElementById('save-status');
+    el.textContent = `✓ "${_generatedDeck.name}" saved — ${_generatedDeck.cards.length} cards added to G2 app`;
+    el.style.display = 'block';
+    document.getElementById('btn-save').disabled = true;
+    loadData();
+  }
+
   // ── Load config.json and apply to UI ──
   async function loadConfig() {
     try {
@@ -410,6 +867,223 @@ ML Data Flow:
     return max > 0 ? Math.round((score / max) * 100) : 0;
   }
 
+  // ── Cognitive state cluster rendering ─────────────────────────
+
+  function renderClusterState(clusterState) {
+    const badge = document.getElementById('cluster-status-badge');
+    const chip  = document.getElementById('cluster-current-chip');
+    const obs   = document.getElementById('cluster-current-obs');
+    const list  = document.getElementById('cluster-list');
+    if (!badge || !chip || !obs || !list) return;
+
+    if (!clusterState || clusterState.status === 'collecting') {
+      const n = clusterState?.clusteringObsCount ?? 0;
+      badge.textContent = 'collecting data';
+      chip.className = 'status-chip collecting';
+      chip.textContent = 'collecting';
+      obs.textContent = `${n} / 20 observations`;
+      list.innerHTML = '<p style="font-size:12px;color:var(--muted)">Clusters appear after 20 observations.</p>';
+      return;
+    }
+
+    const currentId = clusterState.currentClusterId;
+    badge.textContent = `${clusterState.clusteringObsCount} obs`;
+    const NULL_CLUSTER_ID = 4;
+    chip.className = 'status-chip active';
+    chip.textContent = currentId === NULL_CLUSTER_ID ? 'No biometrics' : currentId !== null ? `Cluster ${currentId}` : 'unknown';
+    obs.textContent = `last updated ${new Date(clusterState.lastClusteringAt).toLocaleTimeString()}`;
+
+    // Render each cluster: centroid bar + best style by slope
+    const FEATURE_NAMES = ['latencyZ','accuracy','RMSSD','sleep h','REM h','longest block','interruptions','stress','energy','min into session','days since study'];
+    // Include the null-biometric cluster if it has any assignments
+    const nullObs = Object.values(clusterState.assignments || {}).filter(id => id === 4).length;
+    const nullCurves = (clusterState.curves || []).filter(cv => cv.clusterId === 4);
+    const nullClusterHtml = nullObs > 0 ? (() => {
+      const isCurrent = currentId === 4;
+      const bestStyle = nullCurves.sort((a, b) => (b.slope ?? -Infinity) - (a.slope ?? -Infinity))[0];
+      const bestStyleHtml = bestStyle?.slope !== null && bestStyle?.slope !== undefined
+        ? `<span style="font-size:11px;color:var(--accent)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
+        : `<span style="font-size:11px;color:var(--muted)">no curve data yet</span>`;
+      return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border, #2a2520)'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--accent)' : 'var(--muted)'}">No biometrics <span style="font-weight:400;font-size:11px">(${nullObs} obs)</span></span>
+          ${bestStyleHtml}
+        </div>
+        <div style="font-size:10px;color:var(--muted)">baseline — active while ring is disconnected</div>
+      </div>`;
+    })() : '';
+
+    const clusterHtml = clusterState.clusters
+      .sort((a, b) => a.id - b.id)
+      .map(c => {
+        const isCurrent = c.id === currentId;
+        // Best style for this cluster by learning curve slope
+        const curvesForCluster = (clusterState.curves || [])
+          .filter(cv => cv.clusterId === c.id && cv.slope !== null)
+          .sort((a, b) => (b.slope ?? 0) - (a.slope ?? 0));
+        const bestStyle = curvesForCluster[0];
+        const bestStyleHtml = bestStyle
+          ? `<span style="font-size:11px;color:var(--accent)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
+          : `<span style="font-size:11px;color:var(--muted)">no curve data yet</span>`;
+
+        // Show top 3 centroid dims by magnitude
+        const dims = c.centroid.map((v, i) => ({ name: FEATURE_NAMES[i] || `dim${i}`, v }));
+        const topDims = dims.sort((a, b) => Math.abs(b.v - 0.5) - Math.abs(a.v - 0.5)).slice(0, 3);
+        const dimsHtml = topDims.map(d =>
+          `<span style="font-size:10px;color:var(--muted)">${escHtml(d.name)}: ${(d.v * 100).toFixed(0)}%</span>`
+        ).join(' · ');
+
+        return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border, #2a2520)'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--accent)' : 'var(--text)'}">Cluster ${c.id} <span style="font-weight:400;color:var(--muted);font-size:11px">(${c.size} obs)</span></span>
+            ${bestStyleHtml}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${dimsHtml}</div>
+        </div>`;
+      }).join('');
+
+    list.innerHTML = nullClusterHtml + (clusterHtml || '') || '<p style="font-size:12px;color:var(--muted)">No clusters yet.</p>';
+  }
+
+  // ── Analytics helpers ───────────────────────────────────────
+
+  function isoDate(ts) {
+    return new Date(ts).toISOString().slice(0, 10);
+  }
+
+  function renderAnalytics(data) {
+    const sessions    = data.sessions    || [];
+    const reviewEvents= data.reviewEvents|| [];
+    const reviewStates= data.reviewStates|| [];
+    const banditState = data.banditState || null;
+    const now         = Date.now();
+    const todayStr    = isoDate(now);
+
+    // ── Streak ──────────────────────────────────────────────
+    const sessionDays = [...new Set(sessions.map(s => isoDate(s.startTime)))].sort();
+    let streak = 0;
+    if (sessionDays.length) {
+      const d = new Date(); d.setHours(0,0,0,0);
+      while (true) {
+        const key = d.toISOString().slice(0, 10);
+        if (sessionDays.includes(key)) { streak++; d.setDate(d.getDate() - 1); }
+        else break;
+      }
+    }
+    document.getElementById('an-streak').textContent = streak ? streak + (streak === 1 ? ' day' : ' days') : '—';
+
+    // ── Due today ────────────────────────────────────────────
+    const due = reviewStates.filter(s => {
+      const t = s.fsrs?.due ? new Date(s.fsrs.due).getTime() : 0;
+      return t > 0 && t <= now;
+    }).length + reviewStates.filter(s => s.totalReviews === 0).length;
+    document.getElementById('an-due').textContent = due || '0';
+
+    // ── All-time cards reviewed ───────────────────────────────
+    document.getElementById('an-total').textContent = reviewEvents.length.toLocaleString();
+
+    // ── 7-day bar chart ──────────────────────────────────────
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0,0,0,0);
+      return d.toISOString().slice(0, 10);
+    });
+    const dayLabels = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    const countsByDay = {};
+    days.forEach(d => countsByDay[d] = 0);
+    reviewEvents.forEach(e => {
+      const k = isoDate(e.timestamp);
+      if (countsByDay[k] !== undefined) countsByDay[k]++;
+    });
+    const counts = days.map(d => countsByDay[d]);
+    const maxCount = Math.max(...counts, 1);
+    const weekTotal = counts.reduce((s, c) => s + c, 0);
+    document.getElementById('an-week-total').textContent = weekTotal + ' this week';
+
+    const chartEl = document.getElementById('an-bar-chart');
+    const labelsEl = document.getElementById('an-bar-labels');
+    chartEl.innerHTML = counts.map((c, i) => `
+      <div class="bar-col" style="flex:1">
+        <span class="bar-num" style="font-size:10px;color:var(--muted)">${c || ''}</span>
+        <div class="bar-fill ${c === 0 ? 'zero' : ''}"
+          style="height:${Math.round((c / maxCount) * 48) + 4}px;width:100%"></div>
+      </div>`).join('');
+    labelsEl.innerHTML = days.map((d, i) => {
+      const dow = new Date(d + 'T12:00:00').getDay();
+      const isToday = d === todayStr;
+      return `<div class="bar-col" style="flex:1">
+        <span class="bar-day" style="${isToday ? 'color:var(--accent);font-weight:700' : ''}">${dayLabels[dow]}</span>
+      </div>`;
+    }).join('');
+
+    // ── Accuracy trend — last 7 sessions ────────────────────
+    const recentSessions = [...sessions].sort((a,b) => b.startTime - a.startTime).slice(0, 7).reverse();
+    const accEl = document.getElementById('an-accuracy-list');
+    if (!recentSessions.length) {
+      accEl.innerHTML = '<p style="font-size:12px;color:var(--muted)">No sessions yet.</p>';
+    } else {
+      accEl.innerHTML = recentSessions.map(s => {
+        const pct = s.cardsReviewed > 0 ? Math.round((s.cardsCorrect / s.cardsReviewed) * 100) : 0;
+        const date = new Date(s.startTime).toLocaleDateString(undefined, { month:'short', day:'numeric' });
+        const color = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--yellow)' : 'var(--red)';
+        return `<div class="acc-row">
+          <span class="acc-label">${date}</span>
+          <div class="acc-track"><div class="acc-fill" style="width:${pct}%;background:${color}"></div></div>
+          <span class="acc-pct">${pct}%</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Best study time ──────────────────────────────────────
+    const hourBuckets = {};
+    reviewEvents.forEach(e => {
+      const h = new Date(e.timestamp).getHours();
+      const bucket = Math.floor(h / 3) * 3; // 3-hour windows
+      if (!hourBuckets[bucket]) hourBuckets[bucket] = { correct: 0, total: 0 };
+      hourBuckets[bucket].total++;
+      if (e.correct) hourBuckets[bucket].correct++;
+    });
+    const bestTimeEl = document.getElementById('an-best-time');
+    const buckets = Object.entries(hourBuckets).filter(([,v]) => v.total >= 3);
+    if (!buckets.length) {
+      bestTimeEl.textContent = 'Not enough data yet — needs 3+ cards per time window.';
+    } else {
+      const best = buckets.sort(([,a],[,b]) => (b.correct/b.total) - (a.correct/a.total))[0];
+      const h = parseInt(best[0]);
+      const fmt = hh => {
+        const d = new Date(); d.setHours(hh, 0, 0, 0);
+        return d.toLocaleTimeString(undefined, { hour: 'numeric', hour12: true });
+      };
+      const pct = Math.round((best[1].correct / best[1].total) * 100);
+      bestTimeEl.innerHTML = `<span style="color:var(--text);font-weight:600">${fmt(h)} – ${fmt(h+3)}</span>
+        <span style="color:var(--muted);font-size:12px"> · ${pct}% accuracy · ${best[1].total} cards</span>`;
+    }
+
+    // ── Bandit pull counts ───────────────────────────────────
+    const banditEl = document.getElementById('an-bandit-list');
+    const banditTotalEl = document.getElementById('an-bandit-total');
+    if (!banditState?.arms) {
+      banditEl.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:8px 0">No bandit data yet.</p>';
+    } else {
+      const arms = Object.entries(banditState.arms)
+        .map(([name, arm]) => ({ name, pulls: arm.pulls || 0 }))
+        .sort((a, b) => b.pulls - a.pulls);
+      const totalPulls = arms.reduce((s, a) => s + a.pulls, 0);
+      banditTotalEl.textContent = totalPulls + ' total pulls';
+      const maxPulls = Math.max(...arms.map(a => a.pulls), 1);
+      banditEl.innerHTML = arms.filter(a => a.pulls > 0).length === 0
+        ? '<p style="font-size:12px;color:var(--muted);padding:8px 0">No pulls yet — start a study session.</p>'
+        : arms.map((a, i) => `
+          <div class="style-item">
+            <span class="style-rank">${i + 1}</span>
+            <span class="style-name">${a.name.replace(/_/g, ' ')}</span>
+            <div class="style-bar-wrap">
+              <div class="style-bar" style="width:${Math.round((a.pulls/maxPulls)*100)}%"></div>
+            </div>
+            <span class="style-score">${a.pulls}</span>
+          </div>`).join('');
+    }
+  }
+
   // ── Main data loader ──
   function loadData() {
     const data = readStorage();
@@ -421,6 +1095,12 @@ ML Data Flow:
       return;
     }
     note.style.display = 'none';
+
+    // Render session analytics (visible from session 1)
+    renderAnalytics(data);
+
+    // Render cognitive state clustering
+    renderClusterState(data.profile?.clusterState ?? null);
 
     const profile = data.profile;
     const observations = data.observations || [];
@@ -493,8 +1173,12 @@ ML Data Flow:
       const now = Date.now();
       deckList.innerHTML = decks.map(deck => {
         const deckStates = reviewStates.filter(s => s.deckId === deck.id);
-        const due = deckStates.filter(s => s.dueDate <= now).length ||
-                    deckStates.filter(s => s.totalReviews === 0).length;
+        const newCards = deckStates.filter(s => s.totalReviews === 0).length;
+        const dueCards = deckStates.filter(s => {
+          const due = s.fsrs?.due ? new Date(s.fsrs.due).getTime() : 0;
+          return due > 0 && due <= now && s.totalReviews > 0;
+        }).length;
+        const due = newCards + dueCards;
         return `
           <div class="deck-item">
             <div>
@@ -507,9 +1191,507 @@ ML Data Flow:
     }
   }
 
+  // ── Import tab ─────────────────────────────────────────────
+
+  // API Key management
+  const API_KEY_STORE = 'bioloop_api_key';
+  let _generatedCards = [];
+  let _generatedDeckName = '';
+
+  function getApiKey() { return localStorage.getItem(API_KEY_STORE) || ''; }
+
+  function renderApiKeyState() {
+    const key = getApiKey();
+    const setEl = document.getElementById('api-key-set');
+    const inputEl = document.getElementById('api-key-input-wrap');
+    if (key) {
+      setEl.style.display = 'block';
+      inputEl.style.display = 'none';
+      document.getElementById('api-key-display').textContent =
+        key.slice(0, 12) + '••••••••' + key.slice(-4);
+    } else {
+      setEl.style.display = 'none';
+      inputEl.style.display = 'block';
+    }
+  }
+
+  function saveApiKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    if (!val.startsWith('sk-')) { alert('API key should start with sk-'); return; }
+    localStorage.setItem(API_KEY_STORE, val);
+    document.getElementById('api-key-input').value = '';
+    renderApiKeyState();
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem(API_KEY_STORE);
+    renderApiKeyState();
+  }
+
+  // File upload / drag-and-drop
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const textInput = document.getElementById('text-input');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) readFile(file);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) readFile(fileInput.files[0]);
+  });
+  textInput.addEventListener('input', updateTextStats);
+
+  function readFile(file) {
+    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+      alert('PDF detected. Please open the PDF, select all text (Ctrl+A / Cmd+A), and paste it into the text area below.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      textInput.value = e.target.result;
+      updateTextStats();
+      // Pre-fill deck name from filename if empty
+      const nameInput = document.getElementById('deck-name');
+      if (!nameInput.value) {
+        nameInput.value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function updateTextStats() {
+    const text = textInput.value;
+    const chars = text.length;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const el = document.getElementById('text-stats');
+    if (chars === 0) { el.textContent = ''; return; }
+    const warning = chars > 80000 ? ' · ⚠️ will be truncated to 80k chars' : '';
+    el.textContent = `${chars.toLocaleString()} chars · ${words.toLocaleString()} words${warning}`;
+  }
+
+  // ── AI Generation ──────────────────────────────────────────
+
+  function setGenStatus(text, pct) {
+    const el = document.getElementById('gen-status');
+    el.style.display = 'block';
+    document.getElementById('gen-status-text').textContent = text;
+    document.getElementById('gen-progress').style.width = pct + '%';
+  }
+
+  async function generateCards() {
+    const apiKey = getApiKey();
+    if (!apiKey) { alert('Please save your Anthropic API key first.'); return; }
+
+    const text = textInput.value.trim();
+    if (!text) { alert('Please add study material first.'); return; }
+
+    const deckName = document.getElementById('deck-name').value.trim() || 'Untitled Deck';
+    const course = document.getElementById('deck-course').value.trim() || 'General';
+    const n = parseInt(document.getElementById('card-count').value, 10);
+
+    _generatedDeckName = deckName;
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('btn-generate').disabled = true;
+    document.getElementById('btn-generate').textContent = 'Generating…';
+
+    setGenStatus('Analyzing study material…', 20);
+
+    const excerpt = text.length > 80000 ? text.slice(0, 80000) : text;
+
+    const prompt = `You are an expert educator specializing in spaced repetition and active recall.
+Analyze the following study material and generate exactly ${n} high-quality flashcards optimized for long-term retention.
+
+Rules:
+- Each card tests exactly ONE idea — no compound questions
+- Questions probe UNDERSTANDING and mechanism ("Why does X cause Y?", "What happens when…?") not just definition recall
+- Answers explain the WHY with enough context to understand the mechanism (2–4 sentences)
+- High-yield or commonly confused concepts get multiple cards from different angles
+- Vary complexity across: vocabulary (define/recall), concept (mechanism), procedure (apply steps), application (transfer to new scenario), analysis (compare/evaluate)
+- Include 2–3 alternative presentations per card using styles such as: analogy, clinical_example, example, step-by-step, contrast, mnemonic, story
+
+MATERIAL:
+"""
+${excerpt}
+"""
+
+Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
+[
+  {
+    "front": "Question text",
+    "back": "Answer explaining WHY with context",
+    "complexity": "concept",
+    "tags": ["specific-subtopic"],
+    "presentations": {
+      "analogy": { "front": "…", "back": "…" },
+      "clinical_example": { "front": "…", "back": "…" }
+    }
+  }
+]`;
+
+    try {
+      setGenStatus('Calling Claude (this takes 20–40 s for large texts)…', 40);
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      setGenStatus('Parsing response…', 80);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      const raw = data.content?.find(b => b.type === 'text')?.text ?? '';
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      _generatedCards = JSON.parse(cleaned);
+
+      if (!Array.isArray(_generatedCards) || _generatedCards.length === 0) {
+        throw new Error('Model returned empty or invalid card array');
+      }
+
+      setGenStatus(`Done — ${_generatedCards.length} cards generated`, 100);
+      renderPreview(_generatedCards, deckName, course);
+
+    } catch (err) {
+      setGenStatus('Error: ' + err.message, 0);
+    } finally {
+      document.getElementById('btn-generate').disabled = false;
+      document.getElementById('btn-generate').textContent = 'Generate Flashcards';
+    }
+  }
+
+  function renderPreview(cards, deckName, course) {
+    const section = document.getElementById('preview-section');
+    const list = document.getElementById('preview-list');
+    document.getElementById('preview-count').textContent = `${cards.length} cards · ${course}`;
+
+    list.innerHTML = cards.map((c, i) => {
+      const altCount = Object.keys(c.presentations || {}).length;
+      const tags = (c.tags || []).map(t => `<span class="tag-pill">${t}</span>`).join('');
+      return `
+        <div class="preview-card-item">
+          <div class="preview-front">${i + 1}. ${escHtml(c.front)}</div>
+          <div class="preview-back">${escHtml(c.back)}</div>
+          <div class="preview-meta">
+            <span class="tag-pill complexity">${c.complexity || 'concept'}</span>
+            ${tags}
+            ${altCount ? `<span class="tag-pill">${altCount} styles</span>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    section.style.display = 'block';
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function saveDeck() {
+    if (!_generatedCards.length) return;
+    const deckName = document.getElementById('deck-name').value.trim() || _generatedDeckName || 'Untitled Deck';
+    const course = document.getElementById('deck-course').value.trim() || 'General';
+    const now = Date.now();
+    const deckId = crypto.randomUUID();
+
+    const cards = _generatedCards.map(c => ({
+      id: crypto.randomUUID(),
+      deckId,
+      front: c.front || '',
+      back: c.back || '',
+      complexity: c.complexity || 'concept',
+      tags: Array.isArray(c.tags) ? c.tags : [],
+      presentations: c.presentations || {},
+      createdAt: now,
+      updatedAt: now,
+    }));
+
+    const deck = {
+      id: deckId,
+      name: deckName,
+      description: `${course} — AI-generated`,
+      cards,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Write into adaptive_learning_data without disturbing existing data
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    if (!Array.isArray(stored.decks)) stored.decks = [];
+    stored.decks.push(deck);
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+
+    const status = document.getElementById('save-status');
+    status.textContent = `Saved "${deckName}" (${cards.length} cards). Switch to Decks tab or open the G2 app.`;
+    status.style.display = 'block';
+    loadData(); // refresh Decks tab
+  }
+
+  // ── PubMed Integration ─────────────────────────────────────
+
+  const NCBI = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+  let _pubmedArticles = {}; // pmid → article data cache
+
+  function setPubmedSearchStatus(text) {
+    const el = document.getElementById('pubmed-search-status');
+    el.style.display = text ? 'block' : 'none';
+    document.getElementById('pubmed-search-text').textContent = text;
+  }
+
+  function setPubmedImportStatus(text, pct) {
+    const el = document.getElementById('pubmed-import-status');
+    el.style.display = text ? 'block' : 'none';
+    document.getElementById('pubmed-import-text').textContent = text;
+    document.getElementById('pubmed-import-progress').style.width = (pct || 0) + '%';
+  }
+
+  async function searchPubMed() {
+    const query = document.getElementById('pubmed-query').value.trim();
+    if (!query) return;
+    const retmax = document.getElementById('pubmed-retmax').value;
+
+    setPubmedSearchStatus('Searching PubMed…');
+    document.getElementById('pubmed-results').innerHTML = '';
+
+    try {
+      // Step 1: get PMIDs
+      const searchUrl = `${NCBI}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${retmax}&retmode=json&sort=relevance`;
+      const searchRes = await fetch(searchUrl);
+      const searchData = await searchRes.json();
+      const ids = searchData.esearchresult?.idlist || [];
+
+      if (ids.length === 0) {
+        setPubmedSearchStatus('No results found. Try a different query.');
+        return;
+      }
+
+      setPubmedSearchStatus(`Found ${searchData.esearchresult.count} results — loading top ${ids.length}…`);
+
+      // Step 2: get summaries (title, authors, journal, year, abstract)
+      const summaryUrl = `${NCBI}/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`;
+      const summaryRes = await fetch(summaryUrl);
+      const summaryData = await summaryRes.json();
+      const result = summaryData.result || {};
+
+      setPubmedSearchStatus('');
+      renderPubMedResults(ids, result);
+
+    } catch (err) {
+      setPubmedSearchStatus('Search failed: ' + err.message);
+    }
+  }
+
+  function renderPubMedResults(ids, result) {
+    const container = document.getElementById('pubmed-results');
+    container.innerHTML = ids.map(id => {
+      const a = result[id];
+      if (!a) return '';
+      const authors = (a.authors || []).slice(0, 3).map(au => au.name).join(', ') +
+        (a.authors?.length > 3 ? ' et al.' : '');
+      const year = a.pubdate?.split(' ')[0] || '';
+      const journal = a.fulljournalname || a.source || '';
+      // cache article data for import
+      _pubmedArticles[id] = { pmid: id, title: a.title, authors, year, journal, abstract: '' };
+
+      return `
+        <div class="pubmed-result" id="pm-${id}">
+          <div class="pubmed-title">${escHtml(a.title || 'Untitled')}</div>
+          <div class="pubmed-meta">${escHtml(authors)} · ${escHtml(journal)} · ${year}</div>
+          <div class="pubmed-abstract" id="abs-${id}">Loading abstract…</div>
+          <div class="pubmed-actions">
+            <button class="btn-small" onclick="toggleAbstract('${id}')">Expand</button>
+            <button class="btn-small accent" onclick="importPubMedArticle('${id}')">Import → Cards</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Fetch abstracts in background (one at a time to respect rate limit)
+    ids.reduce((p, id) => p.then(() => fetchAbstract(id)), Promise.resolve());
+  }
+
+  async function fetchAbstract(pmid) {
+    try {
+      const url = `${NCBI}/efetch.fcgi?db=pubmed&id=${pmid}&rettype=abstract&retmode=text`;
+      const res = await fetch(url);
+      const text = await res.text();
+      // Extract abstract text (comes after author block)
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      const abIdx = lines.findIndex(l => /^(abstract|background|objective|purpose|aim)/i.test(l));
+      const abstract = abIdx >= 0
+        ? lines.slice(abIdx).join(' ').slice(0, 1200)
+        : lines.slice(3).join(' ').slice(0, 1200);
+
+      if (_pubmedArticles[pmid]) _pubmedArticles[pmid].abstract = abstract;
+      const el = document.getElementById(`abs-${pmid}`);
+      if (el) el.textContent = abstract || 'Abstract not available.';
+    } catch {
+      const el = document.getElementById(`abs-${pmid}`);
+      if (el) el.textContent = 'Abstract unavailable.';
+    }
+  }
+
+  function toggleAbstract(pmid) {
+    const el = document.getElementById(`abs-${pmid}`);
+    if (!el) return;
+    el.classList.toggle('expanded');
+    const btn = el.nextElementSibling?.querySelector('button');
+    if (btn) btn.textContent = el.classList.contains('expanded') ? 'Collapse' : 'Expand';
+  }
+
+  async function importPubMedArticle(pmid) {
+    const apiKey = getApiKey();
+    if (!apiKey) { alert('Please save your Anthropic API key in the Import tab first.'); return; }
+
+    const article = _pubmedArticles[pmid];
+    if (!article) return;
+
+    const n = parseInt(document.getElementById('pubmed-cards').value, 10);
+
+    // Disable the import button while working
+    const btn = document.querySelector(`#pm-${pmid} .btn-small.accent`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Importing…'; }
+
+    setPubmedImportStatus(`Fetching full text for "${article.title.slice(0, 60)}…"`, 15);
+
+    // Try to get full text from PMC, fall back to abstract
+    let sourceText = article.abstract || '';
+    try {
+      const pmcUrl = `${NCBI}/elink.fcgi?dbfrom=pubmed&db=pmc&id=${pmid}&retmode=json`;
+      const pmcRes = await fetch(pmcUrl);
+      const pmcData = await pmcRes.json();
+      const pmcIds = pmcData.linksets?.[0]?.linksetdbs?.find(l => l.dbto === 'pmc')?.links || [];
+      if (pmcIds.length > 0) {
+        const ftUrl = `${NCBI}/efetch.fcgi?db=pmc&id=${pmcIds[0]}&rettype=text&retmode=text`;
+        const ftRes = await fetch(ftUrl);
+        const ftText = await ftRes.text();
+        if (ftText.length > 200) sourceText = ftText.slice(0, 80000);
+      }
+    } catch { /* fall back to abstract */ }
+
+    if (!sourceText) {
+      setPubmedImportStatus('No text available for this article.', 0);
+      if (btn) { btn.disabled = false; btn.textContent = 'Import → Cards'; }
+      return;
+    }
+
+    setPubmedImportStatus('Generating flashcards with Claude…', 40);
+
+    const prompt = `You are an expert medical educator specializing in spaced repetition.
+Generate exactly ${n} high-quality flashcards from this scientific article.
+
+Article: "${article.title}"
+Authors: ${article.authors} (${article.year})
+Journal: ${article.journal}
+
+Rules:
+- Each card tests exactly ONE finding, mechanism, or concept from the article
+- Questions probe understanding ("Why does X lead to Y?" "What mechanism explains…?") not just recall
+- Answers explain the mechanism with clinical/scientific context (2–4 sentences)
+- Include key statistics or effect sizes where relevant (e.g. "HRV decreased by 18ms, p<0.01")
+- Vary complexity: vocabulary, concept, application, analysis
+- Include 2 alternative presentations per card (analogy, clinical_example, or contrast)
+
+TEXT:
+"""
+${sourceText.slice(0, 60000)}
+"""
+
+Return ONLY a valid JSON array, no markdown, no commentary.
+[{"front":"…","back":"…","complexity":"concept","tags":["tag"],"presentations":{"analogy":{"front":"…","back":"…"}}}]`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 6000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      setPubmedImportStatus('Parsing cards…', 80);
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+
+      const data = await res.json();
+      const raw = data.content?.find(b => b.type === 'text')?.text ?? '';
+      const cards = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      if (!Array.isArray(cards) || cards.length === 0) throw new Error('Empty card array');
+
+      // Save deck
+      const deckName = article.title.slice(0, 60) + (article.title.length > 60 ? '…' : '');
+      const now = Date.now();
+      const deckId = crypto.randomUUID();
+      const deckCards = cards.map(c => ({
+        id: crypto.randomUUID(),
+        deckId,
+        front: c.front || '',
+        back: c.back || '',
+        complexity: c.complexity || 'concept',
+        tags: Array.isArray(c.tags) ? c.tags : [article.journal],
+        presentations: c.presentations || {},
+        createdAt: now,
+        updatedAt: now,
+      }));
+      const deck = {
+        id: deckId,
+        name: deckName,
+        description: `${article.authors} · ${article.journal} · ${article.year}`,
+        cards: deckCards,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      let stored = {};
+      try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+      if (!Array.isArray(stored.decks)) stored.decks = [];
+      stored.decks.push(deck);
+      localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+
+      setPubmedImportStatus(`Saved "${deckName}" — ${deckCards.length} cards added to G2 app`, 100);
+      loadData(); // refresh Decks tab
+
+      if (btn) { btn.disabled = false; btn.textContent = 'Imported ✓'; }
+
+    } catch (err) {
+      setPubmedImportStatus('Error: ' + err.message, 0);
+      if (btn) { btn.disabled = false; btn.textContent = 'Import → Cards'; }
+    }
+  }
+
   // Auto-load on page open
   loadConfig();
   loadData();
+  renderApiKeyState();
 </script>
 </body>
 </html>

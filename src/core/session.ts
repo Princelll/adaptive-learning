@@ -16,11 +16,76 @@ import {
   Observation,
   ConfidenceRating,
   PresentationMode,
+  DailyBiometric,
   generateId,
 } from './models';
 import { Scheduler } from './scheduler';
 import { Storage } from './storage';
 import { runAnalysis, updateStylePreferences } from './regression';
+import {
+  LinUCB,
+  buildContext,
+  ratingToReward,
+  ALL_PRESENTATION_MODES,
+  type BanditContext,
+} from './bandit';
+import { updateClustering, CLUSTER_K, NULL_CLUSTER_ID } from './clustering';
+import { State } from 'ts-fsrs';
+
+// ── Sleep interruption analysis ──────────────────────────────
+
+interface SleepQualityFeatures {
+  sleepInterruptionCount: number | null;
+  totalAwakeMin: number | null;
+  longestContinuousBlockHours: number | null;
+  hadDifficultReturn: boolean | null;
+  metSixHourThreshold: boolean | null;
+  sleepAfterLastInterruptionHours: number | null;
+}
+
+function deriveSleepFeatures(bio: DailyBiometric | null): SleepQualityFeatures {
+  const none: SleepQualityFeatures = {
+    sleepInterruptionCount: null,
+    totalAwakeMin: null,
+    longestContinuousBlockHours: null,
+    hadDifficultReturn: null,
+    metSixHourThreshold: null,
+    sleepAfterLastInterruptionHours: null,
+  };
+
+  if (!bio) return none;
+
+  // No segment data — use totals only for the 6h threshold check
+  if (!bio.sleepSegments || bio.sleepSegments.length === 0) {
+    if (bio.sleepHours === null) return none;
+    return {
+      sleepInterruptionCount: 0,
+      totalAwakeMin: 0,
+      longestContinuousBlockHours: bio.sleepHours,
+      hadDifficultReturn: false,
+      metSixHourThreshold: bio.sleepHours >= 6,
+      sleepAfterLastInterruptionHours: null,
+    };
+  }
+
+  const segments = bio.sleepSegments;
+  const interruptions = bio.sleepInterruptions ?? [];
+
+  const longestMin = Math.max(...segments.map(s => s.durationMin));
+  const totalAwakeMin = interruptions.reduce((s, i) => s + i.awakeMin, 0);
+  const hadDifficultReturn = interruptions.some(i => i.difficultReturn);
+  const lastSegmentHours = segments[segments.length - 1].durationMin / 60;
+  const metSixHour = longestMin / 60 >= 6;
+
+  return {
+    sleepInterruptionCount: interruptions.length,
+    totalAwakeMin,
+    longestContinuousBlockHours: longestMin / 60,
+    hadDifficultReturn,
+    metSixHourThreshold: metSixHour,
+    sleepAfterLastInterruptionHours: interruptions.length > 0 ? lastSegmentHours : null,
+  };
+}
 
 export type SessionPhase =
   | 'idle'
@@ -70,6 +135,9 @@ export class SessionManager {
   private recentResults: boolean[] = [];
   private reviewEventIds: string[] = [];
   private sessionStartTime = 0;
+  private bandit: LinUCB | null = null;
+  private currentBanditContext: number[] | null = null;
+  private currentClusterId: number | null = null;
 
   // Z-score context for this session
   private zScores: BiometricZScores | null = null;
@@ -101,6 +169,15 @@ export class SessionManager {
     this.zScores = zScores;
     this.confounders = confounders ?? this.profile?.confounders ?? null;
 
+    // Load or initialise the contextual bandit
+    const savedBandit = await this.storage.getBanditState();
+    this.bandit = savedBandit
+      ? LinUCB.fromState(savedBandit, ALL_PRESENTATION_MODES)
+      : new LinUCB(ALL_PRESENTATION_MODES);
+
+    // Restore last known cluster id from profile
+    this.currentClusterId = this.profile?.clusterState?.currentClusterId ?? null;
+
     // Session recommendation check
     if (zScores) {
       const rec = this.scheduler.getSessionRecommendation(zScores);
@@ -118,7 +195,8 @@ export class SessionManager {
     this.dueCards = this.scheduler.getDueCards(allStates);
 
     if (this.dueCards.length === 0) {
-      this.dueCards = allStates.filter(s => s.totalReviews === 0);
+      // Fall back to cards that have never been reviewed (new cards)
+      this.dueCards = allStates.filter(s => s.fsrs.state === State.New);
     }
 
     if (this.dueCards.length === 0) {
@@ -184,13 +262,35 @@ export class SessionManager {
     this.currentCard = card;
     this.currentReviewState = reviewState;
 
-    // Pass z-scores to mode selection for stress-aware logic
-    this.currentMode = this.scheduler.selectPresentationMode(
-      reviewState,
-      this.profile,
-      card.complexity,
-      this.zScores,
-    );
+    // Build bandit context and select presentation mode
+    const sessionDurationMin = (Date.now() - this.sessionStartTime) / 60000;
+    const banditCtx: BanditContext = {
+      timeOfDay: (() => {
+        const h = new Date().getHours();
+        if (h >= 5 && h < 12) return 'morning';
+        if (h >= 12 && h < 17) return 'afternoon';
+        if (h >= 17 && h < 21) return 'evening';
+        return 'night';
+      })(),
+      complexity: card.complexity,
+      minutesIntoSession: sessionDurationMin,
+      priorLevel: reviewState.fsrs.difficulty ?? 5,
+      stressLevel: this.zScores?.stressState ?? 0.5,
+      energyLevel: this.zScores?.cognitiveLoad != null ? 1 - this.zScores.cognitiveLoad : 0.5,
+      metSixHour: 0.5, // populated when ring data available
+      cognitiveCluster: (this.currentClusterId !== null && this.currentClusterId !== NULL_CLUSTER_ID)
+        ? this.currentClusterId / (CLUSTER_K - 1)
+        : 0.5,
+    };
+    this.currentBanditContext = buildContext(banditCtx);
+
+    if (this.bandit) {
+      this.currentMode = this.bandit.select(this.currentBanditContext) as PresentationMode;
+    } else {
+      this.currentMode = this.scheduler.selectPresentationMode(
+        reviewState, this.profile, card.complexity, this.zScores,
+      );
+    }
 
     const frontText = this.getCardText(card, this.currentMode, true);
     this.cardStartTime = Date.now();
@@ -240,6 +340,12 @@ export class SessionManager {
       responseLatencyMs,
     );
 
+    // Update bandit with observed reward and persist
+    if (this.bandit && this.currentBanditContext) {
+      this.bandit.update(this.currentMode, this.currentBanditContext, ratingToReward(rating));
+      await this.storage.saveBanditState(this.bandit.toState());
+    }
+
     // Mode performance tracking
     if (!newState.modePerformance[this.currentMode]) {
       newState.modePerformance[this.currentMode] = { correct: 0, total: 0 };
@@ -270,7 +376,23 @@ export class SessionManager {
     this.reviewEventIds.push(event.id);
 
     // Record observation for OLS regression
-    await this.recordObservation(correct, responseLatencyMs, rating);
+    await this.recordObservation(correct, responseLatencyMs, rating, enrichedBiometrics);
+
+    // Update cognitive state clustering (same cadence as OLS — every 5th obs)
+    const allObs = await this.storage.getAllObservations();
+    if (this.profile) {
+      const latestObs = allObs[allObs.length - 1];
+      if (latestObs) {
+        const newClusterState = updateClustering(
+          allObs,
+          latestObs,
+          this.profile.clusterState ?? null,
+        );
+        this.profile.clusterState = newClusterState;
+        this.currentClusterId = newClusterState.currentClusterId;
+        await this.storage.saveProfile(this.profile);
+      }
+    }
 
     // Session stats
     this.session.cardsReviewed++;
@@ -302,7 +424,6 @@ export class SessionManager {
     }
 
     // Run regression after every 5th observation if we have 15+
-    const allObs = await this.storage.getAllObservations();
     if (allObs.length >= 15 && allObs.length % 5 === 0 && this.profile) {
       const result = runAnalysis(allObs);
       this.profile.modelStatus = result.status;
@@ -322,8 +443,11 @@ export class SessionManager {
     }
 
     this.currentCardIndex++;
+    const daysUntilReview = Math.round(
+      (newState.fsrs.due.getTime() - Date.now()) / 86400000,
+    );
     this.events.onLog(
-      `Card rated: ${rating} (${correct ? 'correct' : 'incorrect'}) — next review in ${newState.interval} day(s)`,
+      `Card rated: ${rating} (${correct ? 'correct' : 'incorrect'}) — next review in ${daysUntilReview} day(s)`,
     );
 
     await this.showNextCard();
@@ -357,6 +481,7 @@ export class SessionManager {
     correct: boolean,
     latencyMs: number,
     rating: ConfidenceRating,
+    biometrics: BiometricSnapshot | null = null,
   ): Promise<void> {
     if (!this.currentCard || !this.session || !this.profile) return;
 
@@ -367,6 +492,12 @@ export class SessionManager {
     else if (hour >= 17 && hour < 21) timeOfDay = 'evening';
     else if (hour >= 21 || hour < 5) timeOfDay = 'night';
 
+    const lastBio = this.profile.biometricHistory.length > 0
+      ? this.profile.biometricHistory[this.profile.biometricHistory.length - 1]
+      : null;
+    const cardAgeDays = (Date.now() - this.currentCard.createdAt) / 86400000;
+    const sleepFeatures = deriveSleepFeatures(lastBio);
+
     const obs: Observation = {
       id: generateId(),
       timestamp: Date.now(),
@@ -375,16 +506,33 @@ export class SessionManager {
       features: {
         explanationStyle: this.currentMode,
         stressLevel: this.zScores?.stressState ?? 0.5,
-        energyLevel: this.zScores ? 1 - this.zScores.cognitiveLoad : 0.5,
+        energyLevel: this.zScores?.cognitiveLoad != null ? 1 - this.zScores.cognitiveLoad : 0.5,
         timeOfDay,
         topicPosition: this.currentCardIndex,
         minutesIntoSession: sessionDurationMin,
-        daysSinceLastStudy: this.currentReviewState?.lastReview
-          ? (Date.now() - this.currentReviewState.lastReview) / 86400000
+        responseLatencyMs: latencyMs,
+        daysSinceLastStudy: this.currentReviewState?.fsrs.last_review
+          ? (Date.now() - this.currentReviewState.fsrs.last_review.getTime()) / 86400000
           : 0,
-        priorLevel: this.currentReviewState?.easeFactor ?? 2.5,
+        cardAgeDays,
+        priorLevel: this.currentReviewState?.fsrs.difficulty ?? 5,
         complexity: this.currentCard.complexity,
         course: this.currentCard.deckId,
+        sleepHoursActual: lastBio?.sleepHours ?? null,
+        remHoursActual: lastBio?.remHours ?? null,
+        sleepHoursZ: this.zScores?.sleepHoursZ ?? null,
+        remHoursZ: this.zScores?.remHoursZ ?? null,
+        currentHrv: biometrics?.hrv ?? null,
+        currentRmssd: biometrics?.rmssd ?? null,
+        rmssdZ: this.zScores?.rmssdZ ?? null,
+        restingHRZ: this.zScores?.restingHRZ ?? null,
+        spo2Z: this.zScores?.spo2Z ?? null,
+        sleepInterruptionCount: sleepFeatures.sleepInterruptionCount,
+        totalAwakeMin: sleepFeatures.totalAwakeMin,
+        longestContinuousBlockHours: sleepFeatures.longestContinuousBlockHours,
+        hadDifficultReturn: sleepFeatures.hadDifficultReturn,
+        metSixHourThreshold: sleepFeatures.metSixHourThreshold,
+        sleepAfterLastInterruptionHours: sleepFeatures.sleepAfterLastInterruptionHours,
       },
       confounders: this.confounders ?? {
         onSSRI: false,

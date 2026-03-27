@@ -2,6 +2,10 @@
 // Adaptive Learning Data Models
 // ============================================================
 
+import { createEmptyCard } from 'ts-fsrs';
+import type { Card as FSRSCard } from 'ts-fsrs';
+export type { FSRSCard };
+
 /** Card presentation modes - different ways to display the same content */
 export type PresentationMode =
   | 'definition'
@@ -18,27 +22,29 @@ export type PresentationMode =
 
 // ── Z-Score Biometric Model (Cheng 2022, Schiweck 2018) ────────────
 
-/** Biometric z-scores relative to personal baseline */
+/** Biometric z-scores relative to personal baseline. All fields null until ring data available. */
 export interface BiometricZScores {
   /** RMSSD z-score – parasympathetic index. Negative = below personal baseline */
-  rmssdZ: number;
+  rmssdZ: number | null;
   /** SpO2 nocturnal dip severity z-score. Positive = worse than usual dipping */
-  spo2DipZ: number;
+  spo2DipZ: number | null;
   /**
    * SpO2 absolute level z-score vs personal baseline mean.
    * Negative = lower than usual (e.g. personal norm 98%, today 95% → negative z).
-   * Complements spo2DipZ: dip captures sleep-disordered breathing,
-   * this captures general oxygenation state throughout the day.
    */
-  spo2Z: number;
+  spo2Z: number | null;
   /** Resting HR z-score. Positive = elevated above personal baseline */
-  restingHRZ: number;
-  /** Self-reported sleep quality 0-1 (0=poor, 1=excellent) */
-  sleepQuality: number;
-  /** Self-reported stress state 0-1 (0=low, 1=extreme) */
-  stressState: number;
-  /** Self-reported cognitive load 0-1 (0=low, 1=high) */
-  cognitiveLoad: number;
+  restingHRZ: number | null;
+  /** Sleep hours z-score — last night's total sleep vs personal baseline */
+  sleepHoursZ: number | null;
+  /** REM sleep hours z-score — last night's REM vs personal baseline */
+  remHoursZ: number | null;
+  /** Sleep quality 0-1 — populated by ring when available, otherwise null */
+  sleepQuality: number | null;
+  /** Stress state 0-1 — populated by ring when available, otherwise null */
+  stressState: number | null;
+  /** Cognitive load 0-1 — populated by ring when available, otherwise null */
+  cognitiveLoad: number | null;
 }
 
 /** Structural confounders – collected once, affect HRV baseline (Licht 2008) */
@@ -51,20 +57,62 @@ export interface Confounders {
   smoker: boolean;
 }
 
+/**
+ * A single period of wakefulness during the sleep window.
+ * Interruptions are ordered chronologically between sleep segments.
+ */
+export interface SleepInterruption {
+  /** Minutes spent awake during this interruption */
+  awakeMin: number;
+  /**
+   * True if the person took >20 min to fall back asleep (clinical threshold
+   * for sleep-onset difficulty — American Academy of Sleep Medicine).
+   */
+  difficultReturn: boolean;
+  /**
+   * Minutes of continuous sleep accumulated after returning to sleep,
+   * until the next interruption or final wake-up.
+   */
+  sleepAfterMin: number;
+}
+
+/** A single continuous block of uninterrupted sleep */
+export interface SleepSegment {
+  /** Time of day the person fell asleep, as fractional hour (e.g. 23.5 = 11:30 PM) */
+  startHour: number;
+  /** Duration of this uninterrupted block in minutes */
+  durationMin: number;
+}
+
 /** One day of biometric readings for personal baseline calculation */
 export interface DailyBiometric {
   /** ISO date string YYYY-MM-DD */
   date: string;
-  /** Overnight RMSSD from G1 (ms) — nocturnal baseline reflecting accumulated stress load */
-  rmssd: number;
-  /** Resting heart rate in bpm */
-  restingHR: number;
-  /** SpO2 nocturnal dip severity score 0-1 (derived from spo2Readings if available) */
-  spo2Dip: number;
-  /** Mean SpO2 across hourly readings — used for absolute z-score vs personal baseline */
-  spo2Avg?: number;
-  /** Hourly SpO2 readings with timestamps (ISO time string HH:mm) — from G1 */
-  spo2Readings?: { time: string; value: number }[];
+  /** Overnight RMSSD in ms — null until ring data available */
+  rmssd: number | null;
+  /** Resting heart rate in bpm — null until ring data available */
+  restingHR: number | null;
+  /** SpO2 nocturnal dip severity score 0-1 — null until ring data available */
+  spo2Dip: number | null;
+  /** Mean SpO2 across hourly readings */
+  spo2Avg?: number | null;
+  /** Hourly SpO2 readings with timestamps (ISO time string HH:mm) */
+  spo2Readings?: { time: string; value: number }[] | null;
+  /** Total sleep hours last night — populated from ring or external source */
+  sleepHours: number | null;
+  /** REM sleep hours last night — populated from ring or external source */
+  remHours: number | null;
+  /**
+   * Ordered list of continuous sleep blocks for the night.
+   * Gaps between segments are the interruptions.
+   * Null if ring data not available or sleep was uninterrupted (use sleepHours instead).
+   */
+  sleepSegments: SleepSegment[] | null;
+  /**
+   * Details for each interruption between sleep segments.
+   * Length is always sleepSegments.length - 1 when segments are present.
+   */
+  sleepInterruptions: SleepInterruption[] | null;
 }
 
 /** Session recommendation from biometric analysis */
@@ -95,10 +143,37 @@ export interface Observation {
     timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
     topicPosition: number;
     minutesIntoSession: number;
+    responseLatencyMs: number;
     daysSinceLastStudy: number;
+    cardAgeDays: number;
     priorLevel: number;
     complexity: string;
     course: string;
+    sleepHoursActual: number | null;
+    remHoursActual: number | null;
+    sleepHoursZ: number | null;
+    remHoursZ: number | null;
+    currentHrv: number | null;
+    currentRmssd: number | null;
+    rmssdZ: number | null;
+    restingHRZ: number | null;
+    spo2Z: number | null;
+    /** Number of wake-ups during the sleep window */
+    sleepInterruptionCount: number | null;
+    /** Total minutes spent awake across all interruptions */
+    totalAwakeMin: number | null;
+    /** Longest single unbroken sleep block in hours */
+    longestContinuousBlockHours: number | null;
+    /** True if any interruption took >20 min to fall back asleep */
+    hadDifficultReturn: boolean | null;
+    /**
+     * True if the longest continuous block was >= 6 hours,
+     * or (no interruptions and total sleep >= 6h).
+     * The primary restorative threshold.
+     */
+    metSixHourThreshold: boolean | null;
+    /** Hours slept in the final block after the last interruption */
+    sleepAfterLastInterruptionHours: number | null;
   };
   confounders: Confounders;
   outcomes: {
@@ -184,16 +259,15 @@ export interface Deck {
   updatedAt: number;
 }
 
-/** SM-2+ review state for a single card */
+/** FSRS-based review state for a single card */
 export interface CardReviewState {
   cardId: string;
   deckId: string;
-  repetitions: number;
-  easeFactor: number;
-  interval: number;
-  dueDate: number;
-  lastReview: number | null;
+  /** FSRS owns all scheduling state (stability, difficulty, due, reps, lapses, state) */
+  fsrs: FSRSCard;
+  /** Running count for analytics */
   totalReviews: number;
+  /** Consecutive correct streak */
   streak: number;
   bestPresentationMode: PresentationMode | null;
   modePerformance: Partial<Record<PresentationMode, { correct: number; total: number }>>;
@@ -259,6 +333,80 @@ export interface StudySession {
   reviewEvents: string[];
 }
 
+// ── Clustering types ─────────────────────────────────────────
+
+/** Running mean/variance accumulators for Welford's online algorithm */
+export interface RollingStats {
+  /** Number of values seen */
+  n: number;
+  /** Running mean */
+  mean: number;
+  /** Running sum of squared deviations (M2 in Welford's formulation) */
+  M2: number;
+}
+
+/** One geometric cluster discovered by k-means. No pre-assigned semantic label. */
+export interface CognitiveCluster {
+  /** Stable index 0–(k-1); preserved across re-clusterings via anchor matching */
+  id: number;
+  /** 11-dim centroid in min-max normalised feature space */
+  centroid: number[];
+  /** Number of observations currently assigned to this cluster */
+  size: number;
+}
+
+/** A single point on a per-cluster × per-style learning curve */
+export interface LearningCurvePoint {
+  /** Observation index within this cluster×style cell (0-based) */
+  obsIndex: number;
+  /** Raw masteryGain for this observation (0, 0.5, or 1) */
+  masteryGain: number;
+  /** Rolling 5-observation mean of masteryGain */
+  rollingMean: number;
+}
+
+/** Learning curve for one (clusterId, presentationStyle) cell */
+export interface ClusterStyleCurve {
+  clusterId: number;
+  style: string;
+  points: LearningCurvePoint[];
+  /** OLS slope on rollingMean vs obsIndex — positive = improving, null if n < 3 */
+  slope: number | null;
+  /** Total observations in this cell */
+  n: number;
+}
+
+/**
+ * Full clustering state — persisted inside LearningProfile.
+ * Null until MIN_CLUSTER_OBS (20) observations have been recorded.
+ */
+export interface ClusterState {
+  /** Discovered clusters (k = CLUSTER_K = 4) */
+  clusters: CognitiveCluster[];
+  /** obsId → clusterId assignment map; capped at 200 most recent entries */
+  assignments: Record<string, number>;
+  /** Cluster id of the most recently processed observation, or null if collecting */
+  currentClusterId: number | null;
+  /**
+   * Per-card Welford stats for latencyZ computation (dim 0 of the feature vector).
+   * Key is cardId. Z-score is computed relative to that card's own response history
+   * so card difficulty does not confound the cognitive state signal.
+   */
+  latencyStatsPerCard: Record<string, RollingStats>;
+  /** Per-dim min/max computed from current observation window for normalisation */
+  featureScales: { min: number[]; max: number[] };
+  /** Per-dim running medians for null imputation (dims 2–10, biometric fields) */
+  runningMedians: number[];
+  /** Timestamp of last full k-means re-cluster */
+  lastClusteringAt: number;
+  /** Observation count at the time of the last full re-cluster */
+  clusteringObsCount: number;
+  /** 'collecting' while n < MIN_CLUSTER_OBS; 'active' once clustering is running */
+  status: 'collecting' | 'active' | 'stale';
+  /** Learning curves per cluster×style cell; recomputed on each full re-cluster */
+  curves: ClusterStyleCurve[];
+}
+
 /** User learning profile – extended with z-score fields */
 export interface LearningProfile {
   userId: string;
@@ -282,6 +430,8 @@ export interface LearningProfile {
   modelStatus: string;
   /** Last known OLS R² – persisted so dashboard can display without re-running regression */
   modelR2?: number;
+  /** Cognitive state clustering — null until MIN_CLUSTER_OBS observations recorded */
+  clusterState: ClusterState | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -296,11 +446,7 @@ export function createDefaultReviewState(cardId: string, deckId: string): CardRe
   return {
     cardId,
     deckId,
-    repetitions: 0,
-    easeFactor: 2.5,
-    interval: 0,
-    dueDate: Date.now(),
-    lastReview: null,
+    fsrs: createEmptyCard(),
     totalReviews: 0,
     streak: 0,
     bestPresentationMode: null,
@@ -346,6 +492,7 @@ export function createDefaultProfile(): LearningProfile {
     biometricHistory: [],
     stylePreferences,
     modelStatus: 'collecting_data',
+    clusterState: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

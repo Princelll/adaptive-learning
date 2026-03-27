@@ -14,6 +14,7 @@ import {
   createDefaultProfile,
   createDefaultReviewState,
 } from './models';
+import type { BanditState } from './bandit';
 
 const KEY = 'adaptive_learning_data';
 
@@ -25,6 +26,7 @@ interface StoredData {
   profile: LearningProfile | null;
   biometricHistory: DailyBiometric[];
   observations: Observation[];
+  banditState: BanditState | null;
 }
 
 function emptyData(): StoredData {
@@ -36,6 +38,7 @@ function emptyData(): StoredData {
     profile: null,
     biometricHistory: [],
     observations: [],
+    banditState: null,
   };
 }
 
@@ -51,6 +54,15 @@ export class Storage {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         this.data = { ...emptyData(), ...JSON.parse(raw) };
+        // Revive FSRS Date objects (JSON serializes them as strings)
+        for (const state of this.data.reviewStates) {
+          if (state.fsrs) {
+            state.fsrs.due = new Date(state.fsrs.due);
+            if (state.fsrs.last_review) {
+              state.fsrs.last_review = new Date(state.fsrs.last_review);
+            }
+          }
+        }
       }
     } catch {
       this.data = emptyData();
@@ -191,5 +203,16 @@ export class Storage {
 
   async getObservationsForCard(cardId: string): Promise<Observation[]> {
     return this.data.observations.filter(o => o.cardId === cardId);
+  }
+
+  // ── Bandit State ────────────────────────────────────────────
+
+  async getBanditState(): Promise<BanditState | null> {
+    return this.data.banditState ?? null;
+  }
+
+  async saveBanditState(state: BanditState): Promise<void> {
+    this.data.banditState = state;
+    this.persist();
   }
 }
