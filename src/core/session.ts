@@ -29,6 +29,7 @@ import {
   ALL_PRESENTATION_MODES,
   type BanditContext,
 } from './bandit';
+import { updateClustering, CLUSTER_K } from './clustering';
 import { State } from 'ts-fsrs';
 
 // ── Sleep interruption analysis ──────────────────────────────
@@ -136,6 +137,7 @@ export class SessionManager {
   private sessionStartTime = 0;
   private bandit: LinUCB | null = null;
   private currentBanditContext: number[] | null = null;
+  private currentClusterId: number | null = null;
 
   // Z-score context for this session
   private zScores: BiometricZScores | null = null;
@@ -172,6 +174,9 @@ export class SessionManager {
     this.bandit = savedBandit
       ? LinUCB.fromState(savedBandit, ALL_PRESENTATION_MODES)
       : new LinUCB(ALL_PRESENTATION_MODES);
+
+    // Restore last known cluster id from profile
+    this.currentClusterId = this.profile?.clusterState?.currentClusterId ?? null;
 
     // Session recommendation check
     if (zScores) {
@@ -273,6 +278,9 @@ export class SessionManager {
       stressLevel: this.zScores?.stressState ?? 0.5,
       energyLevel: this.zScores?.cognitiveLoad != null ? 1 - this.zScores.cognitiveLoad : 0.5,
       metSixHour: 0.5, // populated when ring data available
+      cognitiveCluster: this.currentClusterId !== null
+        ? this.currentClusterId / (CLUSTER_K - 1)
+        : 0.5,
     };
     this.currentBanditContext = buildContext(banditCtx);
 
@@ -370,6 +378,22 @@ export class SessionManager {
     // Record observation for OLS regression
     await this.recordObservation(correct, responseLatencyMs, rating, enrichedBiometrics);
 
+    // Update cognitive state clustering (same cadence as OLS — every 5th obs)
+    const allObs = await this.storage.getAllObservations();
+    if (this.profile) {
+      const latestObs = allObs[allObs.length - 1];
+      if (latestObs) {
+        const newClusterState = updateClustering(
+          allObs,
+          latestObs,
+          this.profile.clusterState ?? null,
+        );
+        this.profile.clusterState = newClusterState;
+        this.currentClusterId = newClusterState.currentClusterId;
+        await this.storage.saveProfile(this.profile);
+      }
+    }
+
     // Session stats
     this.session.cardsReviewed++;
     if (correct) this.session.cardsCorrect++;
@@ -400,7 +424,6 @@ export class SessionManager {
     }
 
     // Run regression after every 5th observation if we have 15+
-    const allObs = await this.storage.getAllObservations();
     if (allObs.length >= 15 && allObs.length % 5 === 0 && this.profile) {
       const result = runAnalysis(allObs);
       this.profile.modelStatus = result.status;

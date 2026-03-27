@@ -11,6 +11,7 @@ import {
   ratingToReward,
   ALL_PRESENTATION_MODES,
   BANDIT_D,
+  migrateBanditState,
   type BanditContext,
 } from './bandit';
 
@@ -24,6 +25,7 @@ const NEUTRAL_CTX: BanditContext = {
   stressLevel: 0.5,
   energyLevel: 0.5,
   metSixHour: 0.5,
+  cognitiveCluster: 0.5,
 };
 
 const STRESS_CTX: BanditContext = {
@@ -78,6 +80,13 @@ describe('buildContext', () => {
     // stressLevel at index 9, energyLevel at index 10
     expect(v[9]).toBe(1);
     expect(v[10]).toBe(0);
+  });
+
+  it('cognitiveCluster is clamped to [0,1] at index 12', () => {
+    const v = buildContext({ ...NEUTRAL_CTX, cognitiveCluster: 1.5 });
+    expect(v[12]).toBe(1);
+    const v2 = buildContext({ ...NEUTRAL_CTX, cognitiveCluster: -0.2 });
+    expect(v2[12]).toBe(0);
   });
 });
 
@@ -254,7 +263,44 @@ describe('LinUCB — persistence', () => {
   });
 });
 
-// ── 8. Sherman-Morrison sanity check ─────────────────────────
+// ── 8. migrateBanditState ────────────────────────────────────
+
+describe('migrateBanditState', () => {
+  it('pads Ainv and b to new dimension', () => {
+    const bandit = new LinUCB(ALL_PRESENTATION_MODES, 12, 0.3);
+    const state = bandit.toState();
+    expect(state.d).toBe(12);
+
+    const migrated = migrateBanditState(state, 13);
+    expect(migrated.d).toBe(13);
+    for (const arm of Object.values(migrated.arms)) {
+      expect(arm.Ainv).toHaveLength(13);
+      arm.Ainv.forEach(row => expect(row).toHaveLength(13));
+      expect(arm.b).toHaveLength(13);
+    }
+  });
+
+  it('is a no-op when d already matches', () => {
+    const bandit = new LinUCB(ALL_PRESENTATION_MODES, BANDIT_D, 0.3);
+    const state = bandit.toState();
+    const migrated = migrateBanditState(state, BANDIT_D);
+    expect(migrated).toBe(state); // exact same reference
+  });
+
+  it('restored d=12 bandit selects correctly after migration to d=13', () => {
+    // Simulate a persisted d=12 state that gets migrated
+    const oldBandit = new LinUCB(ALL_PRESENTATION_MODES, 12, 0.05);
+    const oldCtx = buildContext({ ...NEUTRAL_CTX, cognitiveCluster: 0 }).slice(0, 12);
+    for (let i = 0; i < 15; i++) oldBandit.update('analogy', oldCtx, 1.0);
+
+    const migratedState = migrateBanditState(oldBandit.toState(), 13);
+    const restored = LinUCB.fromState(migratedState, ALL_PRESENTATION_MODES);
+    const newCtx = buildContext(NEUTRAL_CTX);
+    expect(restored.select(newCtx)).toBe('analogy');
+  });
+});
+
+// ── 9. Sherman-Morrison sanity check ─────────────────────────
 
 describe('Sherman-Morrison update', () => {
   it('bandit Ainv satisfies (A + xxT) * Ainv ≈ I after one update', () => {

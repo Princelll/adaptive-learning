@@ -467,6 +467,21 @@
       </div>
     </div>
 
+    <!-- Cognitive State Clustering -->
+    <div class="card" id="cluster-card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Cognitive State Clustering</span>
+        <span id="cluster-status-badge" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span id="cluster-current-chip" class="status-chip collecting">collecting</span>
+        <span id="cluster-current-obs" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div id="cluster-list" style="display:flex;flex-direction:column;gap:8px">
+        <p style="font-size:12px;color:var(--muted)">Clusters appear after 20 observations.</p>
+      </div>
+    </div>
+
     <!-- OLS model status (secondary) -->
     <div class="card">
       <div class="card-title">OLS Model Status</div>
@@ -852,6 +867,65 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     return max > 0 ? Math.round((score / max) * 100) : 0;
   }
 
+  // ── Cognitive state cluster rendering ─────────────────────────
+
+  function renderClusterState(clusterState) {
+    const badge = document.getElementById('cluster-status-badge');
+    const chip  = document.getElementById('cluster-current-chip');
+    const obs   = document.getElementById('cluster-current-obs');
+    const list  = document.getElementById('cluster-list');
+    if (!badge || !chip || !obs || !list) return;
+
+    if (!clusterState || clusterState.status === 'collecting') {
+      const n = clusterState?.clusteringObsCount ?? 0;
+      badge.textContent = 'collecting data';
+      chip.className = 'status-chip collecting';
+      chip.textContent = 'collecting';
+      obs.textContent = `${n} / 20 observations`;
+      list.innerHTML = '<p style="font-size:12px;color:var(--muted)">Clusters appear after 20 observations.</p>';
+      return;
+    }
+
+    const currentId = clusterState.currentClusterId;
+    badge.textContent = `${clusterState.clusteringObsCount} obs`;
+    chip.className = 'status-chip active';
+    chip.textContent = currentId !== null ? `Cluster ${currentId}` : 'unknown';
+    obs.textContent = `last updated ${new Date(clusterState.lastClusteringAt).toLocaleTimeString()}`;
+
+    // Render each cluster: centroid bar + best style by slope
+    const FEATURE_NAMES = ['latencyZ','accuracy','RMSSD','sleep h','REM h','longest block','interruptions','stress','energy','min into session','days since study'];
+    const clusterHtml = clusterState.clusters
+      .sort((a, b) => a.id - b.id)
+      .map(c => {
+        const isCurrent = c.id === currentId;
+        // Best style for this cluster by learning curve slope
+        const curvesForCluster = (clusterState.curves || [])
+          .filter(cv => cv.clusterId === c.id && cv.slope !== null)
+          .sort((a, b) => (b.slope ?? 0) - (a.slope ?? 0));
+        const bestStyle = curvesForCluster[0];
+        const bestStyleHtml = bestStyle
+          ? `<span style="font-size:11px;color:var(--accent)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
+          : `<span style="font-size:11px;color:var(--muted)">no curve data yet</span>`;
+
+        // Show top 3 centroid dims by magnitude
+        const dims = c.centroid.map((v, i) => ({ name: FEATURE_NAMES[i] || `dim${i}`, v }));
+        const topDims = dims.sort((a, b) => Math.abs(b.v - 0.5) - Math.abs(a.v - 0.5)).slice(0, 3);
+        const dimsHtml = topDims.map(d =>
+          `<span style="font-size:10px;color:var(--muted)">${escHtml(d.name)}: ${(d.v * 100).toFixed(0)}%</span>`
+        ).join(' · ');
+
+        return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border, #2a2520)'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--accent)' : 'var(--text)'}">Cluster ${c.id} <span style="font-weight:400;color:var(--muted);font-size:11px">(${c.size} obs)</span></span>
+            ${bestStyleHtml}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${dimsHtml}</div>
+        </div>`;
+      }).join('');
+
+    list.innerHTML = clusterHtml || '<p style="font-size:12px;color:var(--muted)">No clusters yet.</p>';
+  }
+
   // ── Analytics helpers ───────────────────────────────────────
 
   function isoDate(ts) {
@@ -1005,6 +1079,9 @@ Return ONLY a valid JSON array. No markdown, no commentary.
 
     // Render session analytics (visible from session 1)
     renderAnalytics(data);
+
+    // Render cognitive state clustering
+    renderClusterState(data.profile?.clusterState ?? null);
 
     const profile = data.profile;
     const observations = data.observations || [];

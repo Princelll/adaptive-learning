@@ -333,6 +333,76 @@ export interface StudySession {
   reviewEvents: string[];
 }
 
+// ── Clustering types ─────────────────────────────────────────
+
+/** Running mean/variance accumulators for Welford's online algorithm */
+export interface RollingStats {
+  /** Number of values seen */
+  n: number;
+  /** Running mean */
+  mean: number;
+  /** Running sum of squared deviations (M2 in Welford's formulation) */
+  M2: number;
+}
+
+/** One geometric cluster discovered by k-means. No pre-assigned semantic label. */
+export interface CognitiveCluster {
+  /** Stable index 0–(k-1); preserved across re-clusterings via anchor matching */
+  id: number;
+  /** 11-dim centroid in min-max normalised feature space */
+  centroid: number[];
+  /** Number of observations currently assigned to this cluster */
+  size: number;
+}
+
+/** A single point on a per-cluster × per-style learning curve */
+export interface LearningCurvePoint {
+  /** Observation index within this cluster×style cell (0-based) */
+  obsIndex: number;
+  /** Raw masteryGain for this observation (0, 0.5, or 1) */
+  masteryGain: number;
+  /** Rolling 5-observation mean of masteryGain */
+  rollingMean: number;
+}
+
+/** Learning curve for one (clusterId, presentationStyle) cell */
+export interface ClusterStyleCurve {
+  clusterId: number;
+  style: string;
+  points: LearningCurvePoint[];
+  /** OLS slope on rollingMean vs obsIndex — positive = improving, null if n < 3 */
+  slope: number | null;
+  /** Total observations in this cell */
+  n: number;
+}
+
+/**
+ * Full clustering state — persisted inside LearningProfile.
+ * Null until MIN_CLUSTER_OBS (20) observations have been recorded.
+ */
+export interface ClusterState {
+  /** Discovered clusters (k = CLUSTER_K = 4) */
+  clusters: CognitiveCluster[];
+  /** obsId → clusterId assignment map; capped at 200 most recent entries */
+  assignments: Record<string, number>;
+  /** Cluster id of the most recently processed observation, or null if collecting */
+  currentClusterId: number | null;
+  /** Welford stats for latencyZ computation (dim 0 of the feature vector) */
+  latencyStats: RollingStats;
+  /** Per-dim min/max computed from current observation window for normalisation */
+  featureScales: { min: number[]; max: number[] };
+  /** Per-dim running medians for null imputation (dims 2–10, biometric fields) */
+  runningMedians: number[];
+  /** Timestamp of last full k-means re-cluster */
+  lastClusteringAt: number;
+  /** Observation count at the time of the last full re-cluster */
+  clusteringObsCount: number;
+  /** 'collecting' while n < MIN_CLUSTER_OBS; 'active' once clustering is running */
+  status: 'collecting' | 'active' | 'stale';
+  /** Learning curves per cluster×style cell; recomputed on each full re-cluster */
+  curves: ClusterStyleCurve[];
+}
+
 /** User learning profile – extended with z-score fields */
 export interface LearningProfile {
   userId: string;
@@ -356,6 +426,8 @@ export interface LearningProfile {
   modelStatus: string;
   /** Last known OLS R² – persisted so dashboard can display without re-running regression */
   modelR2?: number;
+  /** Cognitive state clustering — null until MIN_CLUSTER_OBS observations recorded */
+  clusterState: ClusterState | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -416,6 +488,7 @@ export function createDefaultProfile(): LearningProfile {
     biometricHistory: [],
     stylePreferences,
     modelStatus: 'collecting_data',
+    clusterState: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

@@ -32,11 +32,16 @@ export interface BanditContext {
   energyLevel: number;
   /** 1 if last night had ≥6h continuous sleep, 0 if not, 0.5 if unknown */
   metSixHour: number;
+  /**
+   * Cognitive cluster index normalised to [0, 1]: clusterId / (CLUSTER_K - 1).
+   * 0.5 when unknown (collecting phase or ring not connected).
+   */
+  cognitiveCluster: number;
 }
 
 /**
  * Build a fixed-length context vector from session features.
- * d = 12 — must stay in sync with BANDIT_D.
+ * d = 13 — must stay in sync with BANDIT_D.
  */
 export function buildContext(ctx: BanditContext): number[] {
   return [
@@ -52,11 +57,12 @@ export function buildContext(ctx: BanditContext): number[] {
     Math.max(0, Math.min(1, ctx.stressLevel)),
     Math.max(0, Math.min(1, ctx.energyLevel)),
     Math.max(0, Math.min(1, ctx.metSixHour)),
+    Math.max(0, Math.min(1, ctx.cognitiveCluster)),            // cluster index, normalised 0–1
   ];
 }
 
 /** Context vector dimension — must equal buildContext() output length */
-export const BANDIT_D = 12;
+export const BANDIT_D = 13;
 
 // ── Serialisable state ───────────────────────────────────────
 
@@ -199,17 +205,45 @@ export class LinUCB {
     return { arms, alpha: this.alpha, d: this.d };
   }
 
-  /** Restore from a serialised state */
+  /** Restore from a serialised state, migrating dimension if needed */
   static fromState(state: BanditState, armNames: string[]): LinUCB {
-    const bandit = new LinUCB([], state.d, state.alpha);
+    const migrated = state.d !== BANDIT_D ? migrateBanditState(state, BANDIT_D) : state;
+    const bandit = new LinUCB([], migrated.d, migrated.alpha);
     // Restore persisted arms
-    for (const [name, arm] of Object.entries(state.arms)) {
+    for (const [name, arm] of Object.entries(migrated.arms)) {
       bandit.arms.set(name, arm);
     }
     // Ensure all current arm names exist (handles new styles added after first run)
     for (const name of armNames) bandit.ensureArm(name);
     return bandit;
   }
+}
+
+/**
+ * Migrate a persisted BanditState from oldD dimensions to newD.
+ * Pads Ainv with an identity block and b with zeros for added dimensions.
+ * No-op if state.d already equals newD.
+ */
+export function migrateBanditState(state: BanditState, newD: number): BanditState {
+  if (state.d === newD) return state;
+  const oldD = state.d;
+  const extra = newD - oldD;
+  if (extra <= 0) return state; // downgrade not supported — return as-is
+
+  const newArms: Record<string, BanditArmState> = {};
+  for (const [name, arm] of Object.entries(state.arms)) {
+    // Pad Ainv: expand each existing row with zeros, then append identity rows
+    const newAinv: number[][] = arm.Ainv.map(row => [...row, ...new Array<number>(extra).fill(0)]);
+    for (let i = 0; i < extra; i++) {
+      const row = new Array<number>(newD).fill(0);
+      row[oldD + i] = 1.0; // identity block for new dimensions
+      newAinv.push(row);
+    }
+    const newB = [...arm.b, ...new Array<number>(extra).fill(0)];
+    newArms[name] = { Ainv: newAinv, b: newB, pulls: arm.pulls };
+  }
+
+  return { arms: newArms, alpha: state.alpha, d: newD };
 }
 
 // ── Reward mapping ───────────────────────────────────────────
