@@ -232,6 +232,19 @@
     .btn-small:active { opacity: 0.7; }
     .btn-small.accent { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 
+    /* ── Analytics bar chart ── */
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .bar-fill { width: 100%; border-radius: 3px 3px 0 0; background: var(--accent); min-height: 2px; transition: height 0.3s; }
+    .bar-fill.zero { background: var(--surface3); }
+    .bar-day { font-size: 10px; color: var(--muted); }
+    .bar-num { font-size: 10px; color: var(--text); font-weight: 600; }
+    /* ── Accuracy row ── */
+    .acc-row { display: flex; align-items: center; gap: 8px; }
+    .acc-label { font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; }
+    .acc-track { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .acc-fill { height: 100%; border-radius: 3px; background: var(--green); }
+    .acc-pct { font-size: 11px; color: var(--text); width: 34px; text-align: right; }
+
     /* ── How to connect note ── */
     .connect-note {
       background: rgba(254,249,145,0.06);
@@ -403,16 +416,67 @@
       (e.g. <code>localhost:5173/companion/index.html</code>) to read live data.
     </div>
 
-    <!-- Model status card -->
+    <!-- Key stats row -->
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-label">Streak</div>
+        <div class="stat-value accent" id="an-streak">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Due Today</div>
+        <div class="stat-value yellow" id="an-due">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">All-time Cards</div>
+        <div class="stat-value green" id="an-total">—</div>
+      </div>
+    </div>
+
+    <!-- 7-day review activity -->
     <div class="card">
-      <div class="card-title">Model Status</div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div class="card-title" style="display:flex;justify-content:space-between">
+        <span>Daily Reviews — Last 7 Days</span>
+        <span id="an-week-total" style="color:var(--accent);font-weight:700;font-size:11px"></span>
+      </div>
+      <div id="an-bar-chart" style="display:flex;align-items:flex-end;gap:6px;height:60px;margin-top:8px"></div>
+      <div id="an-bar-labels" style="display:flex;gap:6px;margin-top:4px"></div>
+    </div>
+
+    <!-- Accuracy trend -->
+    <div class="card">
+      <div class="card-title">Accuracy — Last 7 Sessions</div>
+      <div id="an-accuracy-list" style="display:flex;flex-direction:column;gap:6px;margin-top:4px"></div>
+    </div>
+
+    <!-- Best study time -->
+    <div class="card">
+      <div class="card-title">Best Study Time</div>
+      <div id="an-best-time" style="font-size:13px;color:var(--muted);margin-top:4px">Not enough data yet</div>
+    </div>
+
+    <!-- Bandit learning -->
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between">
+        <span>Style Exploration (Bandit)</span>
+        <span id="an-bandit-total" style="color:var(--muted);font-size:11px"></span>
+      </div>
+      <div class="style-list" id="an-bandit-list">
+        <div class="empty" style="padding:16px 0">
+          <p style="font-size:12px">Style exploration data will appear after your first study session.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- OLS model status (secondary) -->
+    <div class="card">
+      <div class="card-title">OLS Model Status</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <span class="status-chip" id="status-chip">collecting</span>
-        <span id="r2-display" style="font-size:13px;color:var(--muted)">R² pending</span>
+        <span id="r2-display" style="font-size:12px;color:var(--muted)">R² pending</span>
       </div>
       <div class="progress-wrap">
         <div class="progress-label">
-          <span>Observations collected</span>
+          <span>Observations</span>
           <span id="obs-label">0 / 15</span>
         </div>
         <div class="progress-track">
@@ -422,38 +486,11 @@
       </div>
     </div>
 
-    <!-- Stats row -->
-    <div class="stat-row">
-      <div class="stat">
-        <div class="stat-label">Observations</div>
-        <div class="stat-value accent" id="obs-count">0</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">R²</div>
-        <div class="stat-value green" id="r2-value">—</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Best Style</div>
-        <div class="stat-value muted" id="best-style">—</div>
-      </div>
-    </div>
-
-    <!-- Style ranking card -->
-    <div class="card">
-      <div class="card-title">Presentation Style Preferences</div>
-      <div class="style-list" id="style-list">
-        <div class="empty">
-          <div class="empty-icon">🧠</div>
-          <p>Style preferences will appear here after you complete study sessions with the G2 glasses.</p>
-        </div>
-      </div>
-    </div>
-
-    <button class="btn btn-primary" id="btn-refresh" onclick="loadData()">
-      ↺ Refresh from G2 Simulator
+    <button class="btn btn-secondary" id="btn-refresh" onclick="loadData()" style="margin-top:4px">
+      ↺ Refresh
     </button>
 
-    <!-- Video slots (hidden until config.json has URLs) -->
+    <!-- Video slots -->
     <div id="video-section" style="display:none">
       <div class="card" style="margin-top:12px">
         <div class="card-title">Videos</div>
@@ -815,6 +852,145 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     return max > 0 ? Math.round((score / max) * 100) : 0;
   }
 
+  // ── Analytics helpers ───────────────────────────────────────
+
+  function isoDate(ts) {
+    return new Date(ts).toISOString().slice(0, 10);
+  }
+
+  function renderAnalytics(data) {
+    const sessions    = data.sessions    || [];
+    const reviewEvents= data.reviewEvents|| [];
+    const reviewStates= data.reviewStates|| [];
+    const banditState = data.banditState || null;
+    const now         = Date.now();
+    const todayStr    = isoDate(now);
+
+    // ── Streak ──────────────────────────────────────────────
+    const sessionDays = [...new Set(sessions.map(s => isoDate(s.startTime)))].sort();
+    let streak = 0;
+    if (sessionDays.length) {
+      const d = new Date(); d.setHours(0,0,0,0);
+      while (true) {
+        const key = d.toISOString().slice(0, 10);
+        if (sessionDays.includes(key)) { streak++; d.setDate(d.getDate() - 1); }
+        else break;
+      }
+    }
+    document.getElementById('an-streak').textContent = streak ? streak + (streak === 1 ? ' day' : ' days') : '—';
+
+    // ── Due today ────────────────────────────────────────────
+    const due = reviewStates.filter(s => {
+      const t = s.fsrs?.due ? new Date(s.fsrs.due).getTime() : 0;
+      return t > 0 && t <= now;
+    }).length + reviewStates.filter(s => s.totalReviews === 0).length;
+    document.getElementById('an-due').textContent = due || '0';
+
+    // ── All-time cards reviewed ───────────────────────────────
+    document.getElementById('an-total').textContent = reviewEvents.length.toLocaleString();
+
+    // ── 7-day bar chart ──────────────────────────────────────
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0,0,0,0);
+      return d.toISOString().slice(0, 10);
+    });
+    const dayLabels = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    const countsByDay = {};
+    days.forEach(d => countsByDay[d] = 0);
+    reviewEvents.forEach(e => {
+      const k = isoDate(e.timestamp);
+      if (countsByDay[k] !== undefined) countsByDay[k]++;
+    });
+    const counts = days.map(d => countsByDay[d]);
+    const maxCount = Math.max(...counts, 1);
+    const weekTotal = counts.reduce((s, c) => s + c, 0);
+    document.getElementById('an-week-total').textContent = weekTotal + ' this week';
+
+    const chartEl = document.getElementById('an-bar-chart');
+    const labelsEl = document.getElementById('an-bar-labels');
+    chartEl.innerHTML = counts.map((c, i) => `
+      <div class="bar-col" style="flex:1">
+        <span class="bar-num" style="font-size:10px;color:var(--muted)">${c || ''}</span>
+        <div class="bar-fill ${c === 0 ? 'zero' : ''}"
+          style="height:${Math.round((c / maxCount) * 48) + 4}px;width:100%"></div>
+      </div>`).join('');
+    labelsEl.innerHTML = days.map((d, i) => {
+      const dow = new Date(d + 'T12:00:00').getDay();
+      const isToday = d === todayStr;
+      return `<div class="bar-col" style="flex:1">
+        <span class="bar-day" style="${isToday ? 'color:var(--accent);font-weight:700' : ''}">${dayLabels[dow]}</span>
+      </div>`;
+    }).join('');
+
+    // ── Accuracy trend — last 7 sessions ────────────────────
+    const recentSessions = [...sessions].sort((a,b) => b.startTime - a.startTime).slice(0, 7).reverse();
+    const accEl = document.getElementById('an-accuracy-list');
+    if (!recentSessions.length) {
+      accEl.innerHTML = '<p style="font-size:12px;color:var(--muted)">No sessions yet.</p>';
+    } else {
+      accEl.innerHTML = recentSessions.map(s => {
+        const pct = s.cardsReviewed > 0 ? Math.round((s.cardsCorrect / s.cardsReviewed) * 100) : 0;
+        const date = new Date(s.startTime).toLocaleDateString(undefined, { month:'short', day:'numeric' });
+        const color = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--yellow)' : 'var(--red)';
+        return `<div class="acc-row">
+          <span class="acc-label">${date}</span>
+          <div class="acc-track"><div class="acc-fill" style="width:${pct}%;background:${color}"></div></div>
+          <span class="acc-pct">${pct}%</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Best study time ──────────────────────────────────────
+    const hourBuckets = {};
+    reviewEvents.forEach(e => {
+      const h = new Date(e.timestamp).getHours();
+      const bucket = Math.floor(h / 3) * 3; // 3-hour windows
+      if (!hourBuckets[bucket]) hourBuckets[bucket] = { correct: 0, total: 0 };
+      hourBuckets[bucket].total++;
+      if (e.correct) hourBuckets[bucket].correct++;
+    });
+    const bestTimeEl = document.getElementById('an-best-time');
+    const buckets = Object.entries(hourBuckets).filter(([,v]) => v.total >= 3);
+    if (!buckets.length) {
+      bestTimeEl.textContent = 'Not enough data yet — needs 3+ cards per time window.';
+    } else {
+      const best = buckets.sort(([,a],[,b]) => (b.correct/b.total) - (a.correct/a.total))[0];
+      const h = parseInt(best[0]);
+      const fmt = hh => {
+        const d = new Date(); d.setHours(hh, 0, 0, 0);
+        return d.toLocaleTimeString(undefined, { hour: 'numeric', hour12: true });
+      };
+      const pct = Math.round((best[1].correct / best[1].total) * 100);
+      bestTimeEl.innerHTML = `<span style="color:var(--text);font-weight:600">${fmt(h)} – ${fmt(h+3)}</span>
+        <span style="color:var(--muted);font-size:12px"> · ${pct}% accuracy · ${best[1].total} cards</span>`;
+    }
+
+    // ── Bandit pull counts ───────────────────────────────────
+    const banditEl = document.getElementById('an-bandit-list');
+    const banditTotalEl = document.getElementById('an-bandit-total');
+    if (!banditState?.arms) {
+      banditEl.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:8px 0">No bandit data yet.</p>';
+    } else {
+      const arms = Object.entries(banditState.arms)
+        .map(([name, arm]) => ({ name, pulls: arm.pulls || 0 }))
+        .sort((a, b) => b.pulls - a.pulls);
+      const totalPulls = arms.reduce((s, a) => s + a.pulls, 0);
+      banditTotalEl.textContent = totalPulls + ' total pulls';
+      const maxPulls = Math.max(...arms.map(a => a.pulls), 1);
+      banditEl.innerHTML = arms.filter(a => a.pulls > 0).length === 0
+        ? '<p style="font-size:12px;color:var(--muted);padding:8px 0">No pulls yet — start a study session.</p>'
+        : arms.map((a, i) => `
+          <div class="style-item">
+            <span class="style-rank">${i + 1}</span>
+            <span class="style-name">${a.name.replace(/_/g, ' ')}</span>
+            <div class="style-bar-wrap">
+              <div class="style-bar" style="width:${Math.round((a.pulls/maxPulls)*100)}%"></div>
+            </div>
+            <span class="style-score">${a.pulls}</span>
+          </div>`).join('');
+    }
+  }
+
   // ── Main data loader ──
   function loadData() {
     const data = readStorage();
@@ -826,6 +1002,9 @@ Return ONLY a valid JSON array. No markdown, no commentary.
       return;
     }
     note.style.display = 'none';
+
+    // Render session analytics (visible from session 1)
+    renderAnalytics(data);
 
     const profile = data.profile;
     const observations = data.observations || [];
