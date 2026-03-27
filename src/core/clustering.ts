@@ -116,14 +116,15 @@ function extractBiometricRaw(obs: Observation): (number | null)[] {
 /**
  * Build an 11-dim raw feature vector from one observation.
  * Nulls are imputed with running medians for biometric dims.
- * latencyZ is computed from Welford stats.
+ * latencyZ is computed per-card so card difficulty does not confound the signal.
  */
 export function extractFeatures(
   obs: Observation,
-  latencyStats: RollingStats,
+  latencyStatsPerCard: Record<string, RollingStats>,
   runningMedians: number[],
 ): number[] {
-  const latencyZ = welfordZ(latencyStats, obs.outcomes.latencyMs);
+  const cardStats = latencyStatsPerCard[obs.cardId] ?? { n: 0, mean: 0, M2: 0 };
+  const latencyZ = welfordZ(cardStats, obs.outcomes.latencyMs);
 
   const biometricRaw = extractBiometricRaw(obs);
   const biometricImputed = biometricRaw.map(
@@ -462,12 +463,16 @@ export function updateClustering(
   const n = observations.length;
 
   // Initialise state if this is the first call
-  const prevLatencyStats: RollingStats = existing?.latencyStats ?? { n: 0, mean: 0, M2: 0 };
+  const prevStatsPerCard: Record<string, RollingStats> = existing?.latencyStatsPerCard ?? {};
   const prevMedians: number[] = existing?.runningMedians ?? emptyMedians();
   const prevReservoirs: number[][] = (existing as any)?.__reservoirs__ ?? BIOMETRIC_DIMS.map(() => []);
 
-  // Update Welford stats for latencyZ
-  const latencyStats = updateWelford(prevLatencyStats, currentObs.outcomes.latencyMs);
+  // Update per-card Welford stats for latencyZ
+  const prevCardStats = prevStatsPerCard[currentObs.cardId] ?? { n: 0, mean: 0, M2: 0 };
+  const latencyStatsPerCard: Record<string, RollingStats> = {
+    ...prevStatsPerCard,
+    [currentObs.cardId]: updateWelford(prevCardStats, currentObs.outcomes.latencyMs),
+  };
 
   // Update running medians
   const { medians: runningMedians, reservoirs } = updateRunningMedians(
@@ -486,11 +491,11 @@ export function updateClustering(
       clusters: existing?.clusters ?? [],
       assignments: existing?.assignments ?? {},
       currentClusterId: null,
-      latencyStats,
+      latencyStatsPerCard,
       featureScales: existing?.featureScales ?? emptyScales(),
       runningMedians,
       lastClusteringAt: existing?.lastClusteringAt ?? 0,
-      clusteringObsCount: existing?.clusteringObsCount ?? 0,
+      clusteringObsCount: n,
       status: 'collecting',
       curves: existing?.curves ?? [],
     };
@@ -501,18 +506,27 @@ export function updateClustering(
 
   // ── Full re-cluster ─────────────────────────────────────────
   if (n % 5 === 0 || existing?.status === 'collecting') {
-    // Annotate all observations with recentAcc
-    const obsWithAcc = observations.map((obs, idx) => {
-      const priors = observations.slice(Math.max(0, idx - 4), idx);
+    // Annotate all observations with recentAcc and build per-card stats incrementally
+    // Process in temporal order so each obs is z-scored against only its own prior history
+    const sortedObs = [...observations].sort((a, b) => a.timestamp - b.timestamp);
+    const incrementalStats: Record<string, RollingStats> = {};
+    const obsWithAcc = sortedObs.map((obs, idx) => {
+      // Rolling 5-card accuracy
+      const priors = sortedObs.slice(Math.max(0, idx - 4), idx);
       const window = [...priors, obs];
       const acc = window.filter(o => o.outcomes.recalledCorrectly).length / window.length;
       (obs as any).__recentAcc__ = acc;
+      // Snapshot per-card stats BEFORE updating with this obs (leave-one-out z-score)
+      (obs as any).__latencyStatsSnapshot__ = { ...incrementalStats };
+      // Now update stats for this card
+      const prev = incrementalStats[obs.cardId] ?? { n: 0, mean: 0, M2: 0 };
+      incrementalStats[obs.cardId] = updateWelford(prev, obs.outcomes.latencyMs);
       return obs;
     });
 
-    // Extract raw features
+    // Extract raw features using the leave-one-out per-card stats snapshot
     const rawVectors = obsWithAcc.map(obs =>
-      extractFeatures(obs, latencyStats, runningMedians),
+      extractFeatures(obs, (obs as any).__latencyStatsSnapshot__, runningMedians),
     );
 
     // Compute scales and normalise
@@ -550,7 +564,7 @@ export function updateClustering(
 
     // Assign current observation
     const currentNorm = normalizeFeatures(
-      extractFeatures(currentObs, latencyStats, runningMedians),
+      extractFeatures(currentObs, latencyStatsPerCard, runningMedians),
       featureScales,
     );
     const currentClusterId = assignToNearest(currentNorm, clusters);
@@ -563,7 +577,7 @@ export function updateClustering(
       clusters,
       assignments,
       currentClusterId,
-      latencyStats,
+      latencyStatsPerCard,
       featureScales,
       runningMedians,
       lastClusteringAt: Date.now(),
@@ -578,7 +592,7 @@ export function updateClustering(
   // ── Cheap 1-NN assignment ───────────────────────────────────
   const featureScales = existing!.featureScales;
   const currentNorm = normalizeFeatures(
-    extractFeatures(currentObs, latencyStats, runningMedians),
+    extractFeatures(currentObs, latencyStatsPerCard, runningMedians),
     featureScales,
   );
   const currentClusterId = assignToNearest(currentNorm, existing!.clusters);
@@ -597,7 +611,7 @@ export function updateClustering(
     ...existing!,
     assignments,
     currentClusterId,
-    latencyStats,
+    latencyStatsPerCard,
     runningMedians,
   };
   (state as any).__reservoirs__ = reservoirs;

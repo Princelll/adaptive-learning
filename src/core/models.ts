@@ -387,8 +387,12 @@ export interface ClusterState {
   assignments: Record<string, number>;
   /** Cluster id of the most recently processed observation, or null if collecting */
   currentClusterId: number | null;
-  /** Welford stats for latencyZ computation (dim 0 of the feature vector) */
-  latencyStats: RollingStats;
+  /**
+   * Per-card Welford stats for latencyZ computation (dim 0 of the feature vector).
+   * Key is cardId. Z-score is computed relative to that card's own response history
+   * so card difficulty does not confound the cognitive state signal.
+   */
+  latencyStatsPerCard: Record<string, RollingStats>;
   /** Per-dim min/max computed from current observation window for normalisation */
   featureScales: { min: number[]; max: number[] };
   /** Per-dim running medians for null imputation (dims 2–10, biometric fields) */
