@@ -8,18 +8,20 @@
     /* ── Reset & base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #22263a;
-      --accent: #6c8bef;
-      --accent2: #a78bfa;
-      --green: #34d399;
-      --yellow: #fbbf24;
-      --red: #f87171;
-      --text: #e2e8f0;
-      --muted: #64748b;
-      --border: #2d3148;
-      --radius: 12px;
+      --bg: #0c0a07;
+      --surface: #161310;
+      --surface2: #201c17;
+      --surface3: #2c2620;
+      --accent: #fef991;
+      --accent-fg: #0c0a07;
+      --accent2: #ffffff;
+      --green: #26a69a;
+      --yellow: #fef991;
+      --red: #ef5350;
+      --text: #f0ebe3;
+      --muted: #8a7f72;
+      --border: #2c2620;
+      --radius: 6px;
       --font: 'Inter', system-ui, -apple-system, sans-serif;
     }
     html, body {
@@ -61,7 +63,7 @@
       cursor: pointer; transition: all 0.15s;
       background: none; border-top: none; border-left: none; border-right: none;
     }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); filter: brightness(0.95); }
 
     /* ── Tab panels ── */
     .panel { display: none; padding: 20px; }
@@ -97,10 +99,10 @@
       display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
     }
-    .status-chip.collecting { background: rgba(100,116,139,0.2); color: var(--muted); }
-    .status-chip.initial { background: rgba(251,191,36,0.15); color: var(--yellow); }
-    .status-chip.refined { background: rgba(108,139,239,0.15); color: var(--accent); }
-    .status-chip.mature { background: rgba(52,211,153,0.15); color: var(--green); }
+    .status-chip.collecting { background: rgba(138,127,114,0.15); color: var(--muted); }
+    .status-chip.initial { background: rgba(254,249,145,0.12); color: var(--yellow); }
+    .status-chip.refined { background: rgba(254,249,145,0.18); color: var(--accent); }
+    .status-chip.mature { background: rgba(38,166,154,0.15); color: var(--green); }
     .status-chip::before { content: '●'; font-size: 8px; }
 
     /* ── Progress bar ── */
@@ -111,7 +113,7 @@
     }
     .progress-fill {
       height: 100%; border-radius: 3px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      background: var(--accent);
       transition: width 0.4s ease;
     }
 
@@ -121,7 +123,7 @@
     .style-rank { font-size: 11px; font-weight: 700; color: var(--muted); width: 16px; }
     .style-name { font-size: 13px; flex: 1; text-transform: capitalize; }
     .style-bar-wrap { width: 100px; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-    .style-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    .style-bar { height: 100%; border-radius: 3px; background: var(--accent); }
     .style-score { font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
 
     /* ── Deck list ── */
@@ -134,8 +136,8 @@
     .deck-name { font-weight: 600; font-size: 14px; }
     .deck-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
     .deck-due {
-      background: var(--accent); color: white;
-      border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 700;
+      background: var(--accent); color: var(--accent-fg);
+      border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 700;
       min-width: 28px; text-align: center;
     }
     .deck-due.zero { background: var(--surface2); color: var(--muted); }
@@ -148,7 +150,7 @@
       border: none; transition: opacity 0.15s;
     }
     .btn:active { opacity: 0.8; }
-    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary { background: var(--accent); color: var(--accent-fg); font-weight: 700; }
     .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 
     /* ── Empty state ── */
@@ -161,11 +163,59 @@
     /* ── Observation progress ── */
     .obs-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
+    /* ── Import tab components ── */
+    .drop-zone {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      font-size: 13px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(254,249,145,0.04);
+      color: var(--text);
+    }
+    .text-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font);
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .text-input:focus { border-color: var(--accent); }
+    .text-input::placeholder { color: var(--muted); }
+    .form-row { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
+    .preview-card-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .preview-front { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .preview-back { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .preview-meta { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+    .tag-pill {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+      padding: 2px 7px; border-radius: 20px;
+      background: var(--surface3); color: var(--muted);
+    }
+    .tag-pill.complexity { background: rgba(254,249,145,0.1); color: var(--accent); }
+
     /* ── How to connect note ── */
     .connect-note {
-      background: rgba(108,139,239,0.08);
-      border: 1px solid rgba(108,139,239,0.2);
-      border-radius: 8px;
+      background: rgba(254,249,145,0.06);
+      border: 1px solid rgba(254,249,145,0.18);
+      border-radius: var(--radius);
       padding: 10px 12px;
       font-size: 12px;
       color: var(--accent);
@@ -182,14 +232,99 @@
       <span class="g2-badge">Even G2</span>
     </div>
     <nav class="tabs">
-      <button class="tab active" data-tab="insights">ML Insights</button>
+      <button class="tab active" data-tab="import">Import</button>
+      <button class="tab" data-tab="insights">Insights</button>
       <button class="tab" data-tab="decks">Decks</button>
-      <button class="tab" data-tab="flow">App Flow</button>
+      <button class="tab" data-tab="flow">Flow</button>
     </nav>
   </header>
 
+  <!-- ── Import panel ── -->
+  <div id="tab-import" class="panel active">
+
+    <!-- API Key -->
+    <div class="card" id="api-key-card">
+      <div class="card-title">Anthropic API Key</div>
+      <div id="api-key-set" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font-size:13px;color:var(--muted);font-family:monospace" id="api-key-display"></span>
+          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;width:auto" onclick="clearApiKey()">Change</button>
+        </div>
+      </div>
+      <div id="api-key-input-wrap">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Enter your Anthropic API key. It is stored only in your browser's localStorage and never sent anywhere except Anthropic's API.</p>
+        <input type="password" id="api-key-input" class="text-input" placeholder="sk-ant-..." autocomplete="off" />
+        <button class="btn btn-primary" style="margin-top:8px" onclick="saveApiKey()">Save Key</button>
+      </div>
+    </div>
+
+    <!-- Study material -->
+    <div class="card">
+      <div class="card-title">Study Material</div>
+      <div class="drop-zone" id="drop-zone">
+        <div style="font-size:24px;margin-bottom:6px">↑</div>
+        <div style="font-weight:600;font-size:14px">Drop a .txt or .md file here</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse &nbsp;·&nbsp; PDF: paste text below</div>
+        <input type="file" id="file-input" accept=".txt,.md" style="display:none" />
+      </div>
+      <div style="margin-top:10px">
+        <textarea id="text-input" class="text-input" placeholder="Or paste your notes / extracted PDF text here…" rows="6" style="resize:vertical;width:100%"></textarea>
+      </div>
+      <div id="text-stats" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right"></div>
+    </div>
+
+    <!-- Deck settings -->
+    <div class="card">
+      <div class="card-title">Deck Settings</div>
+      <div class="form-row">
+        <label class="form-label">Deck name</label>
+        <input type="text" id="deck-name" class="text-input" placeholder="e.g. Cardiac Pharmacology" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">Course / subject</label>
+        <input type="text" id="deck-course" class="text-input" placeholder="e.g. Internal Medicine" />
+      </div>
+      <div class="form-row">
+        <label class="form-label" style="display:flex;justify-content:space-between">
+          <span>Cards to generate</span>
+          <span id="card-count-label" style="color:var(--accent);font-weight:700">15</span>
+        </label>
+        <input type="range" id="card-count" min="5" max="40" value="15"
+          oninput="document.getElementById('card-count-label').textContent=this.value"
+          style="width:100%;accent-color:var(--accent);margin-top:4px" />
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <button class="btn btn-primary" id="btn-generate" onclick="generateCards()">Generate Flashcards</button>
+
+    <!-- Progress -->
+    <div id="gen-status" style="display:none;margin-top:12px">
+      <div class="card">
+        <div id="gen-status-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
+        <div class="progress-track" style="margin-top:10px">
+          <div class="progress-fill" id="gen-progress" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="preview-section" style="display:none;margin-top:12px">
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Preview</span>
+          <span id="preview-count" style="color:var(--accent);font-weight:700;font-size:11px"></span>
+        </div>
+        <div id="preview-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-save" onclick="saveDeck()" style="margin-top:10px">Save to G2 App</button>
+      <div id="save-status" style="font-size:12px;color:var(--green);text-align:center;margin-top:8px;display:none"></div>
+    </div>
+
+  </div><!-- /tab-import -->
+
   <!-- ── ML Insights panel ── -->
-  <div id="tab-insights" class="panel active">
+  <div id="tab-insights" class="panel">
 
     <div class="connect-note" id="connect-note" style="display:none">
       ⚠️ Open this page from the same browser where the G2 simulator is running
@@ -276,21 +411,21 @@
         <pre style="white-space:pre-wrap;overflow-x:auto">
 welcome
   ├─ scroll (any) ──► deck_select
-  │                     └─ click ──► dashboard ◄── NEW
-  │                                    ├─ click ──► bio_sleep
-  │                                    │              ├─ click ──► bio_stress
-  │                                    │              │              ├─ click ──► bio_load
-  │                                    │              │              │              └─ click ──► bio_confirm
-  │                                    │              │              │                              └─ click ──► [session]
-  │                                    │              │              │                                              ├─ question
-  │                                    │              │              │                                              │    └─ click ──► answer
-  │                                    │              │              │                                              │                  └─ click ──► rating
-  │                                    │              │              │                                              │                                  └─ click ──► [next card]
-  │                                    │              │              │                                              └─ (auto end) ──► summary
-  │                                    └─ scroll↓ ──► model_insights ◄── NEW
+  │                     └─ click ──► dashboard
+  │                                    ├─ click ──► [session starts immediately]
+  │                                    │              ├─ question
+  │                                    │              │    └─ click ──► answer
+  │                                    │              │                  └─ click ──► rating
+  │                                    │              │                                  └─ click ──► [next card]
+  │                                    │              └─ (auto end) ──► summary
+  │                                    └─ scroll↓ ──► model_insights
   │                                                     ├─ scroll↑ / click ──► dashboard
   │                                                     └─ dbl-tap ──► welcome
   └─ dbl-tap (from anywhere) ──► welcome
+
+Biometric check-in removed — no self-reported screens.
+Ring data (HRV, sleep, RMSSD) arrives via Even R1 pilot and
+populates automatically. All variables are null-safe until then.
 
 ML Data Flow:
   card rated ──► observation recorded
@@ -493,8 +628,12 @@ ML Data Flow:
       const now = Date.now();
       deckList.innerHTML = decks.map(deck => {
         const deckStates = reviewStates.filter(s => s.deckId === deck.id);
-        const due = deckStates.filter(s => s.dueDate <= now).length ||
-                    deckStates.filter(s => s.totalReviews === 0).length;
+        const newCards = deckStates.filter(s => s.totalReviews === 0).length;
+        const dueCards = deckStates.filter(s => {
+          const due = s.fsrs?.due ? new Date(s.fsrs.due).getTime() : 0;
+          return due > 0 && due <= now && s.totalReviews > 0;
+        }).length;
+        const due = newCards + dueCards;
         return `
           <div class="deck-item">
             <div>
@@ -507,9 +646,270 @@ ML Data Flow:
     }
   }
 
+  // ── Import tab ─────────────────────────────────────────────
+
+  // API Key management
+  const API_KEY_STORE = 'bioloop_api_key';
+  let _generatedCards = [];
+  let _generatedDeckName = '';
+
+  function getApiKey() { return localStorage.getItem(API_KEY_STORE) || ''; }
+
+  function renderApiKeyState() {
+    const key = getApiKey();
+    const setEl = document.getElementById('api-key-set');
+    const inputEl = document.getElementById('api-key-input-wrap');
+    if (key) {
+      setEl.style.display = 'block';
+      inputEl.style.display = 'none';
+      document.getElementById('api-key-display').textContent =
+        key.slice(0, 12) + '••••••••' + key.slice(-4);
+    } else {
+      setEl.style.display = 'none';
+      inputEl.style.display = 'block';
+    }
+  }
+
+  function saveApiKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    if (!val.startsWith('sk-')) { alert('API key should start with sk-'); return; }
+    localStorage.setItem(API_KEY_STORE, val);
+    document.getElementById('api-key-input').value = '';
+    renderApiKeyState();
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem(API_KEY_STORE);
+    renderApiKeyState();
+  }
+
+  // File upload / drag-and-drop
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const textInput = document.getElementById('text-input');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) readFile(file);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) readFile(fileInput.files[0]);
+  });
+  textInput.addEventListener('input', updateTextStats);
+
+  function readFile(file) {
+    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+      alert('PDF detected. Please open the PDF, select all text (Ctrl+A / Cmd+A), and paste it into the text area below.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      textInput.value = e.target.result;
+      updateTextStats();
+      // Pre-fill deck name from filename if empty
+      const nameInput = document.getElementById('deck-name');
+      if (!nameInput.value) {
+        nameInput.value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function updateTextStats() {
+    const text = textInput.value;
+    const chars = text.length;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const el = document.getElementById('text-stats');
+    if (chars === 0) { el.textContent = ''; return; }
+    const warning = chars > 80000 ? ' · ⚠️ will be truncated to 80k chars' : '';
+    el.textContent = `${chars.toLocaleString()} chars · ${words.toLocaleString()} words${warning}`;
+  }
+
+  // ── AI Generation ──────────────────────────────────────────
+
+  function setGenStatus(text, pct) {
+    const el = document.getElementById('gen-status');
+    el.style.display = 'block';
+    document.getElementById('gen-status-text').textContent = text;
+    document.getElementById('gen-progress').style.width = pct + '%';
+  }
+
+  async function generateCards() {
+    const apiKey = getApiKey();
+    if (!apiKey) { alert('Please save your Anthropic API key first.'); return; }
+
+    const text = textInput.value.trim();
+    if (!text) { alert('Please add study material first.'); return; }
+
+    const deckName = document.getElementById('deck-name').value.trim() || 'Untitled Deck';
+    const course = document.getElementById('deck-course').value.trim() || 'General';
+    const n = parseInt(document.getElementById('card-count').value, 10);
+
+    _generatedDeckName = deckName;
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('btn-generate').disabled = true;
+    document.getElementById('btn-generate').textContent = 'Generating…';
+
+    setGenStatus('Analyzing study material…', 20);
+
+    const excerpt = text.length > 80000 ? text.slice(0, 80000) : text;
+
+    const prompt = `You are an expert educator specializing in spaced repetition and active recall.
+Analyze the following study material and generate exactly ${n} high-quality flashcards optimized for long-term retention.
+
+Rules:
+- Each card tests exactly ONE idea — no compound questions
+- Questions probe UNDERSTANDING and mechanism ("Why does X cause Y?", "What happens when…?") not just definition recall
+- Answers explain the WHY with enough context to understand the mechanism (2–4 sentences)
+- High-yield or commonly confused concepts get multiple cards from different angles
+- Vary complexity across: vocabulary (define/recall), concept (mechanism), procedure (apply steps), application (transfer to new scenario), analysis (compare/evaluate)
+- Include 2–3 alternative presentations per card using styles such as: analogy, clinical_example, example, step-by-step, contrast, mnemonic, story
+
+MATERIAL:
+"""
+${excerpt}
+"""
+
+Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
+[
+  {
+    "front": "Question text",
+    "back": "Answer explaining WHY with context",
+    "complexity": "concept",
+    "tags": ["specific-subtopic"],
+    "presentations": {
+      "analogy": { "front": "…", "back": "…" },
+      "clinical_example": { "front": "…", "back": "…" }
+    }
+  }
+]`;
+
+    try {
+      setGenStatus('Calling Claude (this takes 20–40 s for large texts)…', 40);
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      setGenStatus('Parsing response…', 80);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      const raw = data.content?.find(b => b.type === 'text')?.text ?? '';
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      _generatedCards = JSON.parse(cleaned);
+
+      if (!Array.isArray(_generatedCards) || _generatedCards.length === 0) {
+        throw new Error('Model returned empty or invalid card array');
+      }
+
+      setGenStatus(`Done — ${_generatedCards.length} cards generated`, 100);
+      renderPreview(_generatedCards, deckName, course);
+
+    } catch (err) {
+      setGenStatus('Error: ' + err.message, 0);
+    } finally {
+      document.getElementById('btn-generate').disabled = false;
+      document.getElementById('btn-generate').textContent = 'Generate Flashcards';
+    }
+  }
+
+  function renderPreview(cards, deckName, course) {
+    const section = document.getElementById('preview-section');
+    const list = document.getElementById('preview-list');
+    document.getElementById('preview-count').textContent = `${cards.length} cards · ${course}`;
+
+    list.innerHTML = cards.map((c, i) => {
+      const altCount = Object.keys(c.presentations || {}).length;
+      const tags = (c.tags || []).map(t => `<span class="tag-pill">${t}</span>`).join('');
+      return `
+        <div class="preview-card-item">
+          <div class="preview-front">${i + 1}. ${escHtml(c.front)}</div>
+          <div class="preview-back">${escHtml(c.back)}</div>
+          <div class="preview-meta">
+            <span class="tag-pill complexity">${c.complexity || 'concept'}</span>
+            ${tags}
+            ${altCount ? `<span class="tag-pill">${altCount} styles</span>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    section.style.display = 'block';
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function saveDeck() {
+    if (!_generatedCards.length) return;
+    const deckName = document.getElementById('deck-name').value.trim() || _generatedDeckName || 'Untitled Deck';
+    const course = document.getElementById('deck-course').value.trim() || 'General';
+    const now = Date.now();
+    const deckId = crypto.randomUUID();
+
+    const cards = _generatedCards.map(c => ({
+      id: crypto.randomUUID(),
+      deckId,
+      front: c.front || '',
+      back: c.back || '',
+      complexity: c.complexity || 'concept',
+      tags: Array.isArray(c.tags) ? c.tags : [],
+      presentations: c.presentations || {},
+      createdAt: now,
+      updatedAt: now,
+    }));
+
+    const deck = {
+      id: deckId,
+      name: deckName,
+      description: `${course} — AI-generated`,
+      cards,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Write into adaptive_learning_data without disturbing existing data
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    if (!Array.isArray(stored.decks)) stored.decks = [];
+    stored.decks.push(deck);
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+
+    const status = document.getElementById('save-status');
+    status.textContent = `Saved "${deckName}" (${cards.length} cards). Switch to Decks tab or open the G2 app.`;
+    status.style.display = 'block';
+    loadData(); // refresh Decks tab
+  }
+
   // Auto-load on page open
   loadConfig();
   loadData();
+  renderApiKeyState();
 </script>
 </body>
 </html>
