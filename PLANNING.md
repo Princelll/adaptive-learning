@@ -93,11 +93,11 @@ A biometric-adaptive learning system built on Even G1/R1 hardware that uses phys
 - [x] BiometricZScores + DailyBiometric — all fields null-safe, sleepHours/remHours added
 - [x] Per-question observation captures: latency, sleep actual+z, REM actual+z, HRV actual+z, RMSSD actual+z, card age, sleep interruption analysis (metSixHourThreshold, longestBlock, difficultReturn)
 - [x] Z-score null guards throughout scheduler — no hard stops when all null
+- [x] Document upload — Import tab in companion app (file drop + paste + claude-sonnet-4-6 analysis)
+- [x] PubMed integration — search NCBI, fetch abstracts/full text, generate cards via Claude
+- [x] LinUCB contextual bandit — replaces weightedRandomSelect(), persists per-arm state to localStorage
 - [ ] Wire biometrics from Even Ring R1 when pilot data available
-- [ ] Document upload — PDF/text → AI analysis → auto-generate flashcards (companion app — in progress)
-- [ ] LinUCB contextual bandit — replaces weightedRandomSelect() — see ML Stack above
-- [ ] PubMed integration — search and pull articles directly
-- [ ] Unsupervised clustering on accumulated biometric + retention data
+- [ ] Unsupervised clustering on accumulated biometric + retention data (Phase 2)
 
 ### Phase 2 — Context and Insights
 - Accumulate longitudinal data per user

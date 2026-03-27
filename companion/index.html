@@ -522,6 +522,204 @@ ML Data Flow:
 </div>
 
 <script>
+  // ── Utilities ───────────────────────────────────────────────
+
+  function escHtml(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── API Key management ──────────────────────────────────────
+
+  function getApiKey() { return localStorage.getItem('bioloop_api_key') || ''; }
+
+  function saveApiKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    if (!val.startsWith('sk-')) { alert('Key should start with sk-'); return; }
+    localStorage.setItem('bioloop_api_key', val);
+    renderApiKeyState();
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem('bioloop_api_key');
+    renderApiKeyState();
+  }
+
+  function renderApiKeyState() {
+    const key = getApiKey();
+    document.getElementById('api-key-set').style.display = key ? 'block' : 'none';
+    document.getElementById('api-key-input-wrap').style.display = key ? 'none' : 'block';
+    if (key) document.getElementById('api-key-display').textContent =
+      key.slice(0, 10) + '••••••••' + key.slice(-4);
+  }
+
+  // ── File reading ────────────────────────────────────────────
+
+  function handleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      alert('PDF detected — open it in a reader, select all text (Cmd/Ctrl+A), copy, and paste below.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('text-input').value = e.target.result;
+      updateTextStats();
+      if (!document.getElementById('deck-name').value)
+        document.getElementById('deck-name').value =
+          file.name.replace(/\.(txt|md)$/i, '').replace(/[-_]/g, ' ');
+    };
+    reader.readAsText(file);
+  }
+
+  function updateTextStats() {
+    const text = document.getElementById('text-input').value;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    document.getElementById('text-stats').textContent = text.length
+      ? `${words.toLocaleString()} words · ${text.length.toLocaleString()} chars` +
+        (text.length > 80000 ? ' — will be truncated to 80 k' : '')
+      : '';
+  }
+
+  // ── Drag-and-drop wiring ────────────────────────────────────
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const zone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const textArea = document.getElementById('text-input');
+    zone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', function () { handleFile(this); });
+    textArea.addEventListener('input', updateTextStats);
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      const f = e.dataTransfer.files[0];
+      if (!f) return;
+      const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+      handleFile(fileInput);
+    });
+  });
+
+  // ── Card generation ─────────────────────────────────────────
+
+  let _generatedCards = [];
+  let _generatedDeck = null;
+
+  function setGenStatus(text, pct) {
+    document.getElementById('gen-status').style.display = text ? 'block' : 'none';
+    document.getElementById('gen-status-text').textContent = text;
+    document.getElementById('gen-progress').style.width = (pct || 0) + '%';
+  }
+
+  async function generateCards() {
+    const apiKey = getApiKey();
+    if (!apiKey) { alert('Please save your Anthropic API key first.'); return; }
+    const text = document.getElementById('text-input').value.trim();
+    if (!text) { alert('Please add study material first.'); return; }
+    const deckName = document.getElementById('deck-name').value.trim() || 'Imported Deck';
+    const course   = document.getElementById('deck-course').value.trim() || 'General';
+    const n        = parseInt(document.getElementById('card-count').value, 10);
+
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('btn-generate').disabled = true;
+    setGenStatus('Analysing content with Claude…', 20);
+
+    const prompt = `You are an expert educator specialising in spaced repetition and active recall.
+Analyse the following study material and generate exactly ${n} high-quality flashcards.
+
+Guidelines:
+- Each card tests exactly ONE idea — no compound questions
+- Questions probe understanding and mechanism, not just recall
+- Answers explain the WHY with full context (2–4 sentences)
+- High-yield concepts deserve multiple cards from different angles
+- Complexity tags: vocabulary · concept · procedure · application · analysis
+- Include 2–3 alternative presentations per card (analogy, clinical_example, step-by-step, contrast, mnemonic)
+
+MATERIAL:
+"""
+${text.slice(0, 80000)}
+"""
+
+Return ONLY a valid JSON array. No markdown, no commentary.
+[{"front":"…","back":"…","complexity":"concept","tags":["tag"],"presentations":{"analogy":{"front":"…","back":"…"}}}]`;
+
+    try {
+      setGenStatus('Waiting for Claude…', 40);
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }] }),
+      });
+      setGenStatus('Parsing cards…', 80);
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const raw  = data.content?.find(b => b.type === 'text')?.text ?? '';
+      const cards = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      if (!Array.isArray(cards) || !cards.length) throw new Error('No cards returned');
+
+      _generatedCards = cards;
+      const now = Date.now(), deckId = crypto.randomUUID();
+      _generatedDeck = {
+        id: deckId, name: deckName, description: `${course} — AI-generated`,
+        cards: cards.map(c => ({
+          id: crypto.randomUUID(), deckId,
+          front: c.front || '', back: c.back || '',
+          complexity: c.complexity || 'concept',
+          tags: Array.isArray(c.tags) ? c.tags : [],
+          presentations: c.presentations || {},
+          createdAt: now, updatedAt: now,
+        })),
+        createdAt: now, updatedAt: now,
+      };
+      setGenStatus(`Generated ${cards.length} cards`, 100);
+      renderPreview(cards);
+    } catch (err) {
+      setGenStatus('Error: ' + err.message, 0);
+    } finally {
+      document.getElementById('btn-generate').disabled = false;
+    }
+  }
+
+  function renderPreview(cards) {
+    document.getElementById('preview-count').textContent = `${cards.length} cards`;
+    document.getElementById('preview-list').innerHTML = cards.map((c, i) => `
+      <div class="preview-card-item">
+        <div class="preview-front">${i + 1}. ${escHtml(c.front)}</div>
+        <div class="preview-back">${escHtml(c.back)}</div>
+        <div class="preview-meta">
+          <span class="tag-pill complexity">${escHtml(c.complexity || 'concept')}</span>
+          ${(c.tags || []).map(t => `<span class="tag-pill">${escHtml(t)}</span>`).join('')}
+          ${c.presentations ? `<span class="tag-pill">${Object.keys(c.presentations).length} styles</span>` : ''}
+        </div>
+      </div>`).join('');
+    document.getElementById('preview-section').style.display = 'block';
+    document.getElementById('save-status').style.display = 'none';
+    document.getElementById('btn-save').disabled = false;
+  }
+
+  function saveDeck() {
+    if (!_generatedDeck) return;
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    if (!Array.isArray(stored.decks)) stored.decks = [];
+    stored.decks.push(_generatedDeck);
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    const el = document.getElementById('save-status');
+    el.textContent = `✓ "${_generatedDeck.name}" saved — ${_generatedDeck.cards.length} cards added to G2 app`;
+    el.style.display = 'block';
+    document.getElementById('btn-save').disabled = true;
+    loadData();
+  }
+
   // ── Load config.json and apply to UI ──
   async function loadConfig() {
     try {
