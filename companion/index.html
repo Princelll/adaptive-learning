@@ -211,6 +211,27 @@
     }
     .tag-pill.complexity { background: rgba(254,249,145,0.1); color: var(--accent); }
 
+    /* ── PubMed result card ── */
+    .pubmed-result {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .pubmed-title { font-size: 13px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
+    .pubmed-meta { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+    .pubmed-abstract { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .pubmed-abstract.expanded { display: block; }
+    .pubmed-actions { display: flex; gap: 8px; }
+    .btn-small {
+      padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-small:active { opacity: 0.7; }
+    .btn-small.accent { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
     /* ── How to connect note ── */
     .connect-note {
       background: rgba(254,249,145,0.06);
@@ -233,6 +254,7 @@
     </div>
     <nav class="tabs">
       <button class="tab active" data-tab="import">Import</button>
+      <button class="tab" data-tab="pubmed">PubMed</button>
       <button class="tab" data-tab="insights">Insights</button>
       <button class="tab" data-tab="decks">Decks</button>
       <button class="tab" data-tab="flow">Flow</button>
@@ -322,6 +344,56 @@
     </div>
 
   </div><!-- /tab-import -->
+
+  <!-- ── PubMed panel ── -->
+  <div id="tab-pubmed" class="panel">
+
+    <!-- Search -->
+    <div class="card">
+      <div class="card-title">Search PubMed</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="pubmed-query" class="text-input" placeholder="e.g. HRV sleep cognition" style="flex:1"
+          onkeydown="if(event.key==='Enter') searchPubMed()" />
+        <button class="btn btn-primary" style="width:auto;padding:0 16px;white-space:nowrap" onclick="searchPubMed()">Search</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <label class="form-label" style="margin:0;white-space:nowrap">Results</label>
+        <select id="pubmed-retmax" class="text-input" style="width:70px;padding:6px 8px">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+        </select>
+        <label class="form-label" style="margin:0;white-space:nowrap">Cards each</label>
+        <select id="pubmed-cards" class="text-input" style="width:60px;padding:6px 8px">
+          <option value="5">5</option>
+          <option value="8" selected>8</option>
+          <option value="12">12</option>
+          <option value="15">15</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Search status -->
+    <div id="pubmed-search-status" style="display:none;margin-bottom:12px">
+      <div class="card">
+        <div id="pubmed-search-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="pubmed-results" style="display:flex;flex-direction:column;gap:10px"></div>
+
+    <!-- Import progress (per article) -->
+    <div id="pubmed-import-status" style="display:none;margin-top:12px">
+      <div class="card">
+        <div id="pubmed-import-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
+        <div class="progress-track" style="margin-top:10px">
+          <div class="progress-fill" id="pubmed-import-progress" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-pubmed -->
 
   <!-- ── ML Insights panel ── -->
   <div id="tab-insights" class="panel">
@@ -904,6 +976,243 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
     status.textContent = `Saved "${deckName}" (${cards.length} cards). Switch to Decks tab or open the G2 app.`;
     status.style.display = 'block';
     loadData(); // refresh Decks tab
+  }
+
+  // ── PubMed Integration ─────────────────────────────────────
+
+  const NCBI = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+  let _pubmedArticles = {}; // pmid → article data cache
+
+  function setPubmedSearchStatus(text) {
+    const el = document.getElementById('pubmed-search-status');
+    el.style.display = text ? 'block' : 'none';
+    document.getElementById('pubmed-search-text').textContent = text;
+  }
+
+  function setPubmedImportStatus(text, pct) {
+    const el = document.getElementById('pubmed-import-status');
+    el.style.display = text ? 'block' : 'none';
+    document.getElementById('pubmed-import-text').textContent = text;
+    document.getElementById('pubmed-import-progress').style.width = (pct || 0) + '%';
+  }
+
+  async function searchPubMed() {
+    const query = document.getElementById('pubmed-query').value.trim();
+    if (!query) return;
+    const retmax = document.getElementById('pubmed-retmax').value;
+
+    setPubmedSearchStatus('Searching PubMed…');
+    document.getElementById('pubmed-results').innerHTML = '';
+
+    try {
+      // Step 1: get PMIDs
+      const searchUrl = `${NCBI}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${retmax}&retmode=json&sort=relevance`;
+      const searchRes = await fetch(searchUrl);
+      const searchData = await searchRes.json();
+      const ids = searchData.esearchresult?.idlist || [];
+
+      if (ids.length === 0) {
+        setPubmedSearchStatus('No results found. Try a different query.');
+        return;
+      }
+
+      setPubmedSearchStatus(`Found ${searchData.esearchresult.count} results — loading top ${ids.length}…`);
+
+      // Step 2: get summaries (title, authors, journal, year, abstract)
+      const summaryUrl = `${NCBI}/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`;
+      const summaryRes = await fetch(summaryUrl);
+      const summaryData = await summaryRes.json();
+      const result = summaryData.result || {};
+
+      setPubmedSearchStatus('');
+      renderPubMedResults(ids, result);
+
+    } catch (err) {
+      setPubmedSearchStatus('Search failed: ' + err.message);
+    }
+  }
+
+  function renderPubMedResults(ids, result) {
+    const container = document.getElementById('pubmed-results');
+    container.innerHTML = ids.map(id => {
+      const a = result[id];
+      if (!a) return '';
+      const authors = (a.authors || []).slice(0, 3).map(au => au.name).join(', ') +
+        (a.authors?.length > 3 ? ' et al.' : '');
+      const year = a.pubdate?.split(' ')[0] || '';
+      const journal = a.fulljournalname || a.source || '';
+      // cache article data for import
+      _pubmedArticles[id] = { pmid: id, title: a.title, authors, year, journal, abstract: '' };
+
+      return `
+        <div class="pubmed-result" id="pm-${id}">
+          <div class="pubmed-title">${escHtml(a.title || 'Untitled')}</div>
+          <div class="pubmed-meta">${escHtml(authors)} · ${escHtml(journal)} · ${year}</div>
+          <div class="pubmed-abstract" id="abs-${id}">Loading abstract…</div>
+          <div class="pubmed-actions">
+            <button class="btn-small" onclick="toggleAbstract('${id}')">Expand</button>
+            <button class="btn-small accent" onclick="importPubMedArticle('${id}')">Import → Cards</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Fetch abstracts in background (one at a time to respect rate limit)
+    ids.reduce((p, id) => p.then(() => fetchAbstract(id)), Promise.resolve());
+  }
+
+  async function fetchAbstract(pmid) {
+    try {
+      const url = `${NCBI}/efetch.fcgi?db=pubmed&id=${pmid}&rettype=abstract&retmode=text`;
+      const res = await fetch(url);
+      const text = await res.text();
+      // Extract abstract text (comes after author block)
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      const abIdx = lines.findIndex(l => /^(abstract|background|objective|purpose|aim)/i.test(l));
+      const abstract = abIdx >= 0
+        ? lines.slice(abIdx).join(' ').slice(0, 1200)
+        : lines.slice(3).join(' ').slice(0, 1200);
+
+      if (_pubmedArticles[pmid]) _pubmedArticles[pmid].abstract = abstract;
+      const el = document.getElementById(`abs-${pmid}`);
+      if (el) el.textContent = abstract || 'Abstract not available.';
+    } catch {
+      const el = document.getElementById(`abs-${pmid}`);
+      if (el) el.textContent = 'Abstract unavailable.';
+    }
+  }
+
+  function toggleAbstract(pmid) {
+    const el = document.getElementById(`abs-${pmid}`);
+    if (!el) return;
+    el.classList.toggle('expanded');
+    const btn = el.nextElementSibling?.querySelector('button');
+    if (btn) btn.textContent = el.classList.contains('expanded') ? 'Collapse' : 'Expand';
+  }
+
+  async function importPubMedArticle(pmid) {
+    const apiKey = getApiKey();
+    if (!apiKey) { alert('Please save your Anthropic API key in the Import tab first.'); return; }
+
+    const article = _pubmedArticles[pmid];
+    if (!article) return;
+
+    const n = parseInt(document.getElementById('pubmed-cards').value, 10);
+
+    // Disable the import button while working
+    const btn = document.querySelector(`#pm-${pmid} .btn-small.accent`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Importing…'; }
+
+    setPubmedImportStatus(`Fetching full text for "${article.title.slice(0, 60)}…"`, 15);
+
+    // Try to get full text from PMC, fall back to abstract
+    let sourceText = article.abstract || '';
+    try {
+      const pmcUrl = `${NCBI}/elink.fcgi?dbfrom=pubmed&db=pmc&id=${pmid}&retmode=json`;
+      const pmcRes = await fetch(pmcUrl);
+      const pmcData = await pmcRes.json();
+      const pmcIds = pmcData.linksets?.[0]?.linksetdbs?.find(l => l.dbto === 'pmc')?.links || [];
+      if (pmcIds.length > 0) {
+        const ftUrl = `${NCBI}/efetch.fcgi?db=pmc&id=${pmcIds[0]}&rettype=text&retmode=text`;
+        const ftRes = await fetch(ftUrl);
+        const ftText = await ftRes.text();
+        if (ftText.length > 200) sourceText = ftText.slice(0, 80000);
+      }
+    } catch { /* fall back to abstract */ }
+
+    if (!sourceText) {
+      setPubmedImportStatus('No text available for this article.', 0);
+      if (btn) { btn.disabled = false; btn.textContent = 'Import → Cards'; }
+      return;
+    }
+
+    setPubmedImportStatus('Generating flashcards with Claude…', 40);
+
+    const prompt = `You are an expert medical educator specializing in spaced repetition.
+Generate exactly ${n} high-quality flashcards from this scientific article.
+
+Article: "${article.title}"
+Authors: ${article.authors} (${article.year})
+Journal: ${article.journal}
+
+Rules:
+- Each card tests exactly ONE finding, mechanism, or concept from the article
+- Questions probe understanding ("Why does X lead to Y?" "What mechanism explains…?") not just recall
+- Answers explain the mechanism with clinical/scientific context (2–4 sentences)
+- Include key statistics or effect sizes where relevant (e.g. "HRV decreased by 18ms, p<0.01")
+- Vary complexity: vocabulary, concept, application, analysis
+- Include 2 alternative presentations per card (analogy, clinical_example, or contrast)
+
+TEXT:
+"""
+${sourceText.slice(0, 60000)}
+"""
+
+Return ONLY a valid JSON array, no markdown, no commentary.
+[{"front":"…","back":"…","complexity":"concept","tags":["tag"],"presentations":{"analogy":{"front":"…","back":"…"}}}]`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 6000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      setPubmedImportStatus('Parsing cards…', 80);
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+
+      const data = await res.json();
+      const raw = data.content?.find(b => b.type === 'text')?.text ?? '';
+      const cards = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      if (!Array.isArray(cards) || cards.length === 0) throw new Error('Empty card array');
+
+      // Save deck
+      const deckName = article.title.slice(0, 60) + (article.title.length > 60 ? '…' : '');
+      const now = Date.now();
+      const deckId = crypto.randomUUID();
+      const deckCards = cards.map(c => ({
+        id: crypto.randomUUID(),
+        deckId,
+        front: c.front || '',
+        back: c.back || '',
+        complexity: c.complexity || 'concept',
+        tags: Array.isArray(c.tags) ? c.tags : [article.journal],
+        presentations: c.presentations || {},
+        createdAt: now,
+        updatedAt: now,
+      }));
+      const deck = {
+        id: deckId,
+        name: deckName,
+        description: `${article.authors} · ${article.journal} · ${article.year}`,
+        cards: deckCards,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      let stored = {};
+      try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+      if (!Array.isArray(stored.decks)) stored.decks = [];
+      stored.decks.push(deck);
+      localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+
+      setPubmedImportStatus(`Saved "${deckName}" — ${deckCards.length} cards added to G2 app`, 100);
+      loadData(); // refresh Decks tab
+
+      if (btn) { btn.disabled = false; btn.textContent = 'Imported ✓'; }
+
+    } catch (err) {
+      setPubmedImportStatus('Error: ' + err.message, 0);
+      if (btn) { btn.disabled = false; btn.textContent = 'Import → Cards'; }
+    }
   }
 
   // Auto-load on page open
