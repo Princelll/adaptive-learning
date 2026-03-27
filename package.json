@@ -18,7 +18,7 @@
   "author": "Jose Eduardo Praiz Mendez",
   "license": "MIT",
   "dependencies": {
-    "@evenrealities/even_hub_sdk": "latest",
+    "@evenrealities/even_hub_sdk": "^0.0.8",
     "ts-fsrs": "^4.6.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"
