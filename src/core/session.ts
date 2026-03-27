@@ -29,7 +29,7 @@ import {
   ALL_PRESENTATION_MODES,
   type BanditContext,
 } from './bandit';
-import { updateClustering, CLUSTER_K } from './clustering';
+import { updateClustering, CLUSTER_K, NULL_CLUSTER_ID } from './clustering';
 import { State } from 'ts-fsrs';
 
 // ── Sleep interruption analysis ──────────────────────────────
@@ -278,7 +278,7 @@ export class SessionManager {
       stressLevel: this.zScores?.stressState ?? 0.5,
       energyLevel: this.zScores?.cognitiveLoad != null ? 1 - this.zScores.cognitiveLoad : 0.5,
       metSixHour: 0.5, // populated when ring data available
-      cognitiveCluster: this.currentClusterId !== null
+      cognitiveCluster: (this.currentClusterId !== null && this.currentClusterId !== NULL_CLUSTER_ID)
         ? this.currentClusterId / (CLUSTER_K - 1)
         : 0.5,
     };

@@ -38,6 +38,13 @@ import type {
 
 export const CLUSTER_K = 4;
 export const MIN_CLUSTER_OBS = 20;
+/**
+ * Special cluster id for observations where no biometric data is available.
+ * Outside the k-means range (0–3) so it never displaces a real cluster.
+ * Learning curves are computed for it just like any other cluster, giving
+ * a baseline to compare against once ring data arrives.
+ */
+export const NULL_CLUSTER_ID = CLUSTER_K; // = 4
 const FEATURE_DIM = 11;
 const KMEANS_MAX_ITER = 15;
 const KMEANS_RESTARTS = 3;
@@ -98,6 +105,21 @@ export function updateRunningMedians(
     return r.length % 2 === 0 ? (r[mid - 1] + r[mid]) / 2 : r[mid];
   });
   return { medians: newMedians, reservoirs: newReservoirs };
+}
+
+/**
+ * Returns true if the observation has at least one non-null biometric reading.
+ * Observations without any biometrics are assigned to NULL_CLUSTER_ID instead
+ * of being clustered, so imputed-median noise doesn't pollute the k-means space.
+ */
+export function hasBiometrics(obs: Observation): boolean {
+  return (
+    obs.features.currentRmssd !== null ||
+    obs.features.sleepHoursActual !== null ||
+    obs.features.remHoursActual !== null ||
+    obs.features.longestContinuousBlockHours !== null ||
+    obs.features.sleepInterruptionCount !== null
+  );
 }
 
 /** Extract raw values for nullable biometric dims (indices 0–4 → dims 2–6) */
@@ -487,10 +509,15 @@ export function updateClustering(
 
   // ── Collecting phase ────────────────────────────────────────
   if (n < MIN_CLUSTER_OBS) {
+    // Even while collecting we can assign the null-biometric cluster immediately
+    const nullAssignment = !hasBiometrics(currentObs) ? NULL_CLUSTER_ID : null;
+    const collectingAssignments = { ...(existing?.assignments ?? {}) };
+    if (nullAssignment !== null) collectingAssignments[currentObs.id] = nullAssignment;
+
     const state: ClusterState = {
       clusters: existing?.clusters ?? [],
-      assignments: existing?.assignments ?? {},
-      currentClusterId: null,
+      assignments: collectingAssignments,
+      currentClusterId: nullAssignment,
       latencyStatsPerCard,
       featureScales: existing?.featureScales ?? emptyScales(),
       runningMedians,
@@ -518,42 +545,47 @@ export function updateClustering(
       (obs as any).__recentAcc__ = acc;
       // Snapshot per-card stats BEFORE updating with this obs (leave-one-out z-score)
       (obs as any).__latencyStatsSnapshot__ = { ...incrementalStats };
-      // Now update stats for this card
       const prev = incrementalStats[obs.cardId] ?? { n: 0, mean: 0, M2: 0 };
       incrementalStats[obs.cardId] = updateWelford(prev, obs.outcomes.latencyMs);
       return obs;
     });
 
-    // Extract raw features using the leave-one-out per-card stats snapshot
-    const rawVectors = obsWithAcc.map(obs =>
-      extractFeatures(obs, (obs as any).__latencyStatsSnapshot__, runningMedians),
-    );
+    // Separate observations: those with biometrics go to k-means, others to NULL_CLUSTER_ID
+    const bioObs  = obsWithAcc.filter(o => hasBiometrics(o));
+    const nullObs = obsWithAcc.filter(o => !hasBiometrics(o));
 
-    // Compute scales and normalise
-    const featureScales = computeFeatureScales(rawVectors);
-    const normalised = rawVectors.map(v => normalizeFeatures(v, featureScales));
-
-    // Run k-means
-    const { centroids, assignments: rawAssignments } = runKMeans(normalised, CLUSTER_K);
-
-    // Compute cluster sizes
-    const sizes = new Array<number>(CLUSTER_K).fill(0);
-    rawAssignments.forEach(a => sizes[a]++);
-
-    // Anchor to old cluster ids
-    const clusters = anchorClusters(centroids, sizes, existing?.clusters ?? []);
-
-    // Build assignment map (observation id → cluster id)
+    // Build assignment map — start from existing, then overwrite
     const assignments: Record<string, number> = {};
-    // Keep old assignments for any obs not in the current window
-    if (existing?.assignments) {
-      Object.assign(assignments, existing.assignments);
+    if (existing?.assignments) Object.assign(assignments, existing.assignments);
+
+    // Null-biometric observations go straight to NULL_CLUSTER_ID
+    for (const obs of nullObs) assignments[obs.id] = NULL_CLUSTER_ID;
+
+    // Run k-means only on biometric observations (fall back to single centroid if too few)
+    let clusters = existing?.clusters ?? [];
+    let featureScales = existing?.featureScales ?? emptyScales();
+
+    if (bioObs.length >= CLUSTER_K) {
+      const rawVectors = bioObs.map(obs =>
+        extractFeatures(obs, (obs as any).__latencyStatsSnapshot__, runningMedians),
+      );
+      featureScales = computeFeatureScales(rawVectors);
+      const normalised = rawVectors.map(v => normalizeFeatures(v, featureScales));
+      const { centroids, assignments: rawAssignments } = runKMeans(normalised, CLUSTER_K);
+
+      const sizes = new Array<number>(CLUSTER_K).fill(0);
+      rawAssignments.forEach(a => sizes[a]++);
+      clusters = anchorClusters(centroids, sizes, existing?.clusters ?? []);
+
+      bioObs.forEach((obs, i) => {
+        const clusterId = clusters.find(c => c.centroid === centroids[rawAssignments[i]])?.id
+          ?? rawAssignments[i];
+        assignments[obs.id] = clusterId;
+      });
+    } else {
+      // Not enough biometric data yet — assign bio obs to cluster 0 as placeholder
+      for (const obs of bioObs) assignments[obs.id] = 0;
     }
-    obsWithAcc.forEach((obs, i) => {
-      const clusterId = clusters.find(c => c.centroid === centroids[rawAssignments[i]])?.id
-        ?? rawAssignments[i];
-      assignments[obs.id] = clusterId;
-    });
 
     // Prune to most recent MAX_STORED_ASSIGNMENTS
     const allKeys = Object.keys(assignments);
@@ -563,11 +595,18 @@ export function updateClustering(
     }
 
     // Assign current observation
-    const currentNorm = normalizeFeatures(
-      extractFeatures(currentObs, latencyStatsPerCard, runningMedians),
-      featureScales,
-    );
-    const currentClusterId = assignToNearest(currentNorm, clusters);
+    let currentClusterId: number;
+    if (!hasBiometrics(currentObs)) {
+      currentClusterId = NULL_CLUSTER_ID;
+    } else if (clusters.length > 0) {
+      const currentNorm = normalizeFeatures(
+        extractFeatures(currentObs, latencyStatsPerCard, runningMedians),
+        featureScales,
+      );
+      currentClusterId = assignToNearest(currentNorm, clusters);
+    } else {
+      currentClusterId = NULL_CLUSTER_ID;
+    }
     assignments[currentObs.id] = currentClusterId;
 
     // Compute learning curves
@@ -590,12 +629,17 @@ export function updateClustering(
   }
 
   // ── Cheap 1-NN assignment ───────────────────────────────────
-  const featureScales = existing!.featureScales;
-  const currentNorm = normalizeFeatures(
-    extractFeatures(currentObs, latencyStatsPerCard, runningMedians),
-    featureScales,
-  );
-  const currentClusterId = assignToNearest(currentNorm, existing!.clusters);
+  let currentClusterId: number;
+  if (!hasBiometrics(currentObs)) {
+    currentClusterId = NULL_CLUSTER_ID;
+  } else {
+    const featureScales = existing!.featureScales;
+    const currentNorm = normalizeFeatures(
+      extractFeatures(currentObs, latencyStatsPerCard, runningMedians),
+      featureScales,
+    );
+    currentClusterId = assignToNearest(currentNorm, existing!.clusters);
+  }
 
   const assignments = { ...existing!.assignments };
   assignments[currentObs.id] = currentClusterId;

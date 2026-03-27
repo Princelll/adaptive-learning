@@ -888,12 +888,31 @@ Return ONLY a valid JSON array. No markdown, no commentary.
 
     const currentId = clusterState.currentClusterId;
     badge.textContent = `${clusterState.clusteringObsCount} obs`;
+    const NULL_CLUSTER_ID = 4;
     chip.className = 'status-chip active';
-    chip.textContent = currentId !== null ? `Cluster ${currentId}` : 'unknown';
+    chip.textContent = currentId === NULL_CLUSTER_ID ? 'No biometrics' : currentId !== null ? `Cluster ${currentId}` : 'unknown';
     obs.textContent = `last updated ${new Date(clusterState.lastClusteringAt).toLocaleTimeString()}`;
 
     // Render each cluster: centroid bar + best style by slope
     const FEATURE_NAMES = ['latencyZ','accuracy','RMSSD','sleep h','REM h','longest block','interruptions','stress','energy','min into session','days since study'];
+    // Include the null-biometric cluster if it has any assignments
+    const nullObs = Object.values(clusterState.assignments || {}).filter(id => id === 4).length;
+    const nullCurves = (clusterState.curves || []).filter(cv => cv.clusterId === 4);
+    const nullClusterHtml = nullObs > 0 ? (() => {
+      const isCurrent = currentId === 4;
+      const bestStyle = nullCurves.sort((a, b) => (b.slope ?? -Infinity) - (a.slope ?? -Infinity))[0];
+      const bestStyleHtml = bestStyle?.slope !== null && bestStyle?.slope !== undefined
+        ? `<span style="font-size:11px;color:var(--accent)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
+        : `<span style="font-size:11px;color:var(--muted)">no curve data yet</span>`;
+      return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border, #2a2520)'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--accent)' : 'var(--muted)'}">No biometrics <span style="font-weight:400;font-size:11px">(${nullObs} obs)</span></span>
+          ${bestStyleHtml}
+        </div>
+        <div style="font-size:10px;color:var(--muted)">baseline — active while ring is disconnected</div>
+      </div>`;
+    })() : '';
+
     const clusterHtml = clusterState.clusters
       .sort((a, b) => a.id - b.id)
       .map(c => {
@@ -923,7 +942,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
         </div>`;
       }).join('');
 
-    list.innerHTML = clusterHtml || '<p style="font-size:12px;color:var(--muted)">No clusters yet.</p>';
+    list.innerHTML = nullClusterHtml + (clusterHtml || '') || '<p style="font-size:12px;color:var(--muted)">No clusters yet.</p>';
   }
 
   // ── Analytics helpers ───────────────────────────────────────
