@@ -22,6 +22,13 @@ import {
 import { Scheduler } from './scheduler';
 import { Storage } from './storage';
 import { runAnalysis, updateStylePreferences } from './regression';
+import {
+  LinUCB,
+  buildContext,
+  ratingToReward,
+  ALL_PRESENTATION_MODES,
+  type BanditContext,
+} from './bandit';
 import { State } from 'ts-fsrs';
 
 // ── Sleep interruption analysis ──────────────────────────────
@@ -127,6 +134,8 @@ export class SessionManager {
   private recentResults: boolean[] = [];
   private reviewEventIds: string[] = [];
   private sessionStartTime = 0;
+  private bandit: LinUCB | null = null;
+  private currentBanditContext: number[] | null = null;
 
   // Z-score context for this session
   private zScores: BiometricZScores | null = null;
@@ -157,6 +166,12 @@ export class SessionManager {
 
     this.zScores = zScores;
     this.confounders = confounders ?? this.profile?.confounders ?? null;
+
+    // Load or initialise the contextual bandit
+    const savedBandit = await this.storage.getBanditState();
+    this.bandit = savedBandit
+      ? LinUCB.fromState(savedBandit, ALL_PRESENTATION_MODES)
+      : new LinUCB(ALL_PRESENTATION_MODES);
 
     // Session recommendation check
     if (zScores) {
@@ -242,13 +257,32 @@ export class SessionManager {
     this.currentCard = card;
     this.currentReviewState = reviewState;
 
-    // Pass z-scores to mode selection for stress-aware logic
-    this.currentMode = this.scheduler.selectPresentationMode(
-      reviewState,
-      this.profile,
-      card.complexity,
-      this.zScores,
-    );
+    // Build bandit context and select presentation mode
+    const sessionDurationMin = (Date.now() - this.sessionStartTime) / 60000;
+    const banditCtx: BanditContext = {
+      timeOfDay: (() => {
+        const h = new Date().getHours();
+        if (h >= 5 && h < 12) return 'morning';
+        if (h >= 12 && h < 17) return 'afternoon';
+        if (h >= 17 && h < 21) return 'evening';
+        return 'night';
+      })(),
+      complexity: card.complexity,
+      minutesIntoSession: sessionDurationMin,
+      priorLevel: reviewState.fsrs.difficulty ?? 5,
+      stressLevel: this.zScores?.stressState ?? 0.5,
+      energyLevel: this.zScores?.cognitiveLoad != null ? 1 - this.zScores.cognitiveLoad : 0.5,
+      metSixHour: 0.5, // populated when ring data available
+    };
+    this.currentBanditContext = buildContext(banditCtx);
+
+    if (this.bandit) {
+      this.currentMode = this.bandit.select(this.currentBanditContext) as PresentationMode;
+    } else {
+      this.currentMode = this.scheduler.selectPresentationMode(
+        reviewState, this.profile, card.complexity, this.zScores,
+      );
+    }
 
     const frontText = this.getCardText(card, this.currentMode, true);
     this.cardStartTime = Date.now();
@@ -297,6 +331,12 @@ export class SessionManager {
       this.profile,
       responseLatencyMs,
     );
+
+    // Update bandit with observed reward and persist
+    if (this.bandit && this.currentBanditContext) {
+      this.bandit.update(this.currentMode, this.currentBanditContext, ratingToReward(rating));
+      await this.storage.saveBanditState(this.bandit.toState());
+    }
 
     // Mode performance tracking
     if (!newState.modePerformance[this.currentMode]) {

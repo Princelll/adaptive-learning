@@ -14,6 +14,7 @@ import {
   createDefaultProfile,
   createDefaultReviewState,
 } from './models';
+import type { BanditState } from './bandit';
 
 const KEY = 'adaptive_learning_data';
 
@@ -25,6 +26,7 @@ interface StoredData {
   profile: LearningProfile | null;
   biometricHistory: DailyBiometric[];
   observations: Observation[];
+  banditState: BanditState | null;
 }
 
 function emptyData(): StoredData {
@@ -36,6 +38,7 @@ function emptyData(): StoredData {
     profile: null,
     biometricHistory: [],
     observations: [],
+    banditState: null,
   };
 }
 
@@ -200,5 +203,16 @@ export class Storage {
 
   async getObservationsForCard(cardId: string): Promise<Observation[]> {
     return this.data.observations.filter(o => o.cardId === cardId);
+  }
+
+  // ── Bandit State ────────────────────────────────────────────
+
+  async getBanditState(): Promise<BanditState | null> {
+    return this.data.banditState ?? null;
+  }
+
+  async saveBanditState(state: BanditState): Promise<void> {
+    this.data.banditState = state;
+    this.persist();
   }
 }
