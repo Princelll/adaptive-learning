@@ -325,6 +325,26 @@
     }
     .sleep-last-log { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
 
+    /* ── New import section styles ── */
+    .section-label { font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 8px; }
+    .section-sub { font-size:12px;color:var(--muted);margin-top:2px;margin-bottom:12px; }
+    .or-divider { display:flex;align-items:center;gap:12px;margin:24px 0;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px; }
+    .or-divider::before,.or-divider::after { content:'';flex:1;height:1px;background:var(--border); }
+    .provider-pills { display:flex;gap:6px;margin-bottom:12px; }
+    .provider-pill { flex:1;padding:8px 4px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:12px;cursor:pointer;text-align:center;transition:border-color .12s,background .12s; }
+    .provider-pill.active { border-color:#232323;background:#232323;color:#fff; }
+    .count-toggle { display:flex;gap:6px;margin-bottom:8px; }
+    .count-pill { flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:12px;cursor:pointer;text-align:center;transition:border-color .12s; }
+    .count-pill.active { border-color:#232323;background:#232323;color:#fff; }
+    .source-tabs-inner { display:flex;gap:4px;margin-bottom:12px; }
+    .source-tab-inner { flex:1;padding:7px 4px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:11px;cursor:pointer;text-align:center;transition:border-color .12s; }
+    .source-tab-inner.active { border-color:#232323; }
+    .ai-locked { opacity:0.4;pointer-events:none; }
+    .name-input-row { display:flex;gap:8px;margin-top:10px;align-items:center; }
+    .name-input-row input { flex:1; }
+    .name-save-btn { padding:8px 14px;border:1px solid var(--border);border-radius:999px;background:var(--surface);font-size:12px;cursor:pointer;white-space:nowrap; }
+    .name-save-btn:active { background:var(--accent); }
+
     /* ── Home tab ── */
     .home-header { padding: 28px 0 24px; }
     .home-date {
@@ -380,8 +400,6 @@
     <nav class="tabs">
       <button class="tab active" data-tab="home">Home</button>
       <button class="tab" data-tab="import">Import</button>
-      <button class="tab" data-tab="manual">Anki / CSV</button>
-      <button class="tab" data-tab="pubmed">PubMed</button>
       <button class="tab" data-tab="insights">Insights</button>
       <button class="tab" data-tab="decks">Decks</button>
       <button class="tab" data-tab="flow">Flow</button>
@@ -394,6 +412,10 @@
     <div class="home-header">
       <div class="home-date" id="home-date"></div>
       <div class="home-greeting" id="home-greeting"></div>
+      <div id="home-name-input-row" class="name-input-row" style="display:none">
+        <input id="home-name-input" class="text-input" placeholder="What's your name?" style="font-size:13px" />
+        <button class="name-save-btn" onclick="saveUserName()">Save</button>
+      </div>
     </div>
 
     <!-- Quick stats — shown when decks exist -->
