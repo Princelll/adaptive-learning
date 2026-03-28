@@ -200,7 +200,10 @@
       transition: border-color 0.15s;
     }
     .text-input:focus { border-color: #232323; }
+    .text-input.error { border-color: var(--red); }
     .text-input::placeholder { color: var(--muted); }
+    .form-error { font-size: 12px; color: var(--red); margin-top: 4px; display: none; }
+    .form-error.visible { display: block; }
     .form-row { margin-bottom: 14px; }
     .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
     .preview-card-item {
@@ -321,6 +324,7 @@
       <div id="api-key-input-wrap">
         <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Enter your Anthropic API key. It is stored only in your browser's localStorage and never sent anywhere except Anthropic's API.</p>
         <input type="password" id="api-key-input" class="text-input" placeholder="sk-ant-..." autocomplete="off" />
+        <div id="api-key-error" class="form-error">Key must start with sk-</div>
         <button class="btn btn-primary" style="margin-top:8px" onclick="saveApiKey()">Save Key</button>
       </div>
     </div>
@@ -1274,10 +1278,18 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   }
 
   function saveApiKey() {
-    const val = document.getElementById('api-key-input').value.trim();
-    if (!val.startsWith('sk-')) { showToast('API key should start with sk-', 'error'); return; }
+    const input = document.getElementById('api-key-input');
+    const errEl = document.getElementById('api-key-error');
+    const val = input.value.trim();
+    if (!val.startsWith('sk-')) {
+      input.classList.add('error');
+      errEl.classList.add('visible');
+      return;
+    }
+    input.classList.remove('error');
+    errEl.classList.remove('visible');
     localStorage.setItem(API_KEY_STORE, val);
-    document.getElementById('api-key-input').value = '';
+    input.value = '';
     renderApiKeyState();
   }
 
@@ -1290,6 +1302,11 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');
   const textInput = document.getElementById('text-input');
+
+  document.getElementById('api-key-input').addEventListener('input', function() {
+    this.classList.remove('error');
+    document.getElementById('api-key-error').classList.remove('visible');
+  });
 
   dropZone.addEventListener('click', () => fileInput.click());
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
