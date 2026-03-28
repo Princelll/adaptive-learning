@@ -1,6 +1,11 @@
 // ============================================================
-// Adaptive Learning G2 — Glasses Display Renderer
-// Renders to Even G2 576×288 display via SDK containers
+// BioLoop G2 — Glasses Display Renderer
+// Renders to Even G2 576×288 display via SDK containers.
+// Follows Even Hub OS 2.0 Guidelines:
+//   - Header: centered title + separator line
+//   - Body: content in the middle zone
+//   - Footer: gesture hints (left) + screen label (right)
+//   - Two-column key-value layout for data-dense screens
 // ============================================================
 
 import {
@@ -14,13 +19,16 @@ import { state, getBridge, RATING_OPTIONS } from './state';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
+  buildTitleBlock,
+  buildFooter,
   buildActionBar,
-  buildHeaderLine,
   truncateLines,
   wordWrap,
   applyScrollIndicators,
-  VISIBLE_LINES,
+  kvRow,
   separator,
+  VISIBLE_LINES,
+  CHARS_PER_LINE,
 } from './display-utils';
 
 // ── Container helpers ────────────────────────────────────────
@@ -110,196 +118,232 @@ async function rebuildPage(config: PageConfig): Promise<void> {
   }
 }
 
+// ── Layout zones (576×288 display) ───────────────────────────
+// Header  y=0   h=44  — title + separator
+// Body    y=44  h=208 — scrollable content
+// Footer  y=252 h=36  — gesture hints | screen label
+
+const ZONE = {
+  header: { y: 0,   h: 44  },
+  body:   { y: 44,  h: 208 },
+  footer: { y: 252, h: 36  },
+} as const;
+
 // ── Screen builders ──────────────────────────────────────────
 
 function buildWelcome(): PageConfig {
-  const title = buildHeaderLine('Welcome to StudyHub');
+  const header = buildTitleBlock('BioLoop');
   const body = [
     '',
-    'Click: Planned Study',
-    'Scroll: Pick a Subject',
+    'Biometric-adaptive',
+    'spaced repetition.',
+    '',
+    'Click  : Planned session',
+    'Scroll : Pick a subject',
   ].join('\n');
+  const footer = buildFooter(
+    [{ gesture: 'Click', action: 'Start' }],
+    'Welcome',
+  );
 
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 100, DISPLAY_WIDTH, 64),
-      textContainer(2, 'body', body, 0, 170, DISPLAY_WIDTH, 100),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
 function buildNoDecks(): PageConfig {
-  const title = buildHeaderLine('Welcome to StudyHub');
+  const header = buildTitleBlock('BioLoop');
   const body = [
+    '',
     'No study material found.',
     '',
-    'Open the app on your phone',
-    'to upload what you want',
-    'to study.',
+    'Open the companion app',
+    'on your phone to import',
+    'a deck.',
   ].join('\n');
+  const footer = buildFooter(
+    [{ gesture: 'Click', action: 'Retry' }],
+    'Setup',
+  );
 
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 50, DISPLAY_WIDTH, 64),
-      textContainer(2, 'body', body, 0, 120, DISPLAY_WIDTH, 160),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
 function buildDeckSelect(): PageConfig {
-  const title = 'Pick a Subject';
+  const header = buildTitleBlock('Pick a Subject');
   const lines = state.deckNames.map(
     (name, i) => (i === state.deckSelectIdx ? '> ' : '  ') + name,
   );
-  // Apply scroll indicators if many decks
   const body = lines.length > VISIBLE_LINES
     ? applyScrollIndicators(lines, Math.max(0, state.deckSelectIdx - 4), VISIBLE_LINES)
     : lines.join('\n');
-  const hint = buildActionBar([
-    { gesture: 'Up/Down', action: 'select' },
-    { gesture: 'Click', action: 'start' },
-  ]);
+  const footer = buildFooter(
+    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Click', action: 'Start' }],
+    'Subjects',
+  );
 
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(2, 'body', body, 0, 44, DISPLAY_WIDTH, 200),
-      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
 function buildDashboard(): PageConfig {
-  const title = 'Adaptive Learning';
+  const header = buildTitleBlock('BioLoop');
   const hasModel = state.modelStatus !== 'collecting_data' && state.modelStatus !== 'error';
-  const r2Suffix = hasModel ? ` | R²: ${state.modelR2.toFixed(2)}` : '';
-  const topStyle = state.topStyles[0] ?? '—';
+  const deckLabel = state.deckName || 'No deck loaded';
+
+  // Two-column key-value layout — Even G2 data display pattern
   const body = [
-    state.deckName || 'No deck loaded',
-    separator(24),
-    `Cards due: ${state.cardsDue}`,
-    `Model: ${state.modelStatus}${r2Suffix}`,
-    `Best style: ${topStyle}`,
-    `Observations: ${state.obsCount}`,
-  ].join('\n');
-  const hint = buildActionBar([
-    { gesture: 'Click', action: 'Start' },
-    { gesture: 'Scroll↓', action: 'ML info' },
-  ]);
+    truncateLines(deckLabel, CHARS_PER_LINE),
+    separator(CHARS_PER_LINE),
+    kvRow('Cards due',    String(state.cardsDue)),
+    kvRow('Observations', String(state.obsCount)),
+    kvRow('Best style',   state.topStyles[0] ?? '--'),
+    kvRow('Model',        state.modelStatus),
+    hasModel ? kvRow('R\u00B2', state.modelR2.toFixed(2)) : '',
+  ].filter(Boolean).join('\n');
+
+  const footer = buildFooter(
+    [{ gesture: 'Click', action: 'Study' }, { gesture: 'Scroll\u2193', action: 'ML' }],
+    'Dashboard',
+  );
 
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(2, 'body', body, 0, 44, DISPLAY_WIDTH, 200),
-      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
 function buildModelInsights(): PageConfig {
-  const title = 'ML Model Insights';
+  const header = buildTitleBlock('ML Insights');
   const hasModel = state.modelStatus !== 'collecting_data' && state.modelStatus !== 'error';
-  const r2Text = hasModel ? `R²: ${state.modelR2.toFixed(2)}` : 'R²: pending';
-  const obsNeeded = state.obsCount < 15 ? ` (${15 - state.obsCount} more needed)` : '';
+  const obsNeeded = state.obsCount < 15 ? ` (${15 - state.obsCount} more)` : '';
   const styleLines = state.topStyles.length > 0
-    ? state.topStyles.map((s, i) => `${i + 1}. ${s}`)
-    : ['(collect 15+ obs to train)'];
+    ? state.topStyles.map((s, i) => `  ${i + 1}. ${s}`)
+    : ['  (collect 15+ obs to train)'];
+
   const body = [
-    `Status: ${state.modelStatus}`,
-    `${r2Text} | Obs: ${state.obsCount}${obsNeeded}`,
-    separator(24),
-    'Top styles:',
+    kvRow('Status',       state.modelStatus),
+    kvRow('Observations', `${state.obsCount}${obsNeeded}`),
+    hasModel ? kvRow('R\u00B2', state.modelR2.toFixed(3)) : '',
+    separator(CHARS_PER_LINE),
+    'Top study styles:',
     ...styleLines,
-  ].join('\n');
-  const hint = buildActionBar([
-    { gesture: 'Scroll↑', action: 'Back' },
-    { gesture: 'Dbl-tap', action: 'Home' },
-  ]);
+  ].filter(s => s !== undefined && s !== null).join('\n');
+
+  const footer = buildFooter(
+    [{ gesture: 'Scroll\u2191', action: 'Back' }, { gesture: 'Dbl-tap', action: 'Home' }],
+    'ML Insights',
+  );
 
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(2, 'body', body, 0, 44, DISPLAY_WIDTH, 200),
-      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
 function buildQuestion(): PageConfig {
-  const title = `Card ${state.cardNumber}/${state.totalCards}`;
-  // Word-wrap and apply scroll indicators for long questions
+  const header = buildTitleBlock(`Card ${state.cardNumber} / ${state.totalCards}`);
   const wrapped = wordWrap(state.questionText);
   const body = wrapped.length > VISIBLE_LINES
     ? applyScrollIndicators(wrapped, 0, VISIBLE_LINES)
-    : truncateLines(state.questionText);
-  const hint = buildActionBar([{ gesture: 'Click', action: 'Show answer' }]);
+    : wrapped.join('\n');
+  const footer = buildFooter(
+    [{ gesture: 'Click', action: 'Reveal' }],
+    'Question',
+  );
 
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(2, 'body', body, 0, 44, DISPLAY_WIDTH, 200),
-      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
 function buildAnswer(): PageConfig {
-  const title = `Answer ${state.cardNumber}/${state.totalCards}`;
-  // Word-wrap and apply scroll indicators for long answers
+  const header = buildTitleBlock(`Answer ${state.cardNumber} / ${state.totalCards}`);
   const wrapped = wordWrap(state.answerText);
   const body = wrapped.length > VISIBLE_LINES
     ? applyScrollIndicators(wrapped, 0, VISIBLE_LINES)
-    : truncateLines(state.answerText);
-  const hint = buildActionBar([{ gesture: 'Click', action: 'Rate' }]);
+    : wrapped.join('\n');
+  const footer = buildFooter(
+    [{ gesture: 'Click', action: 'Rate' }],
+    'Answer',
+  );
 
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(2, 'body', body, 0, 44, DISPLAY_WIDTH, 200),
-      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
 function buildRating(): PageConfig {
-  const title = 'Rate your recall';
+  const header = buildTitleBlock('Rate Your Recall');
   const items = RATING_OPTIONS.map(
     (r) => r.charAt(0).toUpperCase() + r.slice(1),
   );
-  const hint = buildActionBar([
-    { gesture: 'Scroll', action: 'select' },
-    { gesture: 'Click', action: 'confirm' },
-  ]);
+  const footer = buildFooter(
+    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Click', action: 'Confirm' }],
+    'Rating',
+  );
 
   return {
     textObject: [
-      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
     listObject: [
-      listContainer(2, 'ratings', items, 0, 44, DISPLAY_WIDTH, 200, true),
+      listContainer(2, 'ratings', items, 0, ZONE.body.y, DISPLAY_WIDTH, ZONE.body.h, true),
     ],
   };
 }
 
 function buildSummary(): PageConfig {
-  const title = 'Session Complete';
+  const header = buildTitleBlock('Session Complete');
   const body = state.summaryText;
-  const hint = buildActionBar([{ gesture: 'Click', action: 'Dashboard' }]);
+  const footer = buildFooter(
+    [{ gesture: 'Click', action: 'Dashboard' }],
+    'Summary',
+  );
 
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'title', title, 0, 6, DISPLAY_WIDTH, 36),
-      textContainer(2, 'body', body, 0, 44, DISPLAY_WIDTH, 200),
-      textContainer(3, 'hint', hint, 0, 252, DISPLAY_WIDTH, 32),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }

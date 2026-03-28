@@ -50,9 +50,28 @@ export function buildHeaderLine(text: string, width = CHARS_PER_LINE): string {
 }
 
 /**
+ * Build a full-width title block: centered title + separator.
+ * Per Even Hub OS Guidelines: header area followed by a dividing line.
+ */
+export function buildTitleBlock(title: string, width = CHARS_PER_LINE): string {
+  return buildHeaderLine(title, width) + '\n' + separator(width);
+}
+
+/**
+ * Build a two-column key-value row, right-aligned value.
+ * Matches Even G2 data display pattern (stock ticker style).
+ * e.g. "Cards due           12"
+ */
+export function kvRow(label: string, value: string, width = CHARS_PER_LINE): string {
+  const maxLabel = width - value.length - 1;
+  const l = truncate(label, maxLabel);
+  const gap = width - l.length - value.length;
+  return l + ' '.repeat(Math.max(1, gap)) + value;
+}
+
+/**
  * Apply scroll indicators to text content.
  * Shows markers when content extends above/below visible area.
- * Pattern from even-toolkit applyScrollIndicators.
  */
 export function applyScrollIndicators(
   lines: string[],
@@ -62,12 +81,10 @@ export function applyScrollIndicators(
   const totalLines = lines.length;
   const visible = lines.slice(scrollOffset, scrollOffset + visibleCount);
 
-  // Add up indicator if scrolled down
   if (scrollOffset > 0) {
     visible[0] = '... more above ...';
   }
 
-  // Add down indicator if more below
   if (scrollOffset + visibleCount < totalLines) {
     visible[visible.length - 1] = '... more below ...';
   }
@@ -75,8 +92,9 @@ export function applyScrollIndicators(
   return visible.join('\n');
 }
 
-// ── Action bar builder ──────────────────────────────────────
-// Pattern from even-toolkit action-bar module
+// ── Footer builder ──────────────────────────────────────────
+// Pattern from Even Hub OS: screen label at bottom + gesture hint.
+// Left side: gesture hint.  Right side: screen label (context).
 
 interface ActionHint {
   gesture: string;  // 'Click', 'Scroll', 'Up/Down', 'Double-tap'
@@ -84,13 +102,20 @@ interface ActionHint {
 }
 
 /**
- * Build a compact action bar hint string for the bottom of the display.
- * Uses colon format since arrows are not supported on G2.
+ * Build a footer line with gesture hints on the left and the
+ * screen label (context) on the right — per Even Hub OS pattern.
  */
+export function buildFooter(hints: ActionHint[], screenLabel: string, width = CHARS_PER_LINE): string {
+  const hintStr = hints.map(h => `${h.gesture}:${h.action}`).join(' ');
+  const gap = width - hintStr.length - screenLabel.length;
+  return gap > 0
+    ? hintStr + ' '.repeat(gap) + screenLabel
+    : truncate(hintStr, width - screenLabel.length - 1) + ' ' + screenLabel;
+}
+
+/** Legacy action bar — kept for compatibility */
 export function buildActionBar(hints: ActionHint[]): string {
-  return hints
-    .map(h => `${h.gesture}: ${h.action}`)
-    .join('  ');
+  return hints.map(h => `${h.gesture}: ${h.action}`).join('  ');
 }
 
 /**
