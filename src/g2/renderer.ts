@@ -32,6 +32,12 @@ import {
 } from './display-utils';
 
 // ── Container helpers ────────────────────────────────────────
+// Even Hub OS background layer renders content in a rounded-corner card
+// with a visible white border (per App Layer dashboard screenshot).
+// WHITE = 0xFFFFFF = 16777215 (RGB integer used by SDK).
+
+const BORDER_COLOR_WHITE = 16777215; // 0xFFFFFF
+const CARD_BORDER_RADIUS = 8;        // matches G2 background layer card
 
 function textContainer(
   id: number,
@@ -42,6 +48,7 @@ function textContainer(
   w: number,
   h: number,
   isEvt = false,
+  card = false,   // true → add white border + radius (background layer card style)
 ): TextContainerProperty {
   return new TextContainerProperty({
     containerID: id,
@@ -52,10 +59,10 @@ function textContainer(
     width: w,
     height: h,
     isEventCapture: isEvt ? 1 : 0,
-    paddingLength: 4,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
+    paddingLength: card ? 8 : 4,
+    borderWidth: card ? 1 : 0,
+    borderColor: card ? BORDER_COLOR_WHITE : 0,
+    borderRadius: card ? CARD_BORDER_RADIUS : 0,
   });
 }
 
@@ -78,9 +85,9 @@ function listContainer(
     height: h,
     isEventCapture: isEvt ? 1 : 0,
     paddingLength: 4,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: BORDER_COLOR_WHITE,
+    borderRadius: CARD_BORDER_RADIUS,
     itemContainer: new ListItemContainerProperty({
       itemCount: items.length,
       itemWidth: 0,
@@ -150,7 +157,7 @@ function buildWelcome(): PageConfig {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
@@ -175,7 +182,7 @@ function buildNoDecks(): PageConfig {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
@@ -198,7 +205,7 @@ function buildDeckSelect(): PageConfig {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
@@ -229,7 +236,7 @@ function buildDashboard(): PageConfig {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
@@ -261,7 +268,7 @@ function buildModelInsights(): PageConfig {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
@@ -282,7 +289,7 @@ function buildQuestion(): PageConfig {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
@@ -303,7 +310,7 @@ function buildAnswer(): PageConfig {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
@@ -342,7 +349,7 @@ function buildSummary(): PageConfig {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
