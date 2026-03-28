@@ -1,4 +1,4 @@
-# BioLoop — Project Context for Claude Code
+# Adaptive Learning — Project Context for Claude Code
 
 ## Repository
 - GitHub: https://github.com/Princelll/adaptive-learning
@@ -6,7 +6,7 @@
 - Owner: Maria (Jose Eduardo Praiz Mendez)
 
 ## What this app is
-BioLoop is a biometric-adaptive spaced repetition app for Even Realities G2 smart glasses.
+Adaptive Learning is a biometric-adaptive spaced repetition app for Even Realities G2 smart glasses.
 It uses ML (k-means clustering + LinUCB bandit) to adapt flashcard presentation styles
 to the user's cognitive state (HRV, sleep, stress). Cards are generated from study material
 via the Anthropic API. The companion web app (companion/index.html) handles deck import,
