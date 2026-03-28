@@ -24,6 +24,8 @@ cd "$REPO" || {
   read -p "Press enter to exit..."
   exit 1
 }
+# Pre-remove directories git will try to delete (Windows locks them during pull)
+rm -rf "$REPO/companion" 2>/dev/null || true
 git fetch origin
 git checkout "$BRANCH" 2>/dev/null
 git pull origin "$BRANCH"
