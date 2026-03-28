@@ -68,9 +68,17 @@ echo ""
 echo "  G2 App:    http://localhost:5173"
 echo "  Companion: opened as file://"
 echo ""
+echo "  Windows will auto-arrange in ~10 seconds."
 echo "  Press Ctrl+C to stop."
 echo "=========================================="
 echo ""
+
+# Arrange windows 10s after simulator starts (all windows need time to open)
+ARRANGE="$(cygpath -w "$APP_DIR/arrange-windows.ps1" 2>/dev/null || echo "")"
+if [ -n "$ARRANGE" ]; then
+  (sleep 10 && powershell.exe -NonInteractive -ExecutionPolicy Bypass -File "$ARRANGE") &
+fi
+
 cd "$EVEN_DEV"
 ./start-even.sh "$APP_NAME"
 
