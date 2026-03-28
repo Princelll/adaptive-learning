@@ -95,9 +95,9 @@
     }
     .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
-    .stat-value.accent { color: var(--accent); }
+    .stat-value.accent { color: var(--text); }
     .stat-value.green { color: var(--green); }
-    .stat-value.yellow { color: var(--yellow); }
+    .stat-value.yellow { color: var(--text); }
     .stat-value.muted { color: var(--muted); font-size: 14px; }
 
     /* ── Status chip ── */
@@ -119,7 +119,7 @@
     }
     .progress-fill {
       height: 100%; border-radius: 3px;
-      background: var(--accent);
+      background: #232323;
       transition: width 0.4s ease;
     }
 
@@ -129,7 +129,7 @@
     .style-rank { font-size: 11px; font-weight: 700; color: var(--muted); width: 16px; }
     .style-name { font-size: 13px; flex: 1; text-transform: capitalize; }
     .style-bar-wrap { width: 100px; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-    .style-bar { height: 100%; border-radius: 3px; background: var(--accent); }
+    .style-bar { height: 100%; border-radius: 3px; background: #232323; }
     .style-score { font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
 
     /* ── Deck list ── */
@@ -199,7 +199,7 @@
       outline: none;
       transition: border-color 0.15s;
     }
-    .text-input:focus { border-color: var(--accent); }
+    .text-input:focus { border-color: #232323; }
     .text-input::placeholder { color: var(--muted); }
     .form-row { margin-bottom: 14px; }
     .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
@@ -242,7 +242,7 @@
 
     /* ── Analytics bar chart ── */
     .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-    .bar-fill { width: 100%; border-radius: 3px 3px 0 0; background: var(--accent); min-height: 2px; transition: height 0.3s; }
+    .bar-fill { width: 100%; border-radius: 3px 3px 0 0; background: #232323; min-height: 2px; transition: height 0.3s; }
     .bar-fill.zero { background: var(--surface3); }
     .bar-day { font-size: 10px; color: var(--muted); }
     .bar-num { font-size: 10px; color: var(--text); font-weight: 600; }
@@ -330,7 +330,7 @@
       <div class="form-row">
         <label class="form-label" style="display:flex;justify-content:space-between">
           <span>Cards to generate</span>
-          <span id="card-count-label" style="color:var(--accent);font-weight:700">15</span>
+          <span id="card-count-label" style="color:var(--text);font-weight:700">15</span>
         </label>
         <input type="range" id="card-count" min="5" max="40" value="15"
           oninput="document.getElementById('card-count-label').textContent=this.value"
@@ -356,7 +356,7 @@
       <div class="card">
         <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
           <span>Preview</span>
-          <span id="preview-count" style="color:var(--accent);font-weight:700;font-size:11px"></span>
+          <span id="preview-count" style="color:var(--muted);font-weight:400;font-size:11px"></span>
         </div>
         <div id="preview-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
       </div>
@@ -444,7 +444,7 @@
     <div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between">
         <span>Daily Reviews — Last 7 Days</span>
-        <span id="an-week-total" style="color:var(--accent);font-weight:700;font-size:11px"></span>
+        <span id="an-week-total" style="color:var(--muted);font-weight:400;font-size:11px"></span>
       </div>
       <div id="an-bar-chart" style="display:flex;align-items:flex-end;gap:6px;height:60px;margin-top:8px"></div>
       <div id="an-bar-labels" style="display:flex;gap:6px;margin-top:4px"></div>
@@ -572,9 +572,9 @@ ML Data Flow:
     <div class="card">
       <div class="card-title">Gesture Reference</div>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
-        <div style="display:flex;justify-content:space-between"><span>Click (single tap)</span><span style="color:var(--accent)">Confirm / Next</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Scroll up / down</span><span style="color:var(--accent)">Navigate lists</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Double-tap</span><span style="color:var(--accent)">Back to Home</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Click (single tap)</span><span style="color:var(--muted)">Confirm / Next</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Scroll up / down</span><span style="color:var(--muted)">Navigate lists</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Double-tap</span><span style="color:var(--muted)">Back to Home</span></div>
         <div style="display:flex;justify-content:space-between"><span>Scroll↓ on dashboard</span><span style="color:var(--accent2)">ML Insights screen</span></div>
       </div>
     </div>
@@ -910,11 +910,11 @@ Return ONLY a valid JSON array. No markdown, no commentary.
       const isCurrent = currentId === 4;
       const bestStyle = nullCurves.sort((a, b) => (b.slope ?? -Infinity) - (a.slope ?? -Infinity))[0];
       const bestStyleHtml = bestStyle?.slope !== null && bestStyle?.slope !== undefined
-        ? `<span style="font-size:11px;color:var(--accent)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
+        ? `<span style="font-size:11px;color:var(--green)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
         : `<span style="font-size:11px;color:var(--muted)">no curve data yet</span>`;
-      return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border, #2a2520)'}">
+      return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? '#232323' : 'var(--border)'}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--accent)' : 'var(--muted)'}">No biometrics <span style="font-weight:400;font-size:11px">(${nullObs} obs)</span></span>
+          <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--text)' : 'var(--muted)'}">No biometrics <span style="font-weight:400;font-size:11px">(${nullObs} obs)</span></span>
           ${bestStyleHtml}
         </div>
         <div style="font-size:10px;color:var(--muted)">baseline — active while ring is disconnected</div>
@@ -931,7 +931,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
           .sort((a, b) => (b.slope ?? 0) - (a.slope ?? 0));
         const bestStyle = curvesForCluster[0];
         const bestStyleHtml = bestStyle
-          ? `<span style="font-size:11px;color:var(--accent)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
+          ? `<span style="font-size:11px;color:var(--green)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
           : `<span style="font-size:11px;color:var(--muted)">no curve data yet</span>`;
 
         // Show top 3 centroid dims by magnitude
@@ -941,9 +941,9 @@ Return ONLY a valid JSON array. No markdown, no commentary.
           `<span style="font-size:10px;color:var(--muted)">${escHtml(d.name)}: ${(d.v * 100).toFixed(0)}%</span>`
         ).join(' · ');
 
-        return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border, #2a2520)'}">
+        return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? '#232323' : 'var(--border)'}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--accent)' : 'var(--text)'}">Cluster ${c.id} <span style="font-weight:400;color:var(--muted);font-size:11px">(${c.size} obs)</span></span>
+            <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--text)' : 'var(--text)'}">Cluster ${c.id} <span style="font-weight:400;color:var(--muted);font-size:11px">(${c.size} obs)</span></span>
             ${bestStyleHtml}
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:4px">${dimsHtml}</div>
@@ -1019,7 +1019,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
       const dow = new Date(d + 'T12:00:00').getDay();
       const isToday = d === todayStr;
       return `<div class="bar-col" style="flex:1">
-        <span class="bar-day" style="${isToday ? 'color:var(--accent);font-weight:700' : ''}">${dayLabels[dow]}</span>
+        <span class="bar-day" style="${isToday ? 'color:var(--text);font-weight:700' : ''}">${dayLabels[dow]}</span>
       </div>`;
     }).join('');
 
