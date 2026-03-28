@@ -54,18 +54,20 @@ echo "[3/5] Installing dependencies..."
 cd "$EVEN_DEV/apps/$APP_NAME"
 npm install --silent
 
-# ── Step 4: Open companion in browser ────────
+# ── Step 4: Open companion in browser (HTTP, not file://) ─────
 echo ""
 echo "[4/5] Opening companion app in browser..."
-COMPANION="$EVEN_DEV/apps/$APP_NAME/companion/index.html"
-# Open in default browser (works on Windows Git Bash)
-if command -v explorer.exe &>/dev/null; then
-  explorer.exe "$(cygpath -w "$COMPANION")" 2>/dev/null
-elif command -v xdg-open &>/dev/null; then
-  xdg-open "$COMPANION" 2>/dev/null
-elif command -v open &>/dev/null; then
-  open "$COMPANION" 2>/dev/null
-fi
+COMPANION_URL="http://localhost:5173/companion/index.html"
+# Wait for Vite to be ready, then open browser in background
+(sleep 5 && \
+  if command -v explorer.exe &>/dev/null; then
+    explorer.exe "$COMPANION_URL" 2>/dev/null
+  elif command -v xdg-open &>/dev/null; then
+    xdg-open "$COMPANION_URL" 2>/dev/null
+  elif command -v open &>/dev/null; then
+    open "$COMPANION_URL" 2>/dev/null
+  fi
+) &
 
 # ── Step 5: Start simulator ──────────────────
 echo ""
