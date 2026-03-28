@@ -291,6 +291,36 @@
     }
     @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(4px); } }
+
+    /* ── Sleep quality slider (Even Realities Slider spec) ── */
+    .slider-value-display {
+      font-size: 36px; font-weight: 700; letter-spacing: -1.5px;
+      text-align: center; color: var(--text); margin-bottom: 16px; line-height: 1;
+    }
+    .slider-input {
+      -webkit-appearance: none;
+      width: 100%; height: 2px; border-radius: 1px;
+      outline: none; cursor: pointer;
+      background: linear-gradient(to right, #232323 var(--pct, 67%), var(--border) var(--pct, 67%));
+    }
+    .slider-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid #232323;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      cursor: pointer;
+    }
+    .slider-input::-moz-range-thumb {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid #232323;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      cursor: pointer; border-style: solid;
+    }
+    .slider-end-labels {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--muted); margin-top: 8px;
+    }
+    .sleep-last-log { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -450,6 +480,20 @@
     <div class="connect-note" id="connect-note" style="display:none">
       ⚠️ Open this page from the same browser where the G2 simulator is running
       (e.g. <code>localhost:5173/companion/index.html</code>) to read live data.
+    </div>
+
+    <!-- Sleep quality check-in -->
+    <div class="card">
+      <div class="card-title">Sleep Quality Check-in</div>
+      <div class="slider-value-display" id="sleep-val">7</div>
+      <input type="range" class="slider-input" id="sleep-slider" min="1" max="10" value="7"
+        oninput="updateSleepSlider(this.value)" style="--pct:67%" />
+      <div class="slider-end-labels">
+        <span>🌙 Poor</span>
+        <span>Great ☀️</span>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="logSleepQuality()">Log</button>
+      <div class="sleep-last-log" id="sleep-last-log">Not logged today</div>
     </div>
 
     <!-- Key stats row -->
@@ -1144,6 +1188,42 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     }
   }
 
+  // ── Sleep quality slider ────────────────────────────────────
+  function updateSleepSlider(val) {
+    document.getElementById('sleep-val').textContent = val;
+    const pct = ((val - 1) / 9 * 100).toFixed(1) + '%';
+    document.getElementById('sleep-slider').style.setProperty('--pct', pct);
+  }
+
+  function logSleepQuality() {
+    const val = parseInt(document.getElementById('sleep-slider').value, 10);
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    stored.lastSleepQuality = { score: val, ts: Date.now() };
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    showToast(`Sleep quality logged: ${val}/10`);
+    renderSleepLastLog(stored.lastSleepQuality);
+  }
+
+  function renderSleepLastLog(entry) {
+    const el = document.getElementById('sleep-last-log');
+    if (!el) return;
+    if (!entry) { el.textContent = 'Not logged today'; return; }
+    const d = new Date(entry.ts);
+    const isToday = d.toDateString() === new Date().toDateString();
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    el.textContent = isToday
+      ? `Logged today at ${time} — ${entry.score}/10`
+      : `Last logged ${dateStr} — ${entry.score}/10`;
+    // Restore slider to last logged value
+    const slider = document.getElementById('sleep-slider');
+    if (slider && isToday) {
+      slider.value = entry.score;
+      updateSleepSlider(entry.score);
+    }
+  }
+
   // ── Main data loader ──
   function loadData() {
     const data = readStorage();
@@ -1155,6 +1235,9 @@ Return ONLY a valid JSON array. No markdown, no commentary.
       return;
     }
     note.style.display = 'none';
+
+    // Restore sleep quality slider
+    renderSleepLastLog(data.lastSleepQuality ?? null);
 
     // Render session analytics (visible from session 1)
     renderAnalytics(data);
@@ -1834,6 +1917,11 @@ Return ONLY a valid JSON array, no markdown, no commentary.
   loadConfig();
   loadData();
   renderApiKeyState();
+  // Initialize sleep slider from stored value (works even before deck data exists)
+  try {
+    const raw = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}');
+    if (raw.lastSleepQuality) renderSleepLastLog(raw.lastSleepQuality);
+  } catch {}
 </script>
 </body>
 </html>
