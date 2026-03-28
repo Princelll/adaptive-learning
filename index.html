@@ -13,9 +13,22 @@
     <button id="btn-connect">Connect glasses</button>
     <div id="event-log" style="margin-top:1em; font-family:monospace; font-size:12px; max-height:300px; overflow:auto;"></div>
   </div>
-  <!-- Companion deck import bridge: companion opens /?import=BASE64DECK from file:// -->
+  <!-- Bridges: companion (file://) ↔ G2 app (localhost:5173) localStorage sync -->
   <script>
   (function () {
+    // Export bridge: if opened as popup by companion, send data back then close
+    if (window.opener) {
+      try {
+        window.opener.postMessage({
+          type: 'g2DataExport',
+          data: localStorage.getItem('adaptive_learning_data')
+        }, '*');
+      } catch(e) {}
+      setTimeout(function() { window.close(); }, 200);
+      return;
+    }
+
+    // Import bridge: companion opens /?import=BASE64DECK to write deck to G2 localStorage
     var raw = new URLSearchParams(location.search).get('import');
     if (!raw) return;
     try {
