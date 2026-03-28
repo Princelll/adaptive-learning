@@ -76,7 +76,8 @@ echo ""
 # Arrange windows 10s after simulator starts (all windows need time to open)
 ARRANGE="$(cygpath -w "$APP_DIR/arrange-windows.ps1" 2>/dev/null || echo "")"
 if [ -n "$ARRANGE" ]; then
-  (sleep 10 && powershell.exe -NonInteractive -ExecutionPolicy Bypass -File "$ARRANGE") &
+  # -NonInteractive removed so the window stays open showing debug output
+  (sleep 10 && powershell.exe -ExecutionPolicy Bypass -File "$ARRANGE") &
 fi
 
 cd "$EVEN_DEV"
