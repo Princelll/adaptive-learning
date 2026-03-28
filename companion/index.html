@@ -324,6 +324,50 @@
       font-size: 12px; color: var(--muted); margin-top: 8px;
     }
     .sleep-last-log { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+    /* ── Home tab ── */
+    .home-header { padding: 28px 0 24px; }
+    .home-date {
+      font-size: 11px; font-weight: 400; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .home-greeting {
+      font-size: 30px; font-weight: 300; letter-spacing: -1px;
+      color: var(--text); line-height: 1.15;
+    }
+    .home-stats-row {
+      display: flex; margin-bottom: 20px;
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); overflow: hidden;
+    }
+    .home-stat { flex: 1; padding: 14px 8px; text-align: center; border-right: 1px solid var(--border); }
+    .home-stat:last-child { border-right: none; }
+    .home-stat-value { font-size: 24px; font-weight: 300; letter-spacing: -0.8px; color: var(--text); line-height: 1; }
+    .home-stat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+    .home-actions { display: flex; flex-direction: column; gap: 8px; }
+    .home-action-btn {
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 16px; width: 100%; text-align: left;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .home-action-btn:hover { border-color: #c0c0c0; background: #fafafa; }
+    .home-action-btn:active { background: var(--accent); border-color: var(--accent); }
+    .home-action-btn.featured { background: var(--accent); border-color: var(--accent); }
+    .home-action-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--bg); display: flex; align-items: center;
+      justify-content: center; font-size: 17px; flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .home-action-btn.featured .home-action-icon { background: rgba(0,0,0,0.06); border-color: transparent; }
+    .home-action-text { flex: 1; min-width: 0; }
+    .home-action-title { font-size: 14px; font-weight: 400; letter-spacing: -0.2px; color: var(--text); }
+    .home-action-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .home-action-btn.featured .home-action-sub { color: rgba(35,35,35,0.6); }
+    .home-action-arrow { font-size: 16px; color: var(--muted); flex-shrink: 0; }
+    .home-divider { height: 1px; background: var(--border); margin: 20px 0; }
   </style>
 </head>
 <body>
@@ -334,7 +378,8 @@
       <span class="g2-badge">Even G2</span>
     </div>
     <nav class="tabs">
-      <button class="tab active" data-tab="import">Import</button>
+      <button class="tab active" data-tab="home">Home</button>
+      <button class="tab" data-tab="import">Import</button>
       <button class="tab" data-tab="manual">Anki / CSV</button>
       <button class="tab" data-tab="pubmed">PubMed</button>
       <button class="tab" data-tab="insights">Insights</button>
@@ -343,8 +388,66 @@
     </nav>
   </header>
 
+  <!-- ── Home panel ── -->
+  <div id="tab-home" class="panel active">
+
+    <div class="home-header">
+      <div class="home-date" id="home-date"></div>
+      <div class="home-greeting" id="home-greeting"></div>
+    </div>
+
+    <!-- Quick stats — shown when decks exist -->
+    <div class="home-stats-row" id="home-stats" style="display:none">
+      <div class="home-stat">
+        <div class="home-stat-value" id="home-due">—</div>
+        <div class="home-stat-label">Due today</div>
+      </div>
+      <div class="home-stat">
+        <div class="home-stat-value" id="home-streak">—</div>
+        <div class="home-stat-label">Streak</div>
+      </div>
+      <div class="home-stat">
+        <div class="home-stat-value" id="home-cards">—</div>
+        <div class="home-stat-label">Total cards</div>
+      </div>
+    </div>
+
+    <div class="home-divider"></div>
+
+    <!-- Action buttons -->
+    <div class="home-actions">
+      <button class="home-action-btn" id="home-btn-import" onclick="goToTab('import')">
+        <div class="home-action-icon">✦</div>
+        <div class="home-action-text">
+          <div class="home-action-title">Import Cards</div>
+          <div class="home-action-sub" id="home-import-sub">Generate with AI or import from Anki</div>
+        </div>
+        <div class="home-action-arrow">›</div>
+      </button>
+
+      <button class="home-action-btn" id="home-btn-decks" onclick="goToTab('decks')">
+        <div class="home-action-icon">▤</div>
+        <div class="home-action-text">
+          <div class="home-action-title">Manage Decks</div>
+          <div class="home-action-sub" id="home-decks-sub">No decks yet</div>
+        </div>
+        <div class="home-action-arrow">›</div>
+      </button>
+
+      <button class="home-action-btn" id="home-btn-insights" onclick="goToTab('insights')">
+        <div class="home-action-icon">◈</div>
+        <div class="home-action-text">
+          <div class="home-action-title">Review Insights</div>
+          <div class="home-action-sub" id="home-insights-sub">Complete a session to unlock</div>
+        </div>
+        <div class="home-action-arrow">›</div>
+      </button>
+    </div>
+
+  </div><!-- /tab-home -->
+
   <!-- ── Import panel ── -->
-  <div id="tab-import" class="panel active">
+  <div id="tab-import" class="panel">
 
     <!-- No API key banner -->
     <div id="no-key-banner" class="connect-note" style="margin-top:12px;display:none;align-items:center;justify-content:space-between;gap:10px">
@@ -819,6 +922,72 @@ ML Data Flow:
   // localhost:5173. Opening /?import=BASE64DECK in a named tab bridges
   // the gap — the G2 app's inline script (index.html) receives the deck
   // and writes it to the correct localStorage origin.
+  // ── Home tab ─────────────────────────────────────────────────
+  function goToTab(tabId) {
+    const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+    if (tab && tab.style.display !== 'none') { tab.click(); return; }
+    // Fallback if target tab is hidden
+    const fallback = { decks: 'manual', insights: 'decks', pubmed: 'import' };
+    if (fallback[tabId]) goToTab(fallback[tabId]);
+  }
+
+  function renderHomeTab() {
+    const now = new Date();
+    const h = now.getHours();
+    document.getElementById('home-date').textContent =
+      now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    document.getElementById('home-greeting').textContent =
+      h < 12 ? 'Good morning.' : h < 17 ? 'Good afternoon.' : 'Good evening.';
+
+    const data = readStorage();
+    const { hasKey, hasDecks, hasActivity } = getAppState();
+    const decks = data?.decks || [];
+    const reviewStates = data?.reviewStates || [];
+
+    // Stats row
+    const statsRow = document.getElementById('home-stats');
+    if (hasDecks) {
+      const nowTs = Date.now();
+      const due = reviewStates.filter(s => new Date(s.fsrs?.due || 0).getTime() <= nowTs).length;
+      const streak = data?.profile?.streak ?? 0;
+      const total = decks.reduce((n, d) => n + (d.cards?.length || 0), 0);
+      document.getElementById('home-due').textContent = due;
+      document.getElementById('home-streak').textContent = streak;
+      document.getElementById('home-cards').textContent = total;
+      statsRow.style.display = 'flex';
+    } else {
+      statsRow.style.display = 'none';
+    }
+
+    // Button subtitles + featured highlight
+    const importBtn = document.getElementById('home-btn-import');
+    const decksBtn  = document.getElementById('home-btn-decks');
+    const insightsBtn = document.getElementById('home-btn-insights');
+
+    // Featured = most actionable action right now
+    [importBtn, decksBtn, insightsBtn].forEach(b => b.classList.remove('featured'));
+
+    if (!hasDecks) {
+      importBtn.classList.add('featured');
+      document.getElementById('home-import-sub').textContent = 'Start here — generate or import your first deck';
+    } else {
+      const due = parseInt(document.getElementById('home-due').textContent, 10) || 0;
+      document.getElementById('home-import-sub').textContent = hasKey
+        ? 'Generate with AI, upload Anki export, or search PubMed'
+        : 'Upload Anki export, CSV, or paste Q&A text';
+      if (due > 0) {
+        decksBtn.classList.add('featured');
+        document.getElementById('home-decks-sub').textContent = `${due} card${due !== 1 ? 's' : ''} due today`;
+      } else {
+        document.getElementById('home-decks-sub').textContent =
+          `${decks.length} deck${decks.length !== 1 ? 's' : ''} · all caught up`;
+      }
+    }
+    document.getElementById('home-insights-sub').textContent = hasActivity
+      ? 'View ML performance and study patterns'
+      : 'Complete a session on the G2 to unlock';
+  }
+
   function syncDeckToG2(deck) {
     try {
       const encoded = btoa(JSON.stringify(deck));
@@ -912,6 +1081,7 @@ ML Data Flow:
     const { hasKey, hasDecks, hasActivity } = getAppState();
 
     const rules = {
+      home:     true,
       import:   true,
       manual:   true,
       pubmed:   hasKey,
@@ -931,7 +1101,7 @@ ML Data Flow:
     // If active tab is now hidden, switch to first visible
     const activeTab = document.querySelector('.tab.active');
     if (!activeTab || activeTab.style.display === 'none') {
-      let target = hasActivity ? 'insights' : hasDecks ? 'decks' : 'import';
+      let target = 'home';
       // Verify target is visible; fall back to first visible tab
       const targetEl = document.querySelector(`.tab[data-tab="${target}"]`);
       if (!targetEl || targetEl.style.display === 'none') {
@@ -1390,6 +1560,7 @@ ML Data Flow:
       }).join('');
     }
 
+    renderHomeTab();
     updateTabVisibility();
   }
 
@@ -2147,6 +2318,7 @@ Return ONLY a valid JSON array, no markdown, no commentary.
   loadConfig();
   loadData();
   renderApiKeyState();
+  renderHomeTab();
   updateTabVisibility();
   // Initialize sleep slider from stored value (works even before deck data exists)
   try {
