@@ -388,15 +388,6 @@
         <label class="form-label">Course / subject</label>
         <input type="text" id="deck-course" class="text-input" placeholder="e.g. Internal Medicine" />
       </div>
-      <div class="form-row">
-        <label class="form-label" style="display:flex;justify-content:space-between">
-          <span>Cards to generate</span>
-          <span id="card-count-label" style="color:var(--text);font-weight:700">15</span>
-        </label>
-        <input type="range" id="card-count" min="5" max="40" value="15"
-          oninput="document.getElementById('card-count-label').textContent=this.value"
-          style="width:100%;accent-color:var(--accent);margin-top:4px" />
-      </div>
     </div>
 
     <!-- Generate -->
@@ -762,25 +753,7 @@ ML Data Flow:
       : '';
   }
 
-  // ── Drag-and-drop wiring ────────────────────────────────────
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const zone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const textArea = document.getElementById('text-input');
-    zone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', function () { handleFile(this); });
-    textArea.addEventListener('input', updateTextStats);
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', e => {
-      e.preventDefault(); zone.classList.remove('drag-over');
-      const f = e.dataTransfer.files[0];
-      if (!f) return;
-      const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
-      handleFile(fileInput);
-    });
-  });
+  // ── Drag-and-drop wiring (handled below at line ~1452) ──
 
   // ── Card generation ─────────────────────────────────────────
 
@@ -800,14 +773,12 @@ ML Data Flow:
     if (!text) { alert('Please add study material first.'); return; }
     const deckName = document.getElementById('deck-name').value.trim() || 'Imported Deck';
     const course   = document.getElementById('deck-course').value.trim() || 'General';
-    const n        = parseInt(document.getElementById('card-count').value, 10);
-
     document.getElementById('preview-section').style.display = 'none';
     document.getElementById('btn-generate').disabled = true;
     setGenStatus('Analysing content with Claude…', 20);
 
     const prompt = `You are an expert educator specialising in spaced repetition and active recall.
-Analyse the following study material and generate exactly ${n} high-quality flashcards.
+Analyse the following study material and generate as many high-quality flashcards as needed to fully cover the content. Let the depth and breadth of the material determine the number — do not cap it artificially.
 
 Guidelines:
 - Each card tests exactly ONE idea — no compound questions
@@ -1396,7 +1367,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
 
   // API Key management
   const API_KEY_STORE = 'bioloop_api_key';
-  let _generatedCards = [];
+  // _generatedCards already declared above
   let _generatedDeckName = '';
   let _pdfFileId = null;
   let _pdfFileName = '';
@@ -1555,8 +1526,6 @@ Return ONLY a valid JSON array. No markdown, no commentary.
 
     const deckName = document.getElementById('deck-name').value.trim() || 'Untitled Deck';
     const course = document.getElementById('deck-course').value.trim() || 'General';
-    const n = parseInt(document.getElementById('card-count').value, 10);
-
     _generatedDeckName = deckName;
     document.getElementById('preview-section').style.display = 'none';
     document.getElementById('btn-generate').disabled = true;
@@ -1570,7 +1539,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
       : `MATERIAL:\n"""\n${excerpt}\n"""`;
 
     const prompt = `You are an expert educator specializing in spaced repetition and active recall.
-Analyze the following study material and generate exactly ${n} high-quality flashcards optimized for long-term retention.
+Analyze the following study material and generate as many high-quality flashcards as needed to fully cover the content. Let the depth and breadth of the material determine the number — do not cap it artificially.
 
 Rules:
 - Each card tests exactly ONE idea — no compound questions

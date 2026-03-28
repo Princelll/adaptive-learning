@@ -147,7 +147,7 @@ const ZONE = {
 // ── Screen builders ──────────────────────────────────────────
 
 function buildWelcome(): PageConfig {
-  const header = buildTitleBlock('BioLoop');
+  const header = buildTitleBlock('Adaptive Learning');
   const body = [
     '',
     'Biometric-adaptive',
@@ -172,7 +172,7 @@ function buildWelcome(): PageConfig {
 }
 
 function buildNoDecks(): PageConfig {
-  const header = buildTitleBlock('BioLoop');
+  const header = buildTitleBlock('Adaptive Learning');
   const body = [
     '',
     'No study material found.',
@@ -220,7 +220,7 @@ function buildDeckSelect(): PageConfig {
 }
 
 function buildDashboard(): PageConfig {
-  const header = buildTitleBlock('BioLoop');
+  const header = buildTitleBlock('Adaptive Learning');
   const hasModel = state.modelStatus !== 'collecting_data' && state.modelStatus !== 'error';
   const deckLabel = state.deckName || 'No deck loaded';
 
