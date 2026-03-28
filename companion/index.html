@@ -335,6 +335,7 @@
     </div>
     <nav class="tabs">
       <button class="tab active" data-tab="import">Import</button>
+      <button class="tab" data-tab="manual">Anki / CSV</button>
       <button class="tab" data-tab="pubmed">PubMed</button>
       <button class="tab" data-tab="insights">Insights</button>
       <button class="tab" data-tab="decks">Decks</button>
@@ -344,6 +345,12 @@
 
   <!-- ── Import panel ── -->
   <div id="tab-import" class="panel active">
+
+    <!-- No API key banner -->
+    <div id="no-key-banner" class="connect-note" style="margin-top:12px;display:none;align-items:center;justify-content:space-between;gap:10px">
+      <span>No API key? Try the Anki / CSV tab — no account needed.</span>
+      <button class="btn-small" onclick="document.querySelector('.tab[data-tab=manual]').click()">Anki / CSV</button>
+    </div>
 
     <!-- API Key -->
     <div class="card" id="api-key-card">
@@ -418,6 +425,67 @@
 
   </div><!-- /tab-import -->
 
+  <!-- ── Manual / Anki / CSV panel ── -->
+  <div id="tab-manual" class="panel">
+
+    <!-- Anki / CSV file upload -->
+    <div class="card">
+      <div class="card-title">Import from Anki or Spreadsheet</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+        No API key needed. Supports:<br>
+        • <strong>Anki</strong> — File → Export → "Notes in Plain Text" (.txt)<br>
+        • <strong>CSV / TSV</strong> — two columns: front, back<br>
+        • <strong>NotebookLM / ChatGPT</strong> — paste Q&amp;A text below
+      </p>
+      <div class="drop-zone" id="manual-drop-zone">
+        <div style="font-size:24px;margin-bottom:6px">↑</div>
+        <div class="drop-label" style="font-weight:400;font-size:15px;letter-spacing:-0.15px">Drop .txt or .csv here</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse</div>
+        <input type="file" id="manual-file-input" accept=".txt,.csv,.tsv" style="display:none" />
+      </div>
+      <div id="manual-file-status" style="font-size:12px;color:var(--muted);margin-top:6px;text-align:center;display:none"></div>
+    </div>
+
+    <!-- Q&A text paste (NotebookLM / ChatGPT) -->
+    <div class="card">
+      <div class="card-title">Paste Q&amp;A Text</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6">
+        Paste text with <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px">Q:</code> / <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px">A:</code> pairs — works great with NotebookLM FAQ exports or ChatGPT-generated Q&amp;A.
+      </p>
+      <textarea id="manual-qa-input" class="text-input" rows="7"
+        placeholder="Q: What is HRV?&#10;A: Heart rate variability is the variation in time between successive heartbeats…&#10;&#10;Q: How does sleep affect HRV?&#10;A: Poor sleep quality reduces overnight HRV recovery…"
+        style="resize:vertical;width:100%;font-size:13px"></textarea>
+    </div>
+
+    <!-- Deck settings + preview -->
+    <div class="card">
+      <div class="card-title">Deck Settings</div>
+      <div class="form-row">
+        <label class="form-label">Deck name</label>
+        <input type="text" id="manual-deck-name" class="text-input" placeholder="e.g. Cardiac Pharmacology" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">Course / subject</label>
+        <input type="text" id="manual-deck-course" class="text-input" placeholder="e.g. Internal Medicine" />
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="importManualDeck()">Preview Cards</button>
+
+    <!-- Preview area -->
+    <div id="manual-preview-section" style="display:none;margin-top:12px">
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Preview</span>
+          <span id="manual-preview-count" style="color:var(--muted);font-weight:400;font-size:11px"></span>
+        </div>
+        <div id="manual-preview-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+      </div>
+      <button class="btn btn-primary" id="manual-btn-save" onclick="saveManualDeck()" style="margin-top:10px">Save to G2 App</button>
+    </div>
+
+  </div><!-- /tab-manual -->
+
   <!-- ── PubMed panel ── -->
   <div id="tab-pubmed" class="panel">
 
@@ -435,13 +503,6 @@
           <option value="5">5</option>
           <option value="10" selected>10</option>
           <option value="20">20</option>
-        </select>
-        <label class="form-label" style="margin:0;white-space:nowrap">Cards each</label>
-        <select id="pubmed-cards" class="text-input" style="width:60px;padding:6px 8px">
-          <option value="5">5</option>
-          <option value="8" selected>8</option>
-          <option value="12">12</option>
-          <option value="15">15</option>
         </select>
       </div>
     </div>
@@ -477,6 +538,15 @@
         <div class="empty-title">No session data yet</div>
         <p>Open this page from the same browser as the G2 app (<code style="font-size:11px">localhost:5173</code>) to sync live data.</p>
         <button class="btn btn-primary" onclick="loadData()">↺ Refresh</button>
+      </div>
+    </div>
+
+    <!-- ML insights empty state -->
+    <div id="insights-empty-state" class="card" style="display:none">
+      <div class="empty" style="padding:24px 8px">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">No activity yet</div>
+        <p>Complete your first review session on the G2 glasses to see ML insights here.</p>
       </div>
     </div>
 
@@ -622,6 +692,37 @@
 
   <!-- ── App Flow panel ── -->
   <div id="tab-flow" class="panel">
+
+    <!-- Getting started (shown when no decks) -->
+    <div id="flow-getting-started" class="card" style="display:none">
+      <div class="card-title">Getting Started</div>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:13px">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <span style="font-size:18px;font-weight:700;color:var(--muted);line-height:1.3">1</span>
+          <div>
+            <div style="font-weight:600;margin-bottom:2px">Add API key in Import tab</div>
+            <div style="color:var(--muted);font-size:12px">Get a key at console.anthropic.com. Or skip and use Anki / CSV — no key needed.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <span style="font-size:18px;font-weight:700;color:var(--muted);line-height:1.3">2</span>
+          <div>
+            <div style="font-weight:600;margin-bottom:2px">Generate or import a deck</div>
+            <div style="color:var(--muted);font-size:12px">Paste study material in Import, upload an Anki export, or search PubMed for scientific articles.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <span style="font-size:18px;font-weight:700;color:var(--muted);line-height:1.3">3</span>
+          <div>
+            <div style="font-weight:600;margin-bottom:2px">Open G2 app and connect glasses</div>
+            <div style="color:var(--muted);font-size:12px">Go to localhost:5173, click Connect glasses, and start a study session.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow diagram (shown when decks exist) -->
+    <div id="flow-main-content">
     <div class="card">
       <div class="card-title">Screen Navigation Flow</div>
       <div id="flow-diagram" style="font-family:monospace;font-size:12px;line-height:1.8;color:var(--text)">
@@ -664,19 +765,12 @@ ML Data Flow:
         <div style="display:flex;justify-content:space-between"><span>Swipe↓ on dashboard</span><span style="color:var(--accent2)">ML Insights screen</span></div>
       </div>
     </div>
+    </div><!-- /flow-main-content -->
   </div>
 </div>
 <div class="toast-container" id="toast-container"></div>
 
 <script>
-  // ── Utilities ───────────────────────────────────────────────
-
-  function escHtml(str) {
-    return String(str ?? '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
   // ── Toast notifications ─────────────────────────────────────
   function showToast(msg, type = 'info', duration = 3000) {
     const container = document.getElementById('toast-container');
@@ -700,30 +794,6 @@ ML Data Flow:
     if (duration > 0) setTimeout(dismiss, duration);
   }
 
-  // ── API Key management ──────────────────────────────────────
-
-  function getApiKey() { return localStorage.getItem('bioloop_api_key') || ''; }
-
-  function saveApiKey() {
-    const val = document.getElementById('api-key-input').value.trim();
-    if (!val.startsWith('sk-')) { alert('Key should start with sk-'); return; }
-    localStorage.setItem('bioloop_api_key', val);
-    renderApiKeyState();
-  }
-
-  function clearApiKey() {
-    localStorage.removeItem('bioloop_api_key');
-    renderApiKeyState();
-  }
-
-  function renderApiKeyState() {
-    const key = getApiKey();
-    document.getElementById('api-key-set').style.display = key ? 'block' : 'none';
-    document.getElementById('api-key-input-wrap').style.display = key ? 'none' : 'block';
-    if (key) document.getElementById('api-key-display').textContent =
-      key.slice(0, 10) + '••••••••' + key.slice(-4);
-  }
-
   // ── File reading ────────────────────────────────────────────
 
   function handleFile(input) {
@@ -744,130 +814,16 @@ ML Data Flow:
     reader.readAsText(file);
   }
 
-  function updateTextStats() {
-    const text = document.getElementById('text-input').value;
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    document.getElementById('text-stats').textContent = text.length
-      ? `${words.toLocaleString()} words · ${text.length.toLocaleString()} chars` +
-        (text.length > 80000 ? ' — will be truncated to 80 k' : '')
-      : '';
-  }
-
-  // ── Drag-and-drop wiring (handled below at line ~1452) ──
-
-  // ── Card generation ─────────────────────────────────────────
-
-  let _generatedCards = [];
-  let _generatedDeck = null;
-
-  function setGenStatus(text, pct) {
-    document.getElementById('gen-status').style.display = text ? 'block' : 'none';
-    document.getElementById('gen-status-text').textContent = text;
-    document.getElementById('gen-progress').style.width = (pct || 0) + '%';
-  }
-
-  async function generateCards() {
-    const apiKey = getApiKey();
-    if (!apiKey) { alert('Please save your Anthropic API key first.'); return; }
-    const text = document.getElementById('text-input').value.trim();
-    if (!text) { alert('Please add study material first.'); return; }
-    const deckName = document.getElementById('deck-name').value.trim() || 'Imported Deck';
-    const course   = document.getElementById('deck-course').value.trim() || 'General';
-    document.getElementById('preview-section').style.display = 'none';
-    document.getElementById('btn-generate').disabled = true;
-    setGenStatus('Analysing content with Claude…', 20);
-
-    const prompt = `You are an expert educator specialising in spaced repetition and active recall.
-Analyse the following study material and generate as many high-quality flashcards as needed to fully cover the content. Let the depth and breadth of the material determine the number — do not cap it artificially.
-
-Guidelines:
-- Each card tests exactly ONE idea — no compound questions
-- Questions probe understanding and mechanism, not just recall
-- Answers explain the WHY with full context (2–4 sentences)
-- High-yield concepts deserve multiple cards from different angles
-- Complexity tags: vocabulary · concept · procedure · application · analysis
-- Include 2–3 alternative presentations per card (analogy, clinical_example, step-by-step, contrast, mnemonic)
-
-MATERIAL:
-"""
-${text.slice(0, 80000)}
-"""
-
-Return ONLY a valid JSON array. No markdown, no commentary.
-[{"front":"…","back":"…","complexity":"concept","tags":["tag"],"presentations":{"analogy":{"front":"…","back":"…"}}}]`;
-
+  // ── Cross-origin deck sync ───────────────────────────────────
+  // Companion may run as file:// which has isolated localStorage from
+  // localhost:5173. Opening /?import=BASE64DECK in a named tab bridges
+  // the gap — the G2 app's inline script (index.html) receives the deck
+  // and writes it to the correct localStorage origin.
+  function syncDeckToG2(deck) {
     try {
-      setGenStatus('Waiting for Claude…', 40);
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8000,
-          messages: [{ role: 'user', content: prompt }] }),
-      });
-      setGenStatus('Parsing cards…', 80);
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
-      const raw  = data.content?.find(b => b.type === 'text')?.text ?? '';
-      const cards = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      if (!Array.isArray(cards) || !cards.length) throw new Error('No cards returned');
-
-      _generatedCards = cards;
-      const now = Date.now(), deckId = crypto.randomUUID();
-      _generatedDeck = {
-        id: deckId, name: deckName, description: `${course} — AI-generated`,
-        cards: cards.map(c => ({
-          id: crypto.randomUUID(), deckId,
-          front: c.front || '', back: c.back || '',
-          complexity: c.complexity || 'concept',
-          tags: Array.isArray(c.tags) ? c.tags : [],
-          presentations: c.presentations || {},
-          createdAt: now, updatedAt: now,
-        })),
-        createdAt: now, updatedAt: now,
-      };
-      setGenStatus(`Generated ${cards.length} cards`, 100);
-      renderPreview(cards);
-    } catch (err) {
-      setGenStatus('Error: ' + err.message, 0);
-    } finally {
-      document.getElementById('btn-generate').disabled = false;
-    }
-  }
-
-  function renderPreview(cards) {
-    document.getElementById('preview-count').textContent = `${cards.length} cards`;
-    document.getElementById('preview-list').innerHTML = cards.map((c, i) => `
-      <div class="preview-card-item">
-        <div class="preview-front">${i + 1}. ${escHtml(c.front)}</div>
-        <div class="preview-back">${escHtml(c.back)}</div>
-        <div class="preview-meta">
-          <span class="tag-pill complexity">${escHtml(c.complexity || 'concept')}</span>
-          ${(c.tags || []).map(t => `<span class="tag-pill">${escHtml(t)}</span>`).join('')}
-          ${c.presentations ? `<span class="tag-pill">${Object.keys(c.presentations).length} styles</span>` : ''}
-        </div>
-      </div>`).join('');
-    document.getElementById('preview-section').style.display = 'block';
-    document.getElementById('save-status').style.display = 'none';
-    document.getElementById('btn-save').disabled = false;
-  }
-
-  function saveDeck() {
-    if (!_generatedDeck) return;
-    let stored = {};
-    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
-    if (!Array.isArray(stored.decks)) stored.decks = [];
-    stored.decks.push(_generatedDeck);
-    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
-    const el = document.getElementById('save-status');
-    el.textContent = `✓ "${_generatedDeck.name}" saved — ${_generatedDeck.cards.length} cards added to G2 app`;
-    el.style.display = 'block';
-    document.getElementById('btn-save').disabled = true;
-    loadData();
+      const encoded = btoa(JSON.stringify(deck));
+      window.open('http://localhost:5173/?import=' + encoded, 'g2-import-bridge');
+    } catch (e) {}
   }
 
   // ── Load config.json and apply to UI ──
@@ -923,6 +879,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   // ── Tab switching ──
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
+      if (tab.style.display === 'none') return;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
@@ -939,6 +896,74 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     } catch {
       return null;
     }
+  }
+
+  // ── App state derivation ──
+  function getAppState() {
+    const data = readStorage();
+    const hasKey = !!localStorage.getItem('bioloop_api_key');
+    const hasDecks = Array.isArray(data?.decks) && data.decks.length > 0;
+    const hasActivity = hasDecks && Array.isArray(data?.reviewStates) && data.reviewStates.some(r => r.totalReviews > 0);
+    return { hasKey, hasDecks, hasActivity };
+  }
+
+  // ── Tab visibility ──
+  function updateTabVisibility() {
+    const { hasKey, hasDecks, hasActivity } = getAppState();
+
+    const rules = {
+      import:   true,
+      manual:   true,
+      pubmed:   hasKey,
+      decks:    hasDecks,
+      insights: hasActivity,
+      flow:     true,
+    };
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      const key = tab.dataset.tab;
+      const visible = rules[key] !== false;
+      tab.style.display = visible ? '' : 'none';
+      const panel = document.getElementById('tab-' + key);
+      if (panel) panel.style.display = visible ? (panel.classList.contains('active') ? 'block' : 'none') : 'none';
+    });
+
+    // If active tab is now hidden, switch to first visible
+    const activeTab = document.querySelector('.tab.active');
+    if (!activeTab || activeTab.style.display === 'none') {
+      let target = hasActivity ? 'insights' : hasDecks ? 'decks' : 'import';
+      // Verify target is visible; fall back to first visible tab
+      const targetEl = document.querySelector(`.tab[data-tab="${target}"]`);
+      if (!targetEl || targetEl.style.display === 'none') {
+        const firstVisible = document.querySelector('.tab:not([style*="display: none"]):not([style*="display:none"])');
+        if (firstVisible) target = firstVisible.dataset.tab;
+      }
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+      const newTab = document.querySelector(`.tab[data-tab="${target}"]`);
+      const newPanel = document.getElementById('tab-' + target);
+      if (newTab) newTab.classList.add('active');
+      if (newPanel) { newPanel.classList.add('active'); newPanel.style.display = 'block'; }
+    }
+
+    // Update Import tab banner
+    const banner = document.getElementById('no-key-banner');
+    if (banner) banner.style.display = hasKey ? 'none' : 'flex';
+
+    // Update Flow tab state
+    renderFlowState(hasDecks);
+
+    // Update Insights empty state
+    const insightsEmpty = document.getElementById('insights-empty-state');
+    if (insightsEmpty) insightsEmpty.style.display = hasActivity ? 'none' : 'block';
+  }
+
+  // ── Flow tab state ──
+  function renderFlowState(hasDecks) {
+    const gettingStarted = document.getElementById('flow-getting-started');
+    const mainContent = document.getElementById('flow-main-content');
+    if (gettingStarted) gettingStarted.style.display = hasDecks ? 'none' : 'block';
+    if (mainContent) mainContent.style.display = hasDecks ? 'block' : 'none';
   }
 
   // ── Status chip helper ──
@@ -1353,14 +1378,36 @@ Return ONLY a valid JSON array. No markdown, no commentary.
         const due = newCards + dueCards;
         return `
           <div class="deck-item">
-            <div>
-              <div class="deck-name">${deck.name}</div>
-              <div class="deck-meta">${deck.cards.length} cards</div>
+            <div style="flex:1;min-width:0">
+              <div class="deck-name">${escHtml(deck.name)}</div>
+              <div class="deck-meta">${deck.cards.length} cards · ${due} due</div>
             </div>
-            <span class="deck-due ${due === 0 ? 'zero' : ''}">${due}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="deck-due ${due === 0 ? 'zero' : ''}">${due}</span>
+              <button class="btn-small" style="color:var(--red);border-color:var(--red);padding:4px 10px;font-size:11px" onclick="deleteDeck('${escHtml(deck.id)}')">Delete</button>
+            </div>
           </div>`;
       }).join('');
     }
+
+    updateTabVisibility();
+  }
+
+  // ── Delete deck ──
+  function deleteDeck(deckId) {
+    if (!confirm('Delete this deck and all its review states? This cannot be undone.')) return;
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    if (Array.isArray(stored.decks)) {
+      stored.decks = stored.decks.filter(d => d.id !== deckId);
+    }
+    if (Array.isArray(stored.reviewStates)) {
+      stored.reviewStates = stored.reviewStates.filter(s => s.deckId !== deckId);
+    }
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    showToast('Deck deleted.');
+    loadData();
+    updateTabVisibility();
   }
 
   // ── Import tab ─────────────────────────────────────────────
@@ -1698,6 +1745,7 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
     if (!Array.isArray(stored.decks)) stored.decks = [];
     stored.decks.push(deck);
     localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    syncDeckToG2(deck);
 
     showToast(`Saved "${deckName}" — ${cards.length} cards added`);
     loadData(); // refresh Decks tab
@@ -1821,8 +1869,6 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
     const article = _pubmedArticles[pmid];
     if (!article) return;
 
-    const n = parseInt(document.getElementById('pubmed-cards').value, 10);
-
     // Disable the import button while working
     const btn = document.querySelector(`#pm-${pmid} .btn-small.accent`);
     if (btn) { btn.disabled = true; btn.textContent = 'Importing…'; }
@@ -1853,7 +1899,7 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
     setPubmedImportStatus('Generating flashcards with Claude…', 40);
 
     const prompt = `You are an expert medical educator specializing in spaced repetition.
-Generate exactly ${n} high-quality flashcards from this scientific article.
+Generate as many high-quality flashcards as needed to fully cover the article content. Let the depth and breadth of the material determine the number.
 
 Article: "${article.title}"
 Authors: ${article.authors} (${article.year})
@@ -1928,6 +1974,7 @@ Return ONLY a valid JSON array, no markdown, no commentary.
       if (!Array.isArray(stored.decks)) stored.decks = [];
       stored.decks.push(deck);
       localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+      syncDeckToG2(deck);
 
       setPubmedImportStatus(`Saved "${deckName}" — ${deckCards.length} cards added to G2 app`, 100);
       loadData(); // refresh Decks tab
@@ -1940,10 +1987,167 @@ Return ONLY a valid JSON array, no markdown, no commentary.
     }
   }
 
+  // ── Manual / Anki / CSV import ──────────────────────────────
+
+  let _manualCards = [];
+
+  // Parse Anki plain-text export or CSV/TSV into [{front, back}]
+  function parseFileToCards(text, filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+    const cards = [];
+    const sep = (ext === 'csv') ? /,(?=(?:[^"]*"[^"]*")*[^"]*$)/ : /\t/;
+
+    for (const line of lines) {
+      const cols = line.split(sep).map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+      if (cols.length >= 2 && cols[0] && cols[1]) {
+        cards.push({ front: cols[0], back: cols[1] });
+      }
+    }
+    return cards;
+  }
+
+  // Parse Q:/A: formatted text (NotebookLM, ChatGPT, manual)
+  function parseQAText(text) {
+    const cards = [];
+    // Normalize: strip markdown bold markers
+    text = text.replace(/\*\*(Q:|A:|Question:|Answer:)\*\*/gi, '$1');
+    // Split into blocks (double newline or numbered list)
+    const blocks = text.split(/\n{2,}/);
+    for (const block of blocks) {
+      const qMatch = block.match(/^(?:\d+[\.\)]\s*)?(?:Q(?:uestion)?)\s*[:：]\s*([\s\S]+?)(?=\n(?:A(?:nswer)?)\s*[:：]|$)/i);
+      const aMatch = block.match(/(?:A(?:nswer)?)\s*[:：]\s*([\s\S]+)/i);
+      if (qMatch && aMatch) {
+        const front = qMatch[1].trim();
+        const back = aMatch[1].trim();
+        if (front && back) cards.push({ front, back });
+      }
+    }
+    // Fallback: look for Q: / A: on consecutive lines in the full text
+    if (cards.length === 0) {
+      const lines = text.split(/\r?\n/);
+      let pendingQ = null;
+      for (const line of lines) {
+        const q = line.match(/^(?:Q(?:uestion)?)\s*[:：]\s*(.+)/i);
+        const a = line.match(/^(?:A(?:nswer)?)\s*[:：]\s*(.+)/i);
+        if (q) { pendingQ = q[1].trim(); }
+        else if (a && pendingQ) {
+          cards.push({ front: pendingQ, back: a[1].trim() });
+          pendingQ = null;
+        }
+      }
+    }
+    return cards;
+  }
+
+  function renderManualPreview(cards) {
+    const section = document.getElementById('manual-preview-section');
+    const list = document.getElementById('manual-preview-list');
+    document.getElementById('manual-preview-count').textContent = `${cards.length} cards`;
+    list.innerHTML = cards.slice(0, 10).map((c, i) => `
+      <div style="border:1px solid #e8e8e8;border-radius:6px;padding:12px;font-size:13px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Card ${i+1}</div>
+        <div style="font-weight:500;margin-bottom:6px">${c.front}</div>
+        <div style="color:var(--muted);border-top:1px solid #f0f0f0;padding-top:6px">${c.back}</div>
+      </div>`).join('');
+    if (cards.length > 10) {
+      list.innerHTML += `<div style="text-align:center;font-size:12px;color:var(--muted);padding:8px">…and ${cards.length - 10} more cards</div>`;
+    }
+    section.style.display = '';
+  }
+
+  function importManualDeck() {
+    const qaText = document.getElementById('manual-qa-input').value.trim();
+    let cards = [];
+
+    // File cards take precedence if loaded; otherwise use Q&A text
+    if (_manualCards.length > 0) {
+      cards = _manualCards;
+    } else if (qaText) {
+      cards = parseQAText(qaText);
+    }
+
+    if (cards.length === 0) {
+      showToast('No cards found. Upload a file or paste Q: / A: text above.', 'error');
+      return;
+    }
+    _manualCards = cards;
+    renderManualPreview(cards);
+    showToast(`${cards.length} cards ready — review and save below.`, 'info');
+  }
+
+  function saveManualDeck() {
+    if (!_manualCards.length) return;
+    const deckName = document.getElementById('manual-deck-name').value.trim() || 'Imported Deck';
+    const course = document.getElementById('manual-deck-course').value.trim() || 'General';
+    const now = Date.now();
+    const deckId = crypto.randomUUID();
+    const cards = _manualCards.map(c => ({
+      id: crypto.randomUUID(),
+      deckId,
+      front: c.front,
+      back: c.back,
+      complexity: 'concept',
+      tags: [course],
+      presentations: {},
+      createdAt: now,
+      updatedAt: now,
+    }));
+    const deck = { id: deckId, name: deckName, description: `${course} — imported`, cards, createdAt: now, updatedAt: now };
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    if (!Array.isArray(stored.decks)) stored.decks = [];
+    stored.decks.push(deck);
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    syncDeckToG2(deck);
+    showToast(`"${deckName}" saved — ${cards.length} cards added to G2 App`, 'success');
+    _manualCards = [];
+    document.getElementById('manual-preview-section').style.display = 'none';
+    document.getElementById('manual-qa-input').value = '';
+    document.getElementById('manual-file-status').style.display = 'none';
+    loadData();
+  }
+
+  // ── Manual drop zone wiring ──────────────────────────────────
+  (function () {
+    const dropZone = document.getElementById('manual-drop-zone');
+    const fileInput = document.getElementById('manual-file-input');
+    const status = document.getElementById('manual-file-status');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) handleManualFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleManualFile(fileInput.files[0]); });
+
+    function handleManualFile(file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const cards = parseFileToCards(ev.target.result, file.name);
+        if (cards.length === 0) {
+          showToast('No cards found in file. Check the format (tab or comma separated, front in col 1, back in col 2).', 'error');
+          return;
+        }
+        _manualCards = cards;
+        const label = dropZone.querySelector('.drop-label');
+        label.textContent = file.name;
+        status.textContent = `${cards.length} cards loaded from file`;
+        status.style.display = '';
+        showToast(`${cards.length} cards loaded from "${file.name}"`, 'info');
+      };
+      reader.readAsText(file);
+    }
+  })();
+
   // Auto-load on page open
   loadConfig();
   loadData();
   renderApiKeyState();
+  updateTabVisibility();
   // Initialize sleep slider from stored value (works even before deck data exists)
   try {
     const raw = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}');
