@@ -85,9 +85,12 @@ function listContainer(
     height: h,
     isEventCapture: isEvt ? 1 : 0,
     paddingLength: 4,
-    borderWidth: 1,
-    borderColor: BORDER_COLOR_WHITE,
-    borderRadius: CARD_BORDER_RADIUS,
+    // No outer border on list — per Even OS focus-based navigation:
+    // only the selected item (isItemSelectBorderEn) has a focus outline.
+    // Two simultaneous borders create visual ambiguity about actionable target.
+    borderWidth: 0,
+    borderColor: 0,
+    borderRadius: 0,
     itemContainer: new ListItemContainerProperty({
       itemCount: items.length,
       itemWidth: 0,
@@ -149,7 +152,7 @@ function buildWelcome(): PageConfig {
     'Scroll : Pick a subject',
   ].join('\n');
   const footer = buildFooter(
-    [{ gesture: 'Click', action: 'Start' }],
+    [{ gesture: 'Tap', action: 'Start' }],
     'Welcome',
   );
 
@@ -197,7 +200,7 @@ function buildDeckSelect(): PageConfig {
     ? applyScrollIndicators(lines, Math.max(0, state.deckSelectIdx - 4), VISIBLE_LINES)
     : lines.join('\n');
   const footer = buildFooter(
-    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Click', action: 'Start' }],
+    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Start' }],
     'Subjects',
   );
 
@@ -228,7 +231,7 @@ function buildDashboard(): PageConfig {
   ].filter(Boolean).join('\n');
 
   const footer = buildFooter(
-    [{ gesture: 'Click', action: 'Study' }, { gesture: 'Scroll\u2193', action: 'ML' }],
+    [{ gesture: 'Tap', action: 'Study' }, { gesture: 'Scroll\u2193', action: 'ML' }],
     'Dashboard',
   );
 
@@ -281,7 +284,7 @@ function buildQuestion(): PageConfig {
     ? applyScrollIndicators(wrapped, 0, VISIBLE_LINES)
     : wrapped.join('\n');
   const footer = buildFooter(
-    [{ gesture: 'Click', action: 'Reveal' }],
+    [{ gesture: 'Tap', action: 'Reveal' }],
     'Question',
   );
 
@@ -302,7 +305,7 @@ function buildAnswer(): PageConfig {
     ? applyScrollIndicators(wrapped, 0, VISIBLE_LINES)
     : wrapped.join('\n');
   const footer = buildFooter(
-    [{ gesture: 'Click', action: 'Rate' }],
+    [{ gesture: 'Tap', action: 'Rate' }],
     'Answer',
   );
 
@@ -322,7 +325,7 @@ function buildRating(): PageConfig {
     (r) => r.charAt(0).toUpperCase() + r.slice(1),
   );
   const footer = buildFooter(
-    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Click', action: 'Confirm' }],
+    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Confirm' }],
     'Rating',
   );
 
@@ -341,7 +344,7 @@ function buildSummary(): PageConfig {
   const header = buildTitleBlock('Session Complete');
   const body = state.summaryText;
   const footer = buildFooter(
-    [{ gesture: 'Click', action: 'Dashboard' }],
+    [{ gesture: 'Tap', action: 'Dashboard' }],
     'Summary',
   );
 
