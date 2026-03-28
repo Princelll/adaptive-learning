@@ -37,7 +37,7 @@ import {
 // WHITE = 0xFFFFFF = 16777215 (RGB integer used by SDK).
 
 const BORDER_COLOR_WHITE = 16777215; // 0xFFFFFF
-const CARD_BORDER_RADIUS = 8;        // matches G2 background layer card
+const CARD_BORDER_RADIUS = 6;        // Even OS 2.0 spec: list items and cards use 6px radius
 
 function textContainer(
   id: number,
@@ -59,7 +59,10 @@ function textContainer(
     width: w,
     height: h,
     isEventCapture: isEvt ? 1 : 0,
-    paddingLength: card ? 8 : 4,
+    // Card: 16px T/B, 20px L/R per Even OS 2.0 Card margin spec.
+    // SDK paddingLength is uniform; use 16 as the balanced value.
+    // Non-card (header/footer): 4px minimal padding.
+    paddingLength: card ? 16 : 4,
     borderWidth: card ? 1 : 0,
     borderColor: card ? BORDER_COLOR_WHITE : 0,
     borderRadius: card ? CARD_BORDER_RADIUS : 0,
@@ -129,9 +132,11 @@ async function rebuildPage(config: PageConfig): Promise<void> {
 }
 
 // ── Layout zones (576×288 display) ───────────────────────────
-// Header  y=0   h=44  — title + separator
-// Body    y=44  h=208 — scrollable content
-// Footer  y=252 h=36  — gesture hints | screen label
+// Even OS 2.0 card margin spec: L/R 20px, T/B 16px.
+// Body container uses paddingLength=16 (uniform, closest approximation).
+// Header  y=0   h=44  — title + separator (no card border)
+// Body    y=44  h=208 — scrollable content (card border, radius 6px)
+// Footer  y=252 h=36  — gesture hints | screen label (no card border)
 
 const ZONE = {
   header: { y: 0,   h: 44  },

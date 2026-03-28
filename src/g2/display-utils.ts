@@ -9,9 +9,11 @@
 export const DISPLAY_WIDTH = 576;
 export const DISPLAY_HEIGHT = 288;
 
-// Approximate chars per line at default monospace size
-// G2 uses ~16px wide chars, so 576/16 ≈ 36 chars per line
-export const CHARS_PER_LINE = 36;
+// Approximate chars per line at default monospace size.
+// Even OS 2.0 card: 576px - 2×20px L/R margin = 536px usable.
+// Even Roster Grotesk size 20 ≈ 16px wide per char → 536/16 ≈ 33 chars.
+// Use 32 to stay comfortably within bounds.
+export const CHARS_PER_LINE = 32;
 
 // Approximate visible lines in the body area (200px height)
 // ~20px per line = ~10 visible lines
