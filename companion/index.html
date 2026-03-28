@@ -4,23 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>StudyHub Mobile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet" />
   <style>
     /* ── Reset & base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0c0a07;
-      --surface: #161310;
-      --surface2: #201c17;
-      --surface3: #2c2620;
+      --bg: #eeeeee;
+      --surface: #ffffff;
+      --surface2: #f6f6f6;
+      --surface3: #e4e4e4;
       --accent: #fef991;
-      --accent-fg: #0c0a07;
-      --accent2: #ffffff;
-      --green: #26a69a;
+      --accent-fg: #232323;
+      --accent2: #232323;
+      --green: #4bb956;
       --yellow: #fef991;
-      --red: #ef5350;
-      --text: #f0ebe3;
-      --muted: #8a7f72;
-      --border: #2c2620;
+      --red: #ff453a;
+      --text: #232323;
+      --muted: #7b7b7b;
+      --border: #e4e4e4;
       --radius: 6px;
       --font: 'Inter', system-ui, -apple-system, sans-serif;
     }
@@ -29,44 +31,48 @@
       color: var(--text);
       font-family: var(--font);
       font-size: 15px;
+      font-weight: 300;
+      letter-spacing: -0.15px;
       min-height: 100dvh;
     }
 
     /* ── Layout ── */
-    .app { max-width: 420px; margin: 0 auto; padding-bottom: 80px; }
+    .app { max-width: 393px; margin: 0 auto; padding-bottom: 80px; }
 
     /* ── Header ── */
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 16px 20px 0;
+      padding: 16px 12px 0;
       position: sticky; top: 0; z-index: 10;
     }
     .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .header-top h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-top h1 { font-size: 20px; font-weight: 400; letter-spacing: -0.60px; }
     .g2-badge {
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      background: var(--accent);
+      border: none;
       border-radius: 20px;
       padding: 4px 10px;
       font-size: 11px;
-      color: var(--accent);
-      font-weight: 600;
+      color: #232323;
+      font-weight: 400;
+      letter-spacing: -0.11px;
     }
 
     /* ── Tabs ── */
     .tabs { display: flex; gap: 4px; }
     .tab {
       flex: 1; padding: 8px; text-align: center;
-      font-size: 13px; font-weight: 600; color: var(--muted);
+      font-size: 13px; font-weight: 400; color: var(--muted);
+      letter-spacing: -0.13px;
       border-bottom: 2px solid transparent;
       cursor: pointer; transition: all 0.15s;
       background: none; border-top: none; border-left: none; border-right: none;
     }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); filter: brightness(0.95); }
+    .tab.active { color: #232323; border-bottom-color: #232323; }
 
     /* ── Tab panels ── */
-    .panel { display: none; padding: 20px; }
+    .panel { display: none; padding: 12px; }
     .panel.active { display: block; }
 
     /* ── Cards ── */
@@ -78,20 +84,20 @@
       margin-bottom: 12px;
     }
     .card-title {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      font-size: 11px; font-weight: 400; text-transform: uppercase;
       letter-spacing: 0.8px; color: var(--muted); margin-bottom: 12px;
     }
 
     /* ── Status row ── */
-    .stat-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .stat-row { display: flex; gap: 6px; margin-bottom: 12px; }
     .stat {
-      flex: 1; background: var(--surface2); border-radius: 8px; padding: 10px 12px;
+      flex: 1; background: var(--surface2); border-radius: 6px; padding: 10px 12px;
     }
     .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
-    .stat-value.accent { color: var(--accent); }
+    .stat-value.accent { color: var(--text); }
     .stat-value.green { color: var(--green); }
-    .stat-value.yellow { color: var(--yellow); }
+    .stat-value.yellow { color: var(--text); }
     .stat-value.muted { color: var(--muted); font-size: 14px; }
 
     /* ── Status chip ── */
@@ -99,10 +105,10 @@
       display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
     }
-    .status-chip.collecting { background: rgba(138,127,114,0.15); color: var(--muted); }
-    .status-chip.initial { background: rgba(254,249,145,0.12); color: var(--yellow); }
-    .status-chip.refined { background: rgba(254,249,145,0.18); color: var(--accent); }
-    .status-chip.mature { background: rgba(38,166,154,0.15); color: var(--green); }
+    .status-chip.collecting { background: rgba(123,123,123,0.12); color: var(--muted); }
+    .status-chip.initial { background: rgba(254,249,145,0.60); color: #232323; }
+    .status-chip.refined { background: rgba(254,249,145,0.80); color: #232323; }
+    .status-chip.mature { background: rgba(75,185,86,0.18); color: var(--green); }
     .status-chip::before { content: '●'; font-size: 8px; }
 
     /* ── Progress bar ── */
@@ -113,7 +119,7 @@
     }
     .progress-fill {
       height: 100%; border-radius: 3px;
-      background: var(--accent);
+      background: #232323;
       transition: width 0.4s ease;
     }
 
@@ -123,7 +129,7 @@
     .style-rank { font-size: 11px; font-weight: 700; color: var(--muted); width: 16px; }
     .style-name { font-size: 13px; flex: 1; text-transform: capitalize; }
     .style-bar-wrap { width: 100px; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-    .style-bar { height: 100%; border-radius: 3px; background: var(--accent); }
+    .style-bar { height: 100%; border-radius: 3px; background: #232323; }
     .style-score { font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
 
     /* ── Deck list ── */
@@ -145,20 +151,24 @@
     /* ── Refresh button ── */
     .btn {
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; padding: 12px; border-radius: 8px;
-      font-size: 14px; font-weight: 600; cursor: pointer;
+      width: 100%; padding: 13px 16px; border-radius: 999px;
+      font-size: 15px; font-weight: 400; cursor: pointer;
+      letter-spacing: -0.15px;
       border: none; transition: opacity 0.15s;
     }
-    .btn:active { opacity: 0.8; }
-    .btn-primary { background: var(--accent); color: var(--accent-fg); font-weight: 700; }
-    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn:active { opacity: 0.75; }
+    .btn-primary { background: #232323; color: #ffffff; }
+    .btn-secondary { background: #ffffff; color: #232323; border: 1px solid var(--border); }
 
-    /* ── Empty state ── */
+    /* ── Empty state (Even Realities template) ── */
     .empty {
-      text-align: center; padding: 40px 20px; color: var(--muted);
+      text-align: center; padding: 48px 24px; display: flex;
+      flex-direction: column; align-items: center; gap: 0;
     }
-    .empty-icon { font-size: 40px; margin-bottom: 12px; }
-    .empty p { font-size: 13px; line-height: 1.6; }
+    .empty-icon { font-size: 32px; margin-bottom: 14px; line-height: 1; }
+    .empty-title { font-size: 15px; font-weight: 400; color: var(--text); margin-bottom: 6px; letter-spacing: -0.15px; }
+    .empty p { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
+    .empty .btn { width: auto; padding: 10px 20px; font-size: 13px; }
 
     /* ── Observation progress ── */
     .obs-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
@@ -175,10 +185,11 @@
       font-size: 13px;
     }
     .drop-zone:hover, .drop-zone.drag-over {
-      border-color: var(--accent);
-      background: rgba(254,249,145,0.04);
+      border-color: #232323;
+      background: rgba(35,35,35,0.04);
       color: var(--text);
     }
+    .drop-zone.uploading { opacity: 0.6; pointer-events: none; }
     .text-input {
       width: 100%;
       background: var(--surface2);
@@ -191,8 +202,11 @@
       outline: none;
       transition: border-color 0.15s;
     }
-    .text-input:focus { border-color: var(--accent); }
+    .text-input:focus { border-color: #232323; }
+    .text-input.error { border-color: var(--red); }
     .text-input::placeholder { color: var(--muted); }
+    .form-error { font-size: 12px; color: var(--red); margin-top: 4px; display: none; }
+    .form-error.visible { display: block; }
     .form-row { margin-bottom: 14px; }
     .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
     .preview-card-item {
@@ -209,7 +223,7 @@
       padding: 2px 7px; border-radius: 20px;
       background: var(--surface3); color: var(--muted);
     }
-    .tag-pill.complexity { background: rgba(254,249,145,0.1); color: var(--accent); }
+    .tag-pill.complexity { background: rgba(254,249,145,0.7); color: #232323; }
 
     /* ── PubMed result card ── */
     .pubmed-result {
@@ -225,16 +239,16 @@
     .pubmed-abstract.expanded { display: block; }
     .pubmed-actions { display: flex; gap: 8px; }
     .btn-small {
-      padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: var(--radius);
-      border: 1px solid var(--border); background: var(--surface2); color: var(--text);
-      cursor: pointer; transition: opacity 0.15s;
+      padding: 6px 14px; font-size: 12px; font-weight: 400; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      cursor: pointer; transition: opacity 0.15s; letter-spacing: -0.13px;
     }
     .btn-small:active { opacity: 0.7; }
-    .btn-small.accent { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+    .btn-small.accent { background: #232323; color: #ffffff; border-color: #232323; }
 
     /* ── Analytics bar chart ── */
     .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-    .bar-fill { width: 100%; border-radius: 3px 3px 0 0; background: var(--accent); min-height: 2px; transition: height 0.3s; }
+    .bar-fill { width: 100%; border-radius: 3px 3px 0 0; background: #232323; min-height: 2px; transition: height 0.3s; }
     .bar-fill.zero { background: var(--surface3); }
     .bar-day { font-size: 10px; color: var(--muted); }
     .bar-num { font-size: 10px; color: var(--text); font-weight: 600; }
@@ -247,22 +261,76 @@
 
     /* ── How to connect note ── */
     .connect-note {
-      background: rgba(254,249,145,0.06);
-      border: 1px solid rgba(254,249,145,0.18);
+      background: rgba(254,249,145,0.55);
+      border: 1px solid rgba(254,249,145,0.90);
       border-radius: var(--radius);
       padding: 10px 12px;
       font-size: 12px;
-      color: var(--accent);
+      color: #232323;
       margin-bottom: 12px;
       line-height: 1.5;
     }
+
+    /* ── Toast notifications ── */
+    .toast-container {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; gap: 8px; z-index: 100;
+      pointer-events: none; width: calc(100% - 24px); max-width: 369px;
+    }
+    .toast {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10), 0 0 0 1px var(--border);
+      padding: 12px 16px;
+      font-size: 14px; line-height: 1.4; color: var(--text);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      pointer-events: auto;
+      animation: toast-in 0.2s ease;
+    }
+    .toast.error { background: var(--accent); box-shadow: 0 2px 12px rgba(0,0,0,0.10); }
+    .toast-close {
+      font-size: 12px; color: var(--muted); cursor: pointer;
+      background: none; border: none; padding: 0; line-height: 1; flex-shrink: 0;
+    }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(4px); } }
+
+    /* ── Sleep quality slider (Even Realities Slider spec) ── */
+    .slider-value-display {
+      font-size: 36px; font-weight: 700; letter-spacing: -1.5px;
+      text-align: center; color: var(--text); margin-bottom: 16px; line-height: 1;
+    }
+    .slider-input {
+      -webkit-appearance: none;
+      width: 100%; height: 2px; border-radius: 1px;
+      outline: none; cursor: pointer;
+      background: linear-gradient(to right, #232323 var(--pct, 67%), var(--border) var(--pct, 67%));
+    }
+    .slider-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid #232323;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      cursor: pointer;
+    }
+    .slider-input::-moz-range-thumb {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid #232323;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      cursor: pointer; border-style: solid;
+    }
+    .slider-end-labels {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--muted); margin-top: 8px;
+    }
+    .sleep-last-log { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
   </style>
 </head>
 <body>
 <div class="app">
   <header>
     <div class="header-top">
-      <h1>StudyHub Mobile</h1>
+      <h1>StudyHub</h1>
       <span class="g2-badge">Even G2</span>
     </div>
     <nav class="tabs">
@@ -289,6 +357,7 @@
       <div id="api-key-input-wrap">
         <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Enter your Anthropic API key. It is stored only in your browser's localStorage and never sent anywhere except Anthropic's API.</p>
         <input type="password" id="api-key-input" class="text-input" placeholder="sk-ant-..." autocomplete="off" />
+        <div id="api-key-error" class="form-error">Key must start with sk-</div>
         <button class="btn btn-primary" style="margin-top:8px" onclick="saveApiKey()">Save Key</button>
       </div>
     </div>
@@ -298,9 +367,9 @@
       <div class="card-title">Study Material</div>
       <div class="drop-zone" id="drop-zone">
         <div style="font-size:24px;margin-bottom:6px">↑</div>
-        <div style="font-weight:600;font-size:14px">Drop a .txt or .md file here</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse &nbsp;·&nbsp; PDF: paste text below</div>
-        <input type="file" id="file-input" accept=".txt,.md" style="display:none" />
+        <div class="drop-label" style="font-weight:400;font-size:15px;letter-spacing:-0.15px">Drop a file here</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse &nbsp;·&nbsp; .txt .md .pdf supported</div>
+        <input type="file" id="file-input" accept=".txt,.md,.pdf" style="display:none" />
       </div>
       <div style="margin-top:10px">
         <textarea id="text-input" class="text-input" placeholder="Or paste your notes / extracted PDF text here…" rows="6" style="resize:vertical;width:100%"></textarea>
@@ -322,7 +391,7 @@
       <div class="form-row">
         <label class="form-label" style="display:flex;justify-content:space-between">
           <span>Cards to generate</span>
-          <span id="card-count-label" style="color:var(--accent);font-weight:700">15</span>
+          <span id="card-count-label" style="color:var(--text);font-weight:700">15</span>
         </label>
         <input type="range" id="card-count" min="5" max="40" value="15"
           oninput="document.getElementById('card-count-label').textContent=this.value"
@@ -348,7 +417,7 @@
       <div class="card">
         <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
           <span>Preview</span>
-          <span id="preview-count" style="color:var(--accent);font-weight:700;font-size:11px"></span>
+          <span id="preview-count" style="color:var(--muted);font-weight:400;font-size:11px"></span>
         </div>
         <div id="preview-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
       </div>
@@ -411,9 +480,41 @@
   <!-- ── ML Insights panel ── -->
   <div id="tab-insights" class="panel">
 
-    <div class="connect-note" id="connect-note" style="display:none">
-      ⚠️ Open this page from the same browser where the G2 simulator is running
-      (e.g. <code>localhost:5173/companion/index.html</code>) to read live data.
+    <div id="connect-note" style="display:none;padding:12px 0 0">
+      <div class="empty">
+        <div class="empty-icon">⊘</div>
+        <div class="empty-title">No session data yet</div>
+        <p>Open this page from the same browser as the G2 app (<code style="font-size:11px">localhost:5173</code>) to sync live data.</p>
+        <button class="btn btn-primary" onclick="loadData()">↺ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Sleep quality check-in -->
+    <div class="card">
+      <div class="card-title">Sleep Quality Check-in</div>
+      <div class="slider-value-display" id="sleep-val">7</div>
+      <input type="range" class="slider-input" id="sleep-slider" min="1" max="10" value="7"
+        oninput="updateSleepSlider(this.value)" style="--pct:67%" />
+      <div class="slider-end-labels">
+        <span>🌙 Poor</span>
+        <span>Great ☀️</span>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="logSleepQuality()">Log</button>
+      <div class="sleep-last-log" id="sleep-last-log">Not logged today</div>
+    </div>
+
+    <!-- Anxiety level check-in -->
+    <div class="card">
+      <div class="card-title">Anxiety Level</div>
+      <div class="slider-value-display" id="anxiety-val">3</div>
+      <input type="range" class="slider-input" id="anxiety-slider" min="1" max="10" value="3"
+        oninput="updateAnxietySlider(this.value)" style="--pct:22%" />
+      <div class="slider-end-labels">
+        <span>😌 Calm</span>
+        <span>Anxious 😰</span>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="logAnxietyLevel()">Log</button>
+      <div class="sleep-last-log" id="anxiety-last-log">Not logged today</div>
     </div>
 
     <!-- Key stats row -->
@@ -436,7 +537,7 @@
     <div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between">
         <span>Daily Reviews — Last 7 Days</span>
-        <span id="an-week-total" style="color:var(--accent);font-weight:700;font-size:11px"></span>
+        <span id="an-week-total" style="color:var(--muted);font-weight:400;font-size:11px"></span>
       </div>
       <div id="an-bar-chart" style="display:flex;align-items:flex-end;gap:6px;height:60px;margin-top:8px"></div>
       <div id="an-bar-labels" style="display:flex;gap:6px;margin-top:4px"></div>
@@ -520,8 +621,9 @@
       <div class="card-title">Your Decks</div>
       <div id="deck-list">
         <div class="empty">
-          <div class="empty-icon">📚</div>
-          <p>No decks found. Load sample decks by opening the G2 simulator first.</p>
+          <div class="empty-icon">▤</div>
+          <div class="empty-title">No decks yet</div>
+          <p>Import study material in the Import tab or open the G2 app first.</p>
         </div>
       </div>
     </div>
@@ -564,14 +666,16 @@ ML Data Flow:
     <div class="card">
       <div class="card-title">Gesture Reference</div>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
-        <div style="display:flex;justify-content:space-between"><span>Click (single tap)</span><span style="color:var(--accent)">Confirm / Next</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Scroll up / down</span><span style="color:var(--accent)">Navigate lists</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Double-tap</span><span style="color:var(--accent)">Back to Home</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Scroll↓ on dashboard</span><span style="color:var(--accent2)">ML Insights screen</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Single tap</span><span style="color:var(--muted)">Confirm / expand</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Double tap</span><span style="color:var(--muted)">Exit / go back</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Swipe up / down</span><span style="color:var(--muted)">Scroll / select</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Long press</span><span style="color:var(--muted)">Open system Menu</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Swipe↓ on dashboard</span><span style="color:var(--accent2)">ML Insights screen</span></div>
       </div>
     </div>
   </div>
 </div>
+<div class="toast-container" id="toast-container"></div>
 
 <script>
   // ── Utilities ───────────────────────────────────────────────
@@ -580,6 +684,29 @@ ML Data Flow:
     return String(str ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Toast notifications ─────────────────────────────────────
+  function showToast(msg, type = 'info', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = type === 'error' ? 'toast error' : 'toast';
+    const text = document.createElement('span');
+    text.textContent = msg;
+    toast.appendChild(text);
+    const dismiss = () => {
+      toast.style.animation = 'toast-out 0.2s ease forwards';
+      toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    };
+    if (duration === 0) {
+      const btn = document.createElement('button');
+      btn.className = 'toast-close';
+      btn.textContent = '✕';
+      btn.onclick = dismiss;
+      toast.appendChild(btn);
+    }
+    container.appendChild(toast);
+    if (duration > 0) setTimeout(dismiss, duration);
   }
 
   // ── API Key management ──────────────────────────────────────
@@ -902,11 +1029,11 @@ Return ONLY a valid JSON array. No markdown, no commentary.
       const isCurrent = currentId === 4;
       const bestStyle = nullCurves.sort((a, b) => (b.slope ?? -Infinity) - (a.slope ?? -Infinity))[0];
       const bestStyleHtml = bestStyle?.slope !== null && bestStyle?.slope !== undefined
-        ? `<span style="font-size:11px;color:var(--accent)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
+        ? `<span style="font-size:11px;color:var(--green)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
         : `<span style="font-size:11px;color:var(--muted)">no curve data yet</span>`;
-      return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border, #2a2520)'}">
+      return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? '#232323' : 'var(--border)'}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--accent)' : 'var(--muted)'}">No biometrics <span style="font-weight:400;font-size:11px">(${nullObs} obs)</span></span>
+          <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--text)' : 'var(--muted)'}">No biometrics <span style="font-weight:400;font-size:11px">(${nullObs} obs)</span></span>
           ${bestStyleHtml}
         </div>
         <div style="font-size:10px;color:var(--muted)">baseline — active while ring is disconnected</div>
@@ -923,7 +1050,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
           .sort((a, b) => (b.slope ?? 0) - (a.slope ?? 0));
         const bestStyle = curvesForCluster[0];
         const bestStyleHtml = bestStyle
-          ? `<span style="font-size:11px;color:var(--accent)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
+          ? `<span style="font-size:11px;color:var(--green)">↑ ${escHtml(bestStyle.style)} (slope ${bestStyle.slope.toFixed(3)})</span>`
           : `<span style="font-size:11px;color:var(--muted)">no curve data yet</span>`;
 
         // Show top 3 centroid dims by magnitude
@@ -933,9 +1060,9 @@ Return ONLY a valid JSON array. No markdown, no commentary.
           `<span style="font-size:10px;color:var(--muted)">${escHtml(d.name)}: ${(d.v * 100).toFixed(0)}%</span>`
         ).join(' · ');
 
-        return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border, #2a2520)'}">
+        return `<div style="padding:8px;border-radius:4px;background:${isCurrent ? 'var(--surface2)' : 'transparent'};border:1px solid ${isCurrent ? '#232323' : 'var(--border)'}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--accent)' : 'var(--text)'}">Cluster ${c.id} <span style="font-weight:400;color:var(--muted);font-size:11px">(${c.size} obs)</span></span>
+            <span style="font-weight:600;font-size:13px;color:${isCurrent ? 'var(--text)' : 'var(--text)'}">Cluster ${c.id} <span style="font-weight:400;color:var(--muted);font-size:11px">(${c.size} obs)</span></span>
             ${bestStyleHtml}
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:4px">${dimsHtml}</div>
@@ -1011,7 +1138,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
       const dow = new Date(d + 'T12:00:00').getDay();
       const isToday = d === todayStr;
       return `<div class="bar-col" style="flex:1">
-        <span class="bar-day" style="${isToday ? 'color:var(--accent);font-weight:700' : ''}">${dayLabels[dow]}</span>
+        <span class="bar-day" style="${isToday ? 'color:var(--text);font-weight:700' : ''}">${dayLabels[dow]}</span>
       </div>`;
     }).join('');
 
@@ -1084,6 +1211,76 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     }
   }
 
+  // ── Sleep quality slider ────────────────────────────────────
+  function updateSleepSlider(val) {
+    document.getElementById('sleep-val').textContent = val;
+    const pct = ((val - 1) / 9 * 100).toFixed(1) + '%';
+    document.getElementById('sleep-slider').style.setProperty('--pct', pct);
+  }
+
+  function logSleepQuality() {
+    const val = parseInt(document.getElementById('sleep-slider').value, 10);
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    stored.lastSleepQuality = { score: val, ts: Date.now() };
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    showToast(`Sleep quality logged: ${val}/10`);
+    renderSleepLastLog(stored.lastSleepQuality);
+  }
+
+  function updateAnxietySlider(val) {
+    document.getElementById('anxiety-val').textContent = val;
+    const pct = ((val - 1) / 9 * 100).toFixed(1) + '%';
+    document.getElementById('anxiety-slider').style.setProperty('--pct', pct);
+  }
+
+  function logAnxietyLevel() {
+    const val = parseInt(document.getElementById('anxiety-slider').value, 10);
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    stored.lastAnxietyLevel = { score: val, ts: Date.now() };
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    showToast(`Anxiety level logged: ${val}/10`);
+    renderAnxietyLastLog(stored.lastAnxietyLevel);
+  }
+
+  function renderAnxietyLastLog(entry) {
+    const el = document.getElementById('anxiety-last-log');
+    if (!el) return;
+    if (!entry) { el.textContent = 'Not logged today'; return; }
+    const d = new Date(entry.ts);
+    const isToday = d.toDateString() === new Date().toDateString();
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    el.textContent = isToday
+      ? `Logged today at ${time} — ${entry.score}/10`
+      : `Last logged ${dateStr} — ${entry.score}/10`;
+    const slider = document.getElementById('anxiety-slider');
+    if (slider && isToday) {
+      slider.value = entry.score;
+      updateAnxietySlider(entry.score);
+    }
+  }
+
+  function renderSleepLastLog(entry) {
+    const el = document.getElementById('sleep-last-log');
+    if (!el) return;
+    if (!entry) { el.textContent = 'Not logged today'; return; }
+    const d = new Date(entry.ts);
+    const isToday = d.toDateString() === new Date().toDateString();
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    el.textContent = isToday
+      ? `Logged today at ${time} — ${entry.score}/10`
+      : `Last logged ${dateStr} — ${entry.score}/10`;
+    // Restore slider to last logged value
+    const slider = document.getElementById('sleep-slider');
+    if (slider && isToday) {
+      slider.value = entry.score;
+      updateSleepSlider(entry.score);
+    }
+  }
+
   // ── Main data loader ──
   function loadData() {
     const data = readStorage();
@@ -1095,6 +1292,10 @@ Return ONLY a valid JSON array. No markdown, no commentary.
       return;
     }
     note.style.display = 'none';
+
+    // Restore self-report sliders
+    renderSleepLastLog(data.lastSleepQuality ?? null);
+    renderAnxietyLastLog(data.lastAnxietyLevel ?? null);
 
     // Render session analytics (visible from session 1)
     renderAnalytics(data);
@@ -1197,6 +1398,8 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   const API_KEY_STORE = 'bioloop_api_key';
   let _generatedCards = [];
   let _generatedDeckName = '';
+  let _pdfFileId = null;
+  let _pdfFileName = '';
 
   function getApiKey() { return localStorage.getItem(API_KEY_STORE) || ''; }
 
@@ -1216,10 +1419,18 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   }
 
   function saveApiKey() {
-    const val = document.getElementById('api-key-input').value.trim();
-    if (!val.startsWith('sk-')) { alert('API key should start with sk-'); return; }
+    const input = document.getElementById('api-key-input');
+    const errEl = document.getElementById('api-key-error');
+    const val = input.value.trim();
+    if (!val.startsWith('sk-')) {
+      input.classList.add('error');
+      errEl.classList.add('visible');
+      return;
+    }
+    input.classList.remove('error');
+    errEl.classList.remove('visible');
     localStorage.setItem(API_KEY_STORE, val);
-    document.getElementById('api-key-input').value = '';
+    input.value = '';
     renderApiKeyState();
   }
 
@@ -1233,6 +1444,11 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   const fileInput = document.getElementById('file-input');
   const textInput = document.getElementById('text-input');
 
+  document.getElementById('api-key-input').addEventListener('input', function() {
+    this.classList.remove('error');
+    document.getElementById('api-key-error').classList.remove('visible');
+  });
+
   dropZone.addEventListener('click', () => fileInput.click());
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
@@ -1245,18 +1461,63 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   fileInput.addEventListener('change', () => {
     if (fileInput.files[0]) readFile(fileInput.files[0]);
   });
-  textInput.addEventListener('input', updateTextStats);
+  textInput.addEventListener('input', () => {
+    if (textInput.value.trim()) { _pdfFileId = null; _pdfFileName = ''; }
+    updateTextStats();
+  });
 
-  function readFile(file) {
-    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-      alert('PDF detected. Please open the PDF, select all text (Ctrl+A / Cmd+A), and paste it into the text area below.');
+  async function uploadPdf(file) {
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error('Save your Anthropic API key first.');
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    const res = await fetch('https://api.anthropic.com/v1/files', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'files-api-2025-04-14',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `Upload failed (${res.status})`);
+    }
+    const data = await res.json();
+    return data.id;
+  }
+
+  async function readFile(file) {
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      const apiKey = getApiKey();
+      if (!apiKey) { showToast('Save your Anthropic API key first.', 'error'); return; }
+      dropZone.classList.add('uploading');
+      dropZone.querySelector('.drop-label').textContent = 'Uploading PDF…';
+      try {
+        _pdfFileId = await uploadPdf(file);
+        _pdfFileName = file.name;
+        dropZone.querySelector('.drop-label').textContent = `✓ ${file.name}`;
+        textInput.value = '';
+        updateTextStats();
+        const nameInput = document.getElementById('deck-name');
+        if (!nameInput.value)
+          nameInput.value = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
+      } catch (err) {
+        dropZone.querySelector('.drop-label').textContent = 'Drop a file here';
+        showToast('PDF upload failed: ' + err.message, 'error', 0);
+        _pdfFileId = null;
+      } finally {
+        dropZone.classList.remove('uploading');
+      }
       return;
     }
     const reader = new FileReader();
     reader.onload = e => {
       textInput.value = e.target.result;
+      _pdfFileId = null; _pdfFileName = '';
       updateTextStats();
-      // Pre-fill deck name from filename if empty
       const nameInput = document.getElementById('deck-name');
       if (!nameInput.value) {
         nameInput.value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
@@ -1286,10 +1547,11 @@ Return ONLY a valid JSON array. No markdown, no commentary.
 
   async function generateCards() {
     const apiKey = getApiKey();
-    if (!apiKey) { alert('Please save your Anthropic API key first.'); return; }
+    if (!apiKey) { showToast('Save your Anthropic API key first.', 'error'); return; }
 
     const text = textInput.value.trim();
-    if (!text) { alert('Please add study material first.'); return; }
+    const usingPdf = Boolean(_pdfFileId);
+    if (!usingPdf && !text) { showToast('Add study material or upload a PDF first.', 'error'); return; }
 
     const deckName = document.getElementById('deck-name').value.trim() || 'Untitled Deck';
     const course = document.getElementById('deck-course').value.trim() || 'General';
@@ -1303,6 +1565,9 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     setGenStatus('Analyzing study material…', 20);
 
     const excerpt = text.length > 80000 ? text.slice(0, 80000) : text;
+    const materialSection = usingPdf
+      ? '(Study material provided as an attached PDF document — read it fully before generating cards)'
+      : `MATERIAL:\n"""\n${excerpt}\n"""`;
 
     const prompt = `You are an expert educator specializing in spaced repetition and active recall.
 Analyze the following study material and generate exactly ${n} high-quality flashcards optimized for long-term retention.
@@ -1315,10 +1580,7 @@ Rules:
 - Vary complexity across: vocabulary (define/recall), concept (mechanism), procedure (apply steps), application (transfer to new scenario), analysis (compare/evaluate)
 - Include 2–3 alternative presentations per card using styles such as: analogy, clinical_example, example, step-by-step, contrast, mnemonic, story
 
-MATERIAL:
-"""
-${excerpt}
-"""
+${materialSection}
 
 Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
 [
@@ -1334,21 +1596,28 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
   }
 ]`;
 
+    const messageContent = usingPdf
+      ? [{ type: 'document', source: { type: 'file', file_id: _pdfFileId } }, { type: 'text', text: prompt }]
+      : [{ type: 'text', text: prompt }];
+
+    const reqHeaders = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      ...(usingPdf ? { 'anthropic-beta': 'files-api-2025-04-14' } : {}),
+    };
+
     try {
       setGenStatus('Calling Claude (this takes 20–40 s for large texts)…', 40);
 
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: reqHeaders,
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 8000,
-          messages: [{ role: 'user', content: prompt }],
+          messages: [{ role: 'user', content: messageContent }],
         }),
       });
 
@@ -1370,6 +1639,22 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
 
       setGenStatus(`Done — ${_generatedCards.length} cards generated`, 100);
       renderPreview(_generatedCards, deckName, course);
+
+      // Fire-and-forget: delete uploaded PDF from Anthropic Files API
+      if (_pdfFileId) {
+        const idToDelete = _pdfFileId;
+        _pdfFileId = null; _pdfFileName = '';
+        dropZone.querySelector('.drop-label').textContent = 'Drop a file here';
+        fetch(`https://api.anthropic.com/v1/files/${idToDelete}`, {
+          method: 'DELETE',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'files-api-2025-04-14',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+        }).catch(() => {});
+      }
 
     } catch (err) {
       setGenStatus('Error: ' + err.message, 0);
@@ -1445,9 +1730,7 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
     stored.decks.push(deck);
     localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
 
-    const status = document.getElementById('save-status');
-    status.textContent = `Saved "${deckName}" (${cards.length} cards). Switch to Decks tab or open the G2 app.`;
-    status.style.display = 'block';
+    showToast(`Saved "${deckName}" — ${cards.length} cards added`);
     loadData(); // refresh Decks tab
   }
 
@@ -1564,7 +1847,7 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
 
   async function importPubMedArticle(pmid) {
     const apiKey = getApiKey();
-    if (!apiKey) { alert('Please save your Anthropic API key in the Import tab first.'); return; }
+    if (!apiKey) { showToast('Save your API key in the Import tab first.', 'error'); return; }
 
     const article = _pubmedArticles[pmid];
     if (!article) return;
@@ -1692,6 +1975,12 @@ Return ONLY a valid JSON array, no markdown, no commentary.
   loadConfig();
   loadData();
   renderApiKeyState();
+  // Initialize sleep slider from stored value (works even before deck data exists)
+  try {
+    const raw = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}');
+    if (raw.lastSleepQuality) renderSleepLastLog(raw.lastSleepQuality);
+    if (raw.lastAnxietyLevel) renderAnxietyLastLog(raw.lastAnxietyLevel);
+  } catch {}
 </script>
 </body>
 </html>
