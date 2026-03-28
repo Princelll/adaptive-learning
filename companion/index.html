@@ -817,6 +817,18 @@ ML Data Flow:
 
   // ── Drag-and-drop wiring (handled below at line ~1452) ──
 
+  // ── Cross-origin deck sync ───────────────────────────────────
+  // Companion may run as file:// which has isolated localStorage from
+  // localhost:5173. Opening /?import=BASE64DECK in a named tab bridges
+  // the gap — the G2 app's inline script (index.html) receives the deck
+  // and writes it to the correct localStorage origin.
+  function syncDeckToG2(deck) {
+    try {
+      const encoded = btoa(JSON.stringify(deck));
+      window.open('http://localhost:5173/?import=' + encoded, 'g2-import-bridge');
+    } catch (e) {}
+  }
+
   // ── Card generation ─────────────────────────────────────────
 
   let _generatedCards = [];
@@ -925,6 +937,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     if (!Array.isArray(stored.decks)) stored.decks = [];
     stored.decks.push(_generatedDeck);
     localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    syncDeckToG2(_generatedDeck);
     const el = document.getElementById('save-status');
     el.textContent = `✓ "${_generatedDeck.name}" saved — ${_generatedDeck.cards.length} cards added to G2 app`;
     el.style.display = 'block';
@@ -1760,6 +1773,7 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
     if (!Array.isArray(stored.decks)) stored.decks = [];
     stored.decks.push(deck);
     localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    syncDeckToG2(deck);
 
     showToast(`Saved "${deckName}" — ${cards.length} cards added`);
     loadData(); // refresh Decks tab
@@ -1990,6 +2004,7 @@ Return ONLY a valid JSON array, no markdown, no commentary.
       if (!Array.isArray(stored.decks)) stored.decks = [];
       stored.decks.push(deck);
       localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+      syncDeckToG2(deck);
 
       setPubmedImportStatus(`Saved "${deckName}" — ${deckCards.length} cards added to G2 app`, 100);
       loadData(); // refresh Decks tab
@@ -2114,6 +2129,7 @@ Return ONLY a valid JSON array, no markdown, no commentary.
     if (!Array.isArray(stored.decks)) stored.decks = [];
     stored.decks.push(deck);
     localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    syncDeckToG2(deck);
     showToast(`"${deckName}" saved — ${cards.length} cards added to G2 App`, 'success');
     _manualCards = [];
     document.getElementById('manual-preview-section').style.display = 'none';
