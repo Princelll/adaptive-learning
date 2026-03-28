@@ -45,7 +45,7 @@ if [ ! -d "$EVEN_DEV" ]; then
   exit 1
 fi
 rm -rf "$EVEN_DEV/apps/$APP_NAME"
-cp -r "$REPO" "$EVEN_DEV/apps/$APP_NAME"
+cp -r "$REPO" "$EVEN_DEV/apps/"
 echo "  Synced."
 
 # ── Step 3: Install dependencies ─────────────
