@@ -762,25 +762,7 @@ ML Data Flow:
       : '';
   }
 
-  // ── Drag-and-drop wiring ────────────────────────────────────
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const zone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const textArea = document.getElementById('text-input');
-    zone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', function () { handleFile(this); });
-    textArea.addEventListener('input', updateTextStats);
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', e => {
-      e.preventDefault(); zone.classList.remove('drag-over');
-      const f = e.dataTransfer.files[0];
-      if (!f) return;
-      const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
-      handleFile(fileInput);
-    });
-  });
+  // ── Drag-and-drop wiring (handled below at line ~1452) ──
 
   // ── Card generation ─────────────────────────────────────────
 
@@ -1396,7 +1378,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
 
   // API Key management
   const API_KEY_STORE = 'bioloop_api_key';
-  let _generatedCards = [];
+  // _generatedCards already declared above
   let _generatedDeckName = '';
   let _pdfFileId = null;
   let _pdfFileName = '';
