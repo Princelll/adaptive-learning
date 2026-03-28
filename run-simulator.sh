@@ -24,14 +24,11 @@ cd "$REPO" || {
   read -p "Press enter to exit..."
   exit 1
 }
-# Pre-remove directories git will try to delete (Windows locks them during pull)
-rm -rf "$REPO/companion" "$REPO/public" 2>/dev/null || true
+# Hard-reset to origin — never prompts about directory deletion on Windows
 git fetch origin
 git checkout "$BRANCH" 2>/dev/null
-git pull origin "$BRANCH"
-if [ $? -ne 0 ]; then
-  echo "WARNING: Git pull failed. Continuing with local copy..."
-fi
+git reset --hard "origin/$BRANCH"
+git clean -fd 2>/dev/null || true
 
 # ── Step 2: Sync to even-dev ─────────────────
 echo ""
