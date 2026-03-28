@@ -984,10 +984,10 @@ ML Data Flow:
       return;
     }
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
     btn.classList.add('active');
     const panel = document.getElementById('tab-' + tabId);
-    if (panel) panel.classList.add('active');
+    if (panel) { panel.classList.add('active'); panel.style.display = 'block'; }
   }
 
   function saveUserName() {
@@ -1120,9 +1120,10 @@ ML Data Flow:
     tab.addEventListener('click', () => {
       if (tab.style.display === 'none') return;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
       tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      const p = document.getElementById('tab-' + tab.dataset.tab);
+      if (p) { p.classList.add('active'); p.style.display = 'block'; }
     });
   });
 
