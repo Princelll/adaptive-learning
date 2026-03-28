@@ -1,7 +1,7 @@
 {
-  "package_id": "com.princelll.bioloop",
+  "package_id": "com.princelll.adaptive-learning",
   "edition": "202601",
-  "name": "BioLoop",
+  "name": "Adaptive Learning",
   "version": "0.1.0",
   "min_app_version": "2.0.0",
   "min_sdk_version": "0.0.8",
@@ -9,7 +9,7 @@
   "permissions": [
     {
       "name": "network",
-      "desc": "BioLoop uses the Anthropic API to generate flashcards from study material.",
+      "desc": "Adaptive Learning uses the Anthropic API to generate flashcards from study material.",
       "whitelist": [
         "https://api.anthropic.com"
       ]
