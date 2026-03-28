@@ -731,14 +731,6 @@ ML Data Flow:
 <div class="toast-container" id="toast-container"></div>
 
 <script>
-  // ── Utilities ───────────────────────────────────────────────
-
-  function escHtml(str) {
-    return String(str ?? '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
   // ── Toast notifications ─────────────────────────────────────
   function showToast(msg, type = 'info', duration = 3000) {
     const container = document.getElementById('toast-container');
@@ -762,30 +754,6 @@ ML Data Flow:
     if (duration > 0) setTimeout(dismiss, duration);
   }
 
-  // ── API Key management ──────────────────────────────────────
-
-  function getApiKey() { return localStorage.getItem('bioloop_api_key') || ''; }
-
-  function saveApiKey() {
-    const val = document.getElementById('api-key-input').value.trim();
-    if (!val.startsWith('sk-')) { alert('Key should start with sk-'); return; }
-    localStorage.setItem('bioloop_api_key', val);
-    renderApiKeyState();
-  }
-
-  function clearApiKey() {
-    localStorage.removeItem('bioloop_api_key');
-    renderApiKeyState();
-  }
-
-  function renderApiKeyState() {
-    const key = getApiKey();
-    document.getElementById('api-key-set').style.display = key ? 'block' : 'none';
-    document.getElementById('api-key-input-wrap').style.display = key ? 'none' : 'block';
-    if (key) document.getElementById('api-key-display').textContent =
-      key.slice(0, 10) + '••••••••' + key.slice(-4);
-  }
-
   // ── File reading ────────────────────────────────────────────
 
   function handleFile(input) {
@@ -806,17 +774,6 @@ ML Data Flow:
     reader.readAsText(file);
   }
 
-  function updateTextStats() {
-    const text = document.getElementById('text-input').value;
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    document.getElementById('text-stats').textContent = text.length
-      ? `${words.toLocaleString()} words · ${text.length.toLocaleString()} chars` +
-        (text.length > 80000 ? ' — will be truncated to 80 k' : '')
-      : '';
-  }
-
-  // ── Drag-and-drop wiring (handled below at line ~1452) ──
-
   // ── Cross-origin deck sync ───────────────────────────────────
   // Companion may run as file:// which has isolated localStorage from
   // localhost:5173. Opening /?import=BASE64DECK in a named tab bridges
@@ -827,122 +784,6 @@ ML Data Flow:
       const encoded = btoa(JSON.stringify(deck));
       window.open('http://localhost:5173/?import=' + encoded, 'g2-import-bridge');
     } catch (e) {}
-  }
-
-  // ── Card generation ─────────────────────────────────────────
-
-  let _generatedCards = [];
-  let _generatedDeck = null;
-
-  function setGenStatus(text, pct) {
-    document.getElementById('gen-status').style.display = text ? 'block' : 'none';
-    document.getElementById('gen-status-text').textContent = text;
-    document.getElementById('gen-progress').style.width = (pct || 0) + '%';
-  }
-
-  async function generateCards() {
-    const apiKey = getApiKey();
-    if (!apiKey) { alert('Please save your Anthropic API key first.'); return; }
-    const text = document.getElementById('text-input').value.trim();
-    if (!text) { alert('Please add study material first.'); return; }
-    const deckName = document.getElementById('deck-name').value.trim() || 'Imported Deck';
-    const course   = document.getElementById('deck-course').value.trim() || 'General';
-    document.getElementById('preview-section').style.display = 'none';
-    document.getElementById('btn-generate').disabled = true;
-    setGenStatus('Analysing content with Claude…', 20);
-
-    const prompt = `You are an expert educator specialising in spaced repetition and active recall.
-Analyse the following study material and generate as many high-quality flashcards as needed to fully cover the content. Let the depth and breadth of the material determine the number — do not cap it artificially.
-
-Guidelines:
-- Each card tests exactly ONE idea — no compound questions
-- Questions probe understanding and mechanism, not just recall
-- Answers explain the WHY with full context (2–4 sentences)
-- High-yield concepts deserve multiple cards from different angles
-- Complexity tags: vocabulary · concept · procedure · application · analysis
-- Include 2–3 alternative presentations per card (analogy, clinical_example, step-by-step, contrast, mnemonic)
-
-MATERIAL:
-"""
-${text.slice(0, 80000)}
-"""
-
-Return ONLY a valid JSON array. No markdown, no commentary.
-[{"front":"…","back":"…","complexity":"concept","tags":["tag"],"presentations":{"analogy":{"front":"…","back":"…"}}}]`;
-
-    try {
-      setGenStatus('Waiting for Claude…', 40);
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8000,
-          messages: [{ role: 'user', content: prompt }] }),
-      });
-      setGenStatus('Parsing cards…', 80);
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
-      const raw  = data.content?.find(b => b.type === 'text')?.text ?? '';
-      const cards = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      if (!Array.isArray(cards) || !cards.length) throw new Error('No cards returned');
-
-      _generatedCards = cards;
-      const now = Date.now(), deckId = crypto.randomUUID();
-      _generatedDeck = {
-        id: deckId, name: deckName, description: `${course} — AI-generated`,
-        cards: cards.map(c => ({
-          id: crypto.randomUUID(), deckId,
-          front: c.front || '', back: c.back || '',
-          complexity: c.complexity || 'concept',
-          tags: Array.isArray(c.tags) ? c.tags : [],
-          presentations: c.presentations || {},
-          createdAt: now, updatedAt: now,
-        })),
-        createdAt: now, updatedAt: now,
-      };
-      setGenStatus(`Generated ${cards.length} cards`, 100);
-      renderPreview(cards);
-    } catch (err) {
-      setGenStatus('Error: ' + err.message, 0);
-    } finally {
-      document.getElementById('btn-generate').disabled = false;
-    }
-  }
-
-  function renderPreview(cards) {
-    document.getElementById('preview-count').textContent = `${cards.length} cards`;
-    document.getElementById('preview-list').innerHTML = cards.map((c, i) => `
-      <div class="preview-card-item">
-        <div class="preview-front">${i + 1}. ${escHtml(c.front)}</div>
-        <div class="preview-back">${escHtml(c.back)}</div>
-        <div class="preview-meta">
-          <span class="tag-pill complexity">${escHtml(c.complexity || 'concept')}</span>
-          ${(c.tags || []).map(t => `<span class="tag-pill">${escHtml(t)}</span>`).join('')}
-          ${c.presentations ? `<span class="tag-pill">${Object.keys(c.presentations).length} styles</span>` : ''}
-        </div>
-      </div>`).join('');
-    document.getElementById('preview-section').style.display = 'block';
-    document.getElementById('save-status').style.display = 'none';
-    document.getElementById('btn-save').disabled = false;
-  }
-
-  function saveDeck() {
-    if (!_generatedDeck) return;
-    let stored = {};
-    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
-    if (!Array.isArray(stored.decks)) stored.decks = [];
-    stored.decks.push(_generatedDeck);
-    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
-    syncDeckToG2(_generatedDeck);
-    const el = document.getElementById('save-status');
-    el.textContent = `✓ "${_generatedDeck.name}" saved — ${_generatedDeck.cards.length} cards added to G2 app`;
-    el.style.display = 'block';
-    document.getElementById('btn-save').disabled = true;
-    loadData();
   }
 
   // ── Load config.json and apply to UI ──
@@ -998,6 +839,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   // ── Tab switching ──
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
+      if (tab.style.display === 'none') return;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
@@ -1014,6 +856,66 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     } catch {
       return null;
     }
+  }
+
+  // ── App state derivation ──
+  function getAppState() {
+    const data = readStorage();
+    const hasKey = !!localStorage.getItem('bioloop_api_key');
+    const hasDecks = Array.isArray(data?.decks) && data.decks.length > 0;
+    const hasActivity = hasDecks && Array.isArray(data?.reviewStates) && data.reviewStates.some(r => r.totalReviews > 0);
+    return { hasKey, hasDecks, hasActivity };
+  }
+
+  // ── Tab visibility ──
+  function updateTabVisibility() {
+    const { hasKey, hasDecks, hasActivity } = getAppState();
+
+    const rules = {
+      import:   true,
+      manual:   true,
+      pubmed:   hasKey,
+      decks:    hasDecks,
+      insights: hasActivity,
+      flow:     true,
+    };
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      const key = tab.dataset.tab;
+      const visible = rules[key] !== false;
+      tab.style.display = visible ? '' : 'none';
+      const panel = document.getElementById('tab-' + key);
+      if (panel) panel.style.display = visible ? (panel.classList.contains('active') ? 'block' : 'none') : 'none';
+    });
+
+    // If active tab is now hidden, switch to first visible
+    const activeTab = document.querySelector('.tab.active');
+    if (!activeTab || activeTab.style.display === 'none') {
+      let target = hasActivity ? 'insights' : hasDecks ? 'decks' : 'import';
+      // Verify target is visible; fall back to first visible tab
+      const targetEl = document.querySelector(`.tab[data-tab="${target}"]`);
+      if (!targetEl || targetEl.style.display === 'none') {
+        const firstVisible = document.querySelector('.tab:not([style*="display: none"]):not([style*="display:none"])');
+        if (firstVisible) target = firstVisible.dataset.tab;
+      }
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+      const newTab = document.querySelector(`.tab[data-tab="${target}"]`);
+      const newPanel = document.getElementById('tab-' + target);
+      if (newTab) newTab.classList.add('active');
+      if (newPanel) { newPanel.classList.add('active'); newPanel.style.display = 'block'; }
+    }
+
+    // Update Import tab banner
+    const banner = document.getElementById('no-key-banner');
+    if (banner) banner.style.display = hasKey ? 'none' : 'block';
+
+    // Update Flow tab state
+    renderFlowState(hasDecks);
+
+    // Update Insights empty state
+    const insightsEmpty = document.getElementById('insights-empty-state');
+    if (insightsEmpty) insightsEmpty.style.display = hasActivity ? 'none' : 'block';
   }
 
   // ── Status chip helper ──
@@ -1428,14 +1330,36 @@ Return ONLY a valid JSON array. No markdown, no commentary.
         const due = newCards + dueCards;
         return `
           <div class="deck-item">
-            <div>
-              <div class="deck-name">${deck.name}</div>
-              <div class="deck-meta">${deck.cards.length} cards</div>
+            <div style="flex:1;min-width:0">
+              <div class="deck-name">${escHtml(deck.name)}</div>
+              <div class="deck-meta">${deck.cards.length} cards · ${due} due</div>
             </div>
-            <span class="deck-due ${due === 0 ? 'zero' : ''}">${due}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="deck-due ${due === 0 ? 'zero' : ''}">${due}</span>
+              <button class="btn-small" style="color:var(--red);border-color:var(--red);padding:4px 10px;font-size:11px" onclick="deleteDeck('${escHtml(deck.id)}')">Delete</button>
+            </div>
           </div>`;
       }).join('');
     }
+
+    updateTabVisibility();
+  }
+
+  // ── Delete deck ──
+  function deleteDeck(deckId) {
+    if (!confirm('Delete this deck and all its review states? This cannot be undone.')) return;
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    if (Array.isArray(stored.decks)) {
+      stored.decks = stored.decks.filter(d => d.id !== deckId);
+    }
+    if (Array.isArray(stored.reviewStates)) {
+      stored.reviewStates = stored.reviewStates.filter(s => s.deckId !== deckId);
+    }
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    showToast('Deck deleted.');
+    loadData();
+    updateTabVisibility();
   }
 
   // ── Import tab ─────────────────────────────────────────────
