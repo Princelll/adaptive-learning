@@ -3,6 +3,7 @@
 // For Even G2 glasses (no IndexedDB available)
 // ============================================================
 
+import { createEmptyCard } from 'ts-fsrs';
 import {
   Deck,
   CardReviewState,
@@ -56,7 +57,9 @@ export class Storage {
         this.data = { ...emptyData(), ...JSON.parse(raw) };
         // Revive FSRS Date objects (JSON serializes them as strings)
         for (const state of this.data.reviewStates) {
-          if (state.fsrs) {
+          if (!state.fsrs) {
+            state.fsrs = createEmptyCard(); // heal missing fsrs (corrupted/old data)
+          } else {
             state.fsrs.due = new Date(state.fsrs.due);
             if (state.fsrs.last_review) {
               state.fsrs.last_review = new Date(state.fsrs.last_review);

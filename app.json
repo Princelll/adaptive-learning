@@ -1,8 +1,21 @@
 {
-  "name": "Adaptive Learning",
-  "description": "ML-driven biometric-adaptive spaced repetition for Even G2 smart glasses",
+  "package_id": "com.princelll.bioloop",
+  "edition": "202601",
+  "name": "BioLoop",
   "version": "0.1.0",
-  "author": "Jose Eduardo Praiz Mendez",
-  "icon": "",
-  "entry": "index.html"
+  "min_app_version": "2.0.0",
+  "min_sdk_version": "0.0.8",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "BioLoop uses the Anthropic API to generate flashcards from study material.",
+      "whitelist": [
+        "https://api.anthropic.com"
+      ]
+    }
+  ],
+  "supported_languages": [
+    "en"
+  ]
 }

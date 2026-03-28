@@ -47,7 +47,7 @@ function textContainer(
     paddingLength: 4,
     borderWidth: 0,
     borderColor: 0,
-    borderRdaius: 0,
+    borderRadius: 0,
   });
 }
 
@@ -72,7 +72,7 @@ function listContainer(
     paddingLength: 4,
     borderWidth: 0,
     borderColor: 0,
-    borderRdaius: 0,
+    borderRadius: 0,
     itemContainer: new ListItemContainerProperty({
       itemCount: items.length,
       itemWidth: 0,
