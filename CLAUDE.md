@@ -113,7 +113,7 @@ location.reload()
 - `src/core/session.ts` — Study session manager
 - `src/core/scheduler.ts` — FSRS spaced repetition scheduler
 - `src/core/storage.ts` — IndexedDB persistence
-- `companion/index.html` — Companion web app (Even Realities design system)
+- `public/companion/index.html` — Companion web app (Even Realities design system); in public/ so Vite always serves it at /companion/index.html regardless of even-dev config
 
 ## Design system
 - Even Realities companion app: light theme, #EEEEEE bg, #232323 text, #FEF991 accent (background only, never text color)

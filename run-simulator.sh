@@ -54,19 +54,21 @@ echo "[3/5] Installing dependencies..."
 cd "$EVEN_DEV/apps/$APP_NAME"
 npm install --silent
 
-# ── Step 4: Open companion in browser (file://) ──────────────
+# ── Step 4: Open companion in browser ────────────────────────
 echo ""
 echo "[4/5] Opening companion app in browser..."
-COMPANION="$EVEN_DEV/apps/$APP_NAME/companion/index.html"
-# Open as file:// — companion HTML is self-contained and works this way.
-# Deck saves are bridged to localhost:5173 via the ?import= URL mechanism.
-if command -v explorer.exe &>/dev/null; then
-  explorer.exe "$(cygpath -w "$COMPANION")" 2>/dev/null || true
-elif command -v xdg-open &>/dev/null; then
-  xdg-open "$COMPANION" 2>/dev/null || true
-elif command -v open &>/dev/null; then
-  open "$COMPANION" 2>/dev/null || true
-fi
+# Companion lives in public/ — served at localhost:5173/companion/index.html
+# Wait for Vite dev server to be ready, then open the URL
+COMPANION_URL="http://localhost:5173/companion/index.html"
+(sleep 5 && \
+  if command -v explorer.exe &>/dev/null; then
+    explorer.exe "$COMPANION_URL" 2>/dev/null
+  elif command -v xdg-open &>/dev/null; then
+    xdg-open "$COMPANION_URL" 2>/dev/null
+  elif command -v open &>/dev/null; then
+    open "$COMPANION_URL" 2>/dev/null
+  fi
+) &
 
 # ── Step 5: Start simulator ──────────────────
 echo ""
