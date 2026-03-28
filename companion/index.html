@@ -600,7 +600,7 @@
           <div class="drop-zone" id="drop-zone">
             <div style="font-size:24px;margin-bottom:6px">↑</div>
             <div class="drop-label" style="font-weight:400;font-size:15px;letter-spacing:-0.15px">Drop a file here</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">PDF or image &nbsp;·&nbsp; click to browse</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">PDF, .txt, .md &nbsp;·&nbsp; click to browse</div>
             <input type="file" id="file-input" accept=".txt,.md,.pdf" style="display:none" />
           </div>
           <div id="text-stats" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right"></div>
@@ -1840,25 +1840,50 @@ ML Data Flow:
     return data.id;
   }
 
+  async function extractPdfText(file) {
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Could not load PDF.js — check your internet connection'));
+        document.head.appendChild(s);
+      });
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let out = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      out += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    return out.trim();
+  }
+
   async function readFile(file) {
     if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-      const apiKey = getApiKey();
-      if (!apiKey) { showToast('Save your Anthropic API key first.', 'error'); return; }
+      const label = dropZone.querySelector('.drop-label');
+      label.textContent = 'Extracting text from PDF…';
       dropZone.classList.add('uploading');
-      dropZone.querySelector('.drop-label').textContent = 'Uploading PDF…';
       try {
-        _pdfFileId = await uploadPdf(file);
-        _pdfFileName = file.name;
-        dropZone.querySelector('.drop-label').textContent = `✓ ${file.name}`;
-        textInput.value = '';
+        const text = await extractPdfText(file);
+        if (!text) throw new Error('No text found — PDF may be a scanned image. Try pasting text manually.');
+        // Switch to Paste tab and fill in the extracted text
+        selectSourceTab('paste');
+        textInput.value = text;
+        _pdfFileId = null; _pdfFileName = '';
         updateTextStats();
         const nameInput = document.getElementById('deck-name');
         if (!nameInput.value)
           nameInput.value = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
+        label.textContent = `✓ ${file.name}`;
+        showToast(`PDF extracted — ${text.length.toLocaleString()} characters ready`, 'info');
       } catch (err) {
-        dropZone.querySelector('.drop-label').textContent = 'Drop a file here';
-        showToast('PDF upload failed: ' + err.message, 'error', 0);
-        _pdfFileId = null;
+        label.textContent = 'Drop a file here';
+        showToast('PDF failed: ' + err.message, 'error', 0);
       } finally {
         dropZone.classList.remove('uploading');
       }
