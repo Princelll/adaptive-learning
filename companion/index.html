@@ -335,6 +335,7 @@
     </div>
     <nav class="tabs">
       <button class="tab active" data-tab="import">Import</button>
+      <button class="tab" data-tab="manual">Anki / CSV</button>
       <button class="tab" data-tab="pubmed">PubMed</button>
       <button class="tab" data-tab="insights">Insights</button>
       <button class="tab" data-tab="decks">Decks</button>
@@ -417,6 +418,67 @@
     </div>
 
   </div><!-- /tab-import -->
+
+  <!-- ── Manual / Anki / CSV panel ── -->
+  <div id="tab-manual" class="panel">
+
+    <!-- Anki / CSV file upload -->
+    <div class="card">
+      <div class="card-title">Import from Anki or Spreadsheet</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+        No API key needed. Supports:<br>
+        • <strong>Anki</strong> — File → Export → "Notes in Plain Text" (.txt)<br>
+        • <strong>CSV / TSV</strong> — two columns: front, back<br>
+        • <strong>NotebookLM / ChatGPT</strong> — paste Q&amp;A text below
+      </p>
+      <div class="drop-zone" id="manual-drop-zone">
+        <div style="font-size:24px;margin-bottom:6px">↑</div>
+        <div class="drop-label" style="font-weight:400;font-size:15px;letter-spacing:-0.15px">Drop .txt or .csv here</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse</div>
+        <input type="file" id="manual-file-input" accept=".txt,.csv,.tsv" style="display:none" />
+      </div>
+      <div id="manual-file-status" style="font-size:12px;color:var(--muted);margin-top:6px;text-align:center;display:none"></div>
+    </div>
+
+    <!-- Q&A text paste (NotebookLM / ChatGPT) -->
+    <div class="card">
+      <div class="card-title">Paste Q&amp;A Text</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6">
+        Paste text with <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px">Q:</code> / <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px">A:</code> pairs — works great with NotebookLM FAQ exports or ChatGPT-generated Q&amp;A.
+      </p>
+      <textarea id="manual-qa-input" class="text-input" rows="7"
+        placeholder="Q: What is HRV?&#10;A: Heart rate variability is the variation in time between successive heartbeats…&#10;&#10;Q: How does sleep affect HRV?&#10;A: Poor sleep quality reduces overnight HRV recovery…"
+        style="resize:vertical;width:100%;font-size:13px"></textarea>
+    </div>
+
+    <!-- Deck settings + preview -->
+    <div class="card">
+      <div class="card-title">Deck Settings</div>
+      <div class="form-row">
+        <label class="form-label">Deck name</label>
+        <input type="text" id="manual-deck-name" class="text-input" placeholder="e.g. Cardiac Pharmacology" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">Course / subject</label>
+        <input type="text" id="manual-deck-course" class="text-input" placeholder="e.g. Internal Medicine" />
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="importManualDeck()">Preview Cards</button>
+
+    <!-- Preview area -->
+    <div id="manual-preview-section" style="display:none;margin-top:12px">
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Preview</span>
+          <span id="manual-preview-count" style="color:var(--muted);font-weight:400;font-size:11px"></span>
+        </div>
+        <div id="manual-preview-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+      </div>
+      <button class="btn btn-primary" id="manual-btn-save" onclick="saveManualDeck()" style="margin-top:10px">Save to G2 App</button>
+    </div>
+
+  </div><!-- /tab-manual -->
 
   <!-- ── PubMed panel ── -->
   <div id="tab-pubmed" class="panel">
@@ -1939,6 +2001,161 @@ Return ONLY a valid JSON array, no markdown, no commentary.
       if (btn) { btn.disabled = false; btn.textContent = 'Import → Cards'; }
     }
   }
+
+  // ── Manual / Anki / CSV import ──────────────────────────────
+
+  let _manualCards = [];
+
+  // Parse Anki plain-text export or CSV/TSV into [{front, back}]
+  function parseFileToCards(text, filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+    const cards = [];
+    const sep = (ext === 'csv') ? /,(?=(?:[^"]*"[^"]*")*[^"]*$)/ : /\t/;
+
+    for (const line of lines) {
+      const cols = line.split(sep).map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+      if (cols.length >= 2 && cols[0] && cols[1]) {
+        cards.push({ front: cols[0], back: cols[1] });
+      }
+    }
+    return cards;
+  }
+
+  // Parse Q:/A: formatted text (NotebookLM, ChatGPT, manual)
+  function parseQAText(text) {
+    const cards = [];
+    // Normalize: strip markdown bold markers
+    text = text.replace(/\*\*(Q:|A:|Question:|Answer:)\*\*/gi, '$1');
+    // Split into blocks (double newline or numbered list)
+    const blocks = text.split(/\n{2,}/);
+    for (const block of blocks) {
+      const qMatch = block.match(/^(?:\d+[\.\)]\s*)?(?:Q(?:uestion)?)\s*[:：]\s*([\s\S]+?)(?=\n(?:A(?:nswer)?)\s*[:：]|$)/i);
+      const aMatch = block.match(/(?:A(?:nswer)?)\s*[:：]\s*([\s\S]+)/i);
+      if (qMatch && aMatch) {
+        const front = qMatch[1].trim();
+        const back = aMatch[1].trim();
+        if (front && back) cards.push({ front, back });
+      }
+    }
+    // Fallback: look for Q: / A: on consecutive lines in the full text
+    if (cards.length === 0) {
+      const lines = text.split(/\r?\n/);
+      let pendingQ = null;
+      for (const line of lines) {
+        const q = line.match(/^(?:Q(?:uestion)?)\s*[:：]\s*(.+)/i);
+        const a = line.match(/^(?:A(?:nswer)?)\s*[:：]\s*(.+)/i);
+        if (q) { pendingQ = q[1].trim(); }
+        else if (a && pendingQ) {
+          cards.push({ front: pendingQ, back: a[1].trim() });
+          pendingQ = null;
+        }
+      }
+    }
+    return cards;
+  }
+
+  function renderManualPreview(cards) {
+    const section = document.getElementById('manual-preview-section');
+    const list = document.getElementById('manual-preview-list');
+    document.getElementById('manual-preview-count').textContent = `${cards.length} cards`;
+    list.innerHTML = cards.slice(0, 10).map((c, i) => `
+      <div style="border:1px solid #e8e8e8;border-radius:6px;padding:12px;font-size:13px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Card ${i+1}</div>
+        <div style="font-weight:500;margin-bottom:6px">${c.front}</div>
+        <div style="color:var(--muted);border-top:1px solid #f0f0f0;padding-top:6px">${c.back}</div>
+      </div>`).join('');
+    if (cards.length > 10) {
+      list.innerHTML += `<div style="text-align:center;font-size:12px;color:var(--muted);padding:8px">…and ${cards.length - 10} more cards</div>`;
+    }
+    section.style.display = '';
+  }
+
+  function importManualDeck() {
+    const qaText = document.getElementById('manual-qa-input').value.trim();
+    let cards = [];
+
+    // File cards take precedence if loaded; otherwise use Q&A text
+    if (_manualCards.length > 0) {
+      cards = _manualCards;
+    } else if (qaText) {
+      cards = parseQAText(qaText);
+    }
+
+    if (cards.length === 0) {
+      showToast('No cards found. Upload a file or paste Q: / A: text above.', 'error');
+      return;
+    }
+    _manualCards = cards;
+    renderManualPreview(cards);
+    showToast(`${cards.length} cards ready — review and save below.`, 'info');
+  }
+
+  function saveManualDeck() {
+    if (!_manualCards.length) return;
+    const deckName = document.getElementById('manual-deck-name').value.trim() || 'Imported Deck';
+    const course = document.getElementById('manual-deck-course').value.trim() || 'General';
+    const now = Date.now();
+    const deckId = crypto.randomUUID();
+    const cards = _manualCards.map(c => ({
+      id: crypto.randomUUID(),
+      deckId,
+      front: c.front,
+      back: c.back,
+      complexity: 'concept',
+      tags: [course],
+      presentations: {},
+      createdAt: now,
+      updatedAt: now,
+    }));
+    const deck = { id: deckId, name: deckName, description: `${course} — imported`, cards, createdAt: now, updatedAt: now };
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    if (!Array.isArray(stored.decks)) stored.decks = [];
+    stored.decks.push(deck);
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    showToast(`"${deckName}" saved — ${cards.length} cards added to G2 App`, 'success');
+    _manualCards = [];
+    document.getElementById('manual-preview-section').style.display = 'none';
+    document.getElementById('manual-qa-input').value = '';
+    document.getElementById('manual-file-status').style.display = 'none';
+    loadData();
+  }
+
+  // ── Manual drop zone wiring ──────────────────────────────────
+  (function () {
+    const dropZone = document.getElementById('manual-drop-zone');
+    const fileInput = document.getElementById('manual-file-input');
+    const status = document.getElementById('manual-file-status');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) handleManualFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleManualFile(fileInput.files[0]); });
+
+    function handleManualFile(file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const cards = parseFileToCards(ev.target.result, file.name);
+        if (cards.length === 0) {
+          showToast('No cards found in file. Check the format (tab or comma separated, front in col 1, back in col 2).', 'error');
+          return;
+        }
+        _manualCards = cards;
+        const label = dropZone.querySelector('.drop-label');
+        label.textContent = file.name;
+        status.textContent = `${cards.length} cards loaded from file`;
+        status.style.display = '';
+        showToast(`${cards.length} cards loaded from "${file.name}"`, 'info');
+      };
+      reader.readAsText(file);
+    }
+  })();
 
   // Auto-load on page open
   loadConfig();
