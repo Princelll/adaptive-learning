@@ -160,12 +160,15 @@
     .btn-primary { background: #232323; color: #ffffff; }
     .btn-secondary { background: #ffffff; color: #232323; border: 1px solid var(--border); }
 
-    /* ── Empty state ── */
+    /* ── Empty state (Even Realities template) ── */
     .empty {
-      text-align: center; padding: 40px 20px; color: var(--muted);
+      text-align: center; padding: 48px 24px; display: flex;
+      flex-direction: column; align-items: center; gap: 0;
     }
-    .empty-icon { font-size: 40px; margin-bottom: 12px; }
-    .empty p { font-size: 13px; line-height: 1.6; }
+    .empty-icon { font-size: 32px; margin-bottom: 14px; line-height: 1; }
+    .empty-title { font-size: 15px; font-weight: 400; color: var(--text); margin-bottom: 6px; letter-spacing: -0.15px; }
+    .empty p { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
+    .empty .btn { width: auto; padding: 10px 20px; font-size: 13px; }
 
     /* ── Observation progress ── */
     .obs-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
@@ -477,9 +480,13 @@
   <!-- ── ML Insights panel ── -->
   <div id="tab-insights" class="panel">
 
-    <div class="connect-note" id="connect-note" style="display:none">
-      ⚠️ Open this page from the same browser where the G2 simulator is running
-      (e.g. <code>localhost:5173/companion/index.html</code>) to read live data.
+    <div id="connect-note" style="display:none;padding:12px 0 0">
+      <div class="empty">
+        <div class="empty-icon">⊘</div>
+        <div class="empty-title">No session data yet</div>
+        <p>Open this page from the same browser as the G2 app (<code style="font-size:11px">localhost:5173</code>) to sync live data.</p>
+        <button class="btn btn-primary" onclick="loadData()">↺ Refresh</button>
+      </div>
     </div>
 
     <!-- Sleep quality check-in -->
@@ -614,8 +621,9 @@
       <div class="card-title">Your Decks</div>
       <div id="deck-list">
         <div class="empty">
-          <div class="empty-icon">📚</div>
-          <p>No decks found. Load sample decks by opening the G2 simulator first.</p>
+          <div class="empty-icon">▤</div>
+          <div class="empty-title">No decks yet</div>
+          <p>Import study material in the Import tab or open the G2 app first.</p>
         </div>
       </div>
     </div>
