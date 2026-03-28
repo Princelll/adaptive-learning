@@ -14,25 +14,9 @@
     <div id="event-log" style="margin-top:1em; font-family:monospace; font-size:12px; max-height:300px; overflow:auto;"></div>
   </div>
   <!-- Companion deck import bridge: companion opens /?import=BASE64DECK from file:// -->
-  <!-- Companion data export bridge: companion opens /?exportData=1 to read G2 localStorage -->
   <script>
   (function () {
-    var params = new URLSearchParams(location.search);
-
-    // Export bridge — send all G2 data back to companion via postMessage then close
-    if (params.get('exportData') === '1') {
-      var payload = localStorage.getItem('adaptive_learning_data');
-      if (window.opener) {
-        window.opener.postMessage({ type: 'g2DataExport', data: payload }, '*');
-      }
-      document.addEventListener('DOMContentLoaded', function () {
-        document.body.innerHTML = '<div style="font-family:sans-serif;padding:20px;text-align:center;color:#232323">Synced ✓<br><small style="color:#7b7b7b">closing…</small></div>';
-        setTimeout(function () { window.close(); }, 800);
-      });
-      return;
-    }
-
-    var raw = params.get('import');
+    var raw = new URLSearchParams(location.search).get('import');
     if (!raw) return;
     try {
       var deck = JSON.parse(atob(raw));
