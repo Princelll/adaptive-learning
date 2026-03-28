@@ -264,6 +264,30 @@
       margin-bottom: 12px;
       line-height: 1.5;
     }
+
+    /* ── Toast notifications ── */
+    .toast-container {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; gap: 8px; z-index: 100;
+      pointer-events: none; width: calc(100% - 24px); max-width: 369px;
+    }
+    .toast {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10), 0 0 0 1px var(--border);
+      padding: 12px 16px;
+      font-size: 14px; line-height: 1.4; color: var(--text);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      pointer-events: auto;
+      animation: toast-in 0.2s ease;
+    }
+    .toast.error { background: var(--accent); box-shadow: 0 2px 12px rgba(0,0,0,0.10); }
+    .toast-close {
+      font-size: 12px; color: var(--muted); cursor: pointer;
+      background: none; border: none; padding: 0; line-height: 1; flex-shrink: 0;
+    }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(4px); } }
   </style>
 </head>
 <body>
@@ -580,6 +604,7 @@ ML Data Flow:
     </div>
   </div>
 </div>
+<div class="toast-container" id="toast-container"></div>
 
 <script>
   // ── Utilities ───────────────────────────────────────────────
@@ -588,6 +613,29 @@ ML Data Flow:
     return String(str ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Toast notifications ─────────────────────────────────────
+  function showToast(msg, type = 'info', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = type === 'error' ? 'toast error' : 'toast';
+    const text = document.createElement('span');
+    text.textContent = msg;
+    toast.appendChild(text);
+    const dismiss = () => {
+      toast.style.animation = 'toast-out 0.2s ease forwards';
+      toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    };
+    if (duration === 0) {
+      const btn = document.createElement('button');
+      btn.className = 'toast-close';
+      btn.textContent = '✕';
+      btn.onclick = dismiss;
+      toast.appendChild(btn);
+    }
+    container.appendChild(toast);
+    if (duration > 0) setTimeout(dismiss, duration);
   }
 
   // ── API Key management ──────────────────────────────────────
@@ -1227,7 +1275,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
 
   function saveApiKey() {
     const val = document.getElementById('api-key-input').value.trim();
-    if (!val.startsWith('sk-')) { alert('API key should start with sk-'); return; }
+    if (!val.startsWith('sk-')) { showToast('API key should start with sk-', 'error'); return; }
     localStorage.setItem(API_KEY_STORE, val);
     document.getElementById('api-key-input').value = '';
     renderApiKeyState();
@@ -1286,7 +1334,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
   async function readFile(file) {
     if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
       const apiKey = getApiKey();
-      if (!apiKey) { alert('Save your Anthropic API key first.'); return; }
+      if (!apiKey) { showToast('Save your Anthropic API key first.', 'error'); return; }
       dropZone.classList.add('uploading');
       dropZone.querySelector('.drop-label').textContent = 'Uploading PDF…';
       try {
@@ -1300,7 +1348,7 @@ Return ONLY a valid JSON array. No markdown, no commentary.
           nameInput.value = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
       } catch (err) {
         dropZone.querySelector('.drop-label').textContent = 'Drop a file here';
-        alert('PDF upload failed: ' + err.message);
+        showToast('PDF upload failed: ' + err.message, 'error', 0);
         _pdfFileId = null;
       } finally {
         dropZone.classList.remove('uploading');
@@ -1341,11 +1389,11 @@ Return ONLY a valid JSON array. No markdown, no commentary.
 
   async function generateCards() {
     const apiKey = getApiKey();
-    if (!apiKey) { alert('Please save your Anthropic API key first.'); return; }
+    if (!apiKey) { showToast('Save your Anthropic API key first.', 'error'); return; }
 
     const text = textInput.value.trim();
     const usingPdf = Boolean(_pdfFileId);
-    if (!usingPdf && !text) { alert('Please add study material or upload a PDF first.'); return; }
+    if (!usingPdf && !text) { showToast('Add study material or upload a PDF first.', 'error'); return; }
 
     const deckName = document.getElementById('deck-name').value.trim() || 'Untitled Deck';
     const course = document.getElementById('deck-course').value.trim() || 'General';
@@ -1524,9 +1572,7 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
     stored.decks.push(deck);
     localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
 
-    const status = document.getElementById('save-status');
-    status.textContent = `Saved "${deckName}" (${cards.length} cards). Switch to Decks tab or open the G2 app.`;
-    status.style.display = 'block';
+    showToast(`Saved "${deckName}" — ${cards.length} cards added`);
     loadData(); // refresh Decks tab
   }
 
@@ -1643,7 +1689,7 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
 
   async function importPubMedArticle(pmid) {
     const apiKey = getApiKey();
-    if (!apiKey) { alert('Please save your Anthropic API key in the Import tab first.'); return; }
+    if (!apiKey) { showToast('Save your API key in the Import tab first.', 'error'); return; }
 
     const article = _pubmedArticles[pmid];
     if (!article) return;
