@@ -496,6 +496,20 @@
       <div class="sleep-last-log" id="sleep-last-log">Not logged today</div>
     </div>
 
+    <!-- Anxiety level check-in -->
+    <div class="card">
+      <div class="card-title">Anxiety Level</div>
+      <div class="slider-value-display" id="anxiety-val">3</div>
+      <input type="range" class="slider-input" id="anxiety-slider" min="1" max="10" value="3"
+        oninput="updateAnxietySlider(this.value)" style="--pct:22%" />
+      <div class="slider-end-labels">
+        <span>😌 Calm</span>
+        <span>Anxious 😰</span>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="logAnxietyLevel()">Log</button>
+      <div class="sleep-last-log" id="anxiety-last-log">Not logged today</div>
+    </div>
+
     <!-- Key stats row -->
     <div class="stat-row">
       <div class="stat">
@@ -1205,6 +1219,40 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     renderSleepLastLog(stored.lastSleepQuality);
   }
 
+  function updateAnxietySlider(val) {
+    document.getElementById('anxiety-val').textContent = val;
+    const pct = ((val - 1) / 9 * 100).toFixed(1) + '%';
+    document.getElementById('anxiety-slider').style.setProperty('--pct', pct);
+  }
+
+  function logAnxietyLevel() {
+    const val = parseInt(document.getElementById('anxiety-slider').value, 10);
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+    stored.lastAnxietyLevel = { score: val, ts: Date.now() };
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+    showToast(`Anxiety level logged: ${val}/10`);
+    renderAnxietyLastLog(stored.lastAnxietyLevel);
+  }
+
+  function renderAnxietyLastLog(entry) {
+    const el = document.getElementById('anxiety-last-log');
+    if (!el) return;
+    if (!entry) { el.textContent = 'Not logged today'; return; }
+    const d = new Date(entry.ts);
+    const isToday = d.toDateString() === new Date().toDateString();
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    el.textContent = isToday
+      ? `Logged today at ${time} — ${entry.score}/10`
+      : `Last logged ${dateStr} — ${entry.score}/10`;
+    const slider = document.getElementById('anxiety-slider');
+    if (slider && isToday) {
+      slider.value = entry.score;
+      updateAnxietySlider(entry.score);
+    }
+  }
+
   function renderSleepLastLog(entry) {
     const el = document.getElementById('sleep-last-log');
     if (!el) return;
@@ -1236,8 +1284,9 @@ Return ONLY a valid JSON array. No markdown, no commentary.
     }
     note.style.display = 'none';
 
-    // Restore sleep quality slider
+    // Restore self-report sliders
     renderSleepLastLog(data.lastSleepQuality ?? null);
+    renderAnxietyLastLog(data.lastAnxietyLevel ?? null);
 
     // Render session analytics (visible from session 1)
     renderAnalytics(data);
@@ -1921,6 +1970,7 @@ Return ONLY a valid JSON array, no markdown, no commentary.
   try {
     const raw = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}');
     if (raw.lastSleepQuality) renderSleepLastLog(raw.lastSleepQuality);
+    if (raw.lastAnxietyLevel) renderAnxietyLastLog(raw.lastAnxietyLevel);
   } catch {}
 </script>
 </body>
