@@ -79,3 +79,6 @@ echo "=========================================="
 echo ""
 cd "$EVEN_DEV"
 ./start-even.sh "$APP_NAME"
+
+echo ""
+read -p "Simulator stopped. Press enter to close..."
