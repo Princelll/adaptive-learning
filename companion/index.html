@@ -395,7 +395,13 @@
   <header>
     <div class="header-top">
       <h1>StudyHub</h1>
-      <span class="g2-badge">Even G2</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="sync-btn" onclick="syncFromG2()" title="Sync decks and data from G2 app"
+          style="background:none;border:1px solid var(--border);border-radius:999px;padding:3px 10px;font-size:11px;color:var(--muted);cursor:pointer;letter-spacing:-.1px;transition:border-color .12s,color .12s"
+          onmouseover="this.style.color='#232323';this.style.borderColor='#232323'"
+          onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">↺ Sync</button>
+        <span class="g2-badge">Even G2</span>
+      </div>
     </div>
     <nav class="tabs">
       <button class="tab active" data-tab="home">Home</button>
@@ -1063,6 +1069,46 @@ ML Data Flow:
       const encoded = btoa(JSON.stringify(deck));
       window.open('http://localhost:5173/?import=' + encoded, 'g2-import-bridge');
     } catch (e) {}
+  }
+
+  // ── Sync data from G2 app (bridges file:// ↔ localhost:5173 localStorage) ──
+  function syncFromG2(silent) {
+    const btn = document.getElementById('sync-btn');
+    if (btn) { btn.textContent = '↺ Syncing…'; btn.disabled = true; }
+
+    let resolved = false;
+    const timer = setTimeout(() => {
+      if (resolved) return;
+      resolved = true;
+      window.removeEventListener('message', handler);
+      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
+      if (!silent) showToast('Could not reach G2 app — make sure localhost:5173 is running and allow popups from this page.', 'error', 0);
+    }, 6000);
+
+    function handler(e) {
+      if (!e.data || e.data.type !== 'g2DataExport') return;
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timer);
+      window.removeEventListener('message', handler);
+      if (e.data.data) {
+        localStorage.setItem('adaptive_learning_data', e.data.data);
+        loadData();
+        if (!silent) showToast('Synced from G2 app');
+      }
+      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
+    }
+
+    window.addEventListener('message', handler);
+    const w = window.open('http://localhost:5173/?exportData=1', 'g2-export-bridge',
+      'width=320,height=120,left=200,top=200');
+    if (!w) {
+      clearTimeout(timer);
+      resolved = true;
+      window.removeEventListener('message', handler);
+      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
+      showToast('Allow popups from this page in your browser, then click Sync again.', 'error', 0);
+    }
   }
 
   // ── Load config.json and apply to UI ──
@@ -2493,6 +2539,8 @@ Return ONLY a valid JSON array, no markdown, no commentary.
   // Auto-load on page open
   loadConfig();
   loadData();
+  // Silently attempt to sync from G2 app on startup (popup-blocker-safe: fails quietly)
+  setTimeout(() => syncFromG2(true), 400);
   // Init provider pill state
   (function() {
     const saved = localStorage.getItem('ai_provider') || 'anthropic';
