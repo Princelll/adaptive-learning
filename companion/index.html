@@ -1066,11 +1066,11 @@ ML Data Flow:
 
   function syncDeckToG2(deck) {
     try {
-      // Encode deck into the window name (avoids query-string routing issues with even-dev)
-      // even-dev only serves GET / exactly — no query params allowed
+      // Use URL hash to pass data — hash is not sent to the server (even-dev serves index.html
+      // for plain '/') and unlike window.name it is NOT cleared on cross-origin navigation
+      // in Chrome/Edge 86+ which broke the previous window.name approach.
       const b64 = btoa(JSON.stringify(deck)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~');
-      const winName = 'AL_import_' + b64;
-      window.open('http://localhost:5173/', winName, 'width=320,height=120,left=200,top=200');
+      window.open('http://localhost:5173/#import=' + b64, '_blank', 'width=320,height=120,left=200,top=200');
     } catch (e) {}
   }
 

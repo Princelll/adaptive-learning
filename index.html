@@ -17,12 +17,13 @@
   <!-- Both use window.name to pass data — avoids query-string routing issues with even-dev -->
   <script>
   (function () {
-    var name = window.name || '';
-
-    // Import bridge: companion sets window.name = 'AL_import_<base64url>' then opens /
-    if (name.indexOf('AL_import_') === 0) {
+    // Import bridge: companion opens /#import=<base64url>
+    // Hash is client-side only — server receives plain '/' so even-dev serves index.html normally.
+    // Unlike window.name, the hash is NOT cleared on cross-origin navigation.
+    var hash = location.hash || '';
+    if (hash.indexOf('#import=') === 0) {
       try {
-        var b64 = name.slice(10).replace(/-/g, '+').replace(/_/g, '/').replace(/~/g, '=');
+        var b64 = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/').replace(/~/g, '=');
         var deck = JSON.parse(atob(b64));
         var stored = {};
         try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
@@ -31,7 +32,7 @@
         stored.decks.push(deck);
         localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
       } catch (e) {}
-      window.name = '';
+      location.hash = '';
       setTimeout(function() { window.close(); }, 100);
       return;
     }
