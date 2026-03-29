@@ -258,4 +258,32 @@ export async function initApp(): Promise<void> {
 
   log('StudyHub ready');
   updateBrowserStatus();
+
+  // Live-reload decks when companion bridge popup writes to localStorage
+  window.addEventListener('storage', async (e: StorageEvent) => {
+    if (e.key === 'adaptive_learning_data') {
+      log('Storage updated by companion bridge — reloading decks');
+      await storage.open();
+      const allDecks = await storage.getAllDecks();
+      state.deckNames = allDecks.map(d => d.name);
+      state.deckIds = allDecks.map(d => d.id);
+      state.deckSelectIdx = 0;
+      if (allDecks.length > 0) {
+        currentDeckId = allDecks[0].id;
+        state.deckName = allDecks[0].name;
+        const reviewStates = await storage.getReviewStatesForDeck(allDecks[0].id);
+        const now = Date.now();
+        state.cardsDue = reviewStates.filter(s => s.fsrs.due.getTime() <= now).length;
+        if (state.cardsDue === 0) {
+          state.cardsDue = reviewStates.filter(s => s.fsrs.state === State.New).length;
+        }
+      }
+      if (state.screen === 'welcome' || state.screen === 'deck_select' || state.screen === 'no_decks') {
+        state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+        void safeShowScreen();
+      }
+      updateBrowserStatus();
+      log(`Decks reloaded: ${allDecks.length} total`);
+    }
+  });
 }
