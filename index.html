@@ -14,9 +14,29 @@
     <div id="event-log" style="margin-top:1em; font-family:monospace; font-size:12px; max-height:300px; overflow:auto;"></div>
   </div>
   <!-- Bridges: companion (file://) ↔ G2 app (localhost:5173) localStorage sync -->
+  <!-- Both use window.name to pass data — avoids query-string routing issues with even-dev -->
   <script>
   (function () {
-    // Export bridge: if opened as popup by companion, send data back then close
+    var name = window.name || '';
+
+    // Import bridge: companion sets window.name = 'AL_import_<base64url>' then opens /
+    if (name.indexOf('AL_import_') === 0) {
+      try {
+        var b64 = name.slice(10).replace(/-/g, '+').replace(/_/g, '/').replace(/~/g, '=');
+        var deck = JSON.parse(atob(b64));
+        var stored = {};
+        try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+        if (!Array.isArray(stored.decks)) stored.decks = [];
+        stored.decks = stored.decks.filter(function (d) { return d.id !== deck.id; });
+        stored.decks.push(deck);
+        localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+      } catch (e) {}
+      window.name = '';
+      setTimeout(function() { window.close(); }, 100);
+      return;
+    }
+
+    // Export bridge: companion opens / with window.opener set → send data back then close
     if (window.opener) {
       try {
         window.opener.postMessage({
@@ -27,27 +47,6 @@
       setTimeout(function() { window.close(); }, 200);
       return;
     }
-
-    // Import bridge: companion opens /?import=BASE64DECK to write deck to G2 localStorage
-    var raw = new URLSearchParams(location.search).get('import');
-    if (!raw) return;
-    try {
-      var deck = JSON.parse(atob(raw));
-      var stored = {};
-      try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
-      if (!Array.isArray(stored.decks)) stored.decks = [];
-      stored.decks = stored.decks.filter(function (d) { return d.id !== deck.id; });
-      stored.decks.push(deck);
-      localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
-      document.addEventListener('DOMContentLoaded', function () {
-        var bar = document.createElement('div');
-        bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#232323;color:#fff;text-align:center;padding:14px;font-family:sans-serif;font-size:14px;letter-spacing:-.2px';
-        bar.textContent = '\u2713 "' + deck.name + '" (' + deck.cards.length + ' cards) saved to G2 App. You can close this tab.';
-        document.body.appendChild(bar);
-        setTimeout(function () { window.close(); }, 3000);
-      });
-    } catch (e) {}
-    history.replaceState({}, '', '/');
   })();
   </script>
   <script type="module" src="/src/main.ts"></script>

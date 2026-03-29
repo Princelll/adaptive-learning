@@ -1066,8 +1066,11 @@ ML Data Flow:
 
   function syncDeckToG2(deck) {
     try {
-      const encoded = btoa(JSON.stringify(deck));
-      window.open('http://localhost:5173/?import=' + encoded, 'g2-import-bridge');
+      // Encode deck into the window name (avoids query-string routing issues with even-dev)
+      // even-dev only serves GET / exactly — no query params allowed
+      const b64 = btoa(JSON.stringify(deck)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~');
+      const winName = 'AL_import_' + b64;
+      window.open('http://localhost:5173/', winName, 'width=1,height=1,left=-200,top=-200');
     } catch (e) {}
   }
 
