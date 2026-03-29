@@ -49,24 +49,22 @@ echo "[2/5] Installing dependencies..."
 cd "$APP_DIR"
 npm install --silent
 
-# ── Step 3: Inject companion into even-dev public/ so Vite serves it ──
-# even-dev's Vite uses ~/even-dev/public/ as publicDir, NOT the app's public/.
-# Copying here makes it available at http://localhost:5173/companion/index.html
+# ── Step 3: Open companion app (file://) ─────────────
 echo ""
-echo "[3/5] Injecting companion into even-dev..."
-mkdir -p "$EVEN_DEV/public/companion"
-cp "$APP_DIR/companion/index.html" "$EVEN_DEV/public/companion/index.html"
-echo "  Done. Will be served at http://localhost:5173/companion/index.html"
+echo "[3/5] Opening companion app..."
+# Remove any stale localhost copy to avoid confusion (there is only ONE companion app)
+rm -rf "$EVEN_DEV/public/companion" 2>/dev/null || true
+COMPANION_FILE="$APP_DIR/companion/index.html"
+if command -v explorer.exe &>/dev/null; then
+  explorer.exe "$(cygpath -w "$COMPANION_FILE")" 2>/dev/null || true
+fi
 
-# ── Step 4: Start simulator + open companion via localhost ────────────
-# Open companion after 8s (Vite needs a moment to start)
-(sleep 8 && cmd.exe /c start "" "http://localhost:5173/companion/index.html" 2>/dev/null) &
-
+# ── Step 4: Start simulator ───────────────────────────
 echo ""
 echo "[4/5] Starting Even Hub simulator..."
 echo ""
 echo "  G2 App:    http://localhost:5173"
-echo "  Companion: http://localhost:5173/companion/index.html (opens in ~8s)"
+echo "  Companion: $COMPANION_FILE"
 echo ""
 echo "  Windows will auto-arrange in ~10 seconds."
 echo "  Press Ctrl+C to stop."
