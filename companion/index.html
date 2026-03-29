@@ -1672,8 +1672,9 @@ ML Data Flow:
               <div class="deck-name">${escHtml(deck.name)}</div>
               <div class="deck-meta">${deck.cards.length} cards · ${due} due</div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:6px">
               <span class="deck-due ${due === 0 ? 'zero' : ''}">${due}</span>
+              <button class="btn-small" style="padding:4px 10px;font-size:11px" onclick="pushDeckToG2('${escHtml(deck.id)}')">→ G2</button>
               <button class="btn-small" style="color:var(--red);border-color:var(--red);padding:4px 10px;font-size:11px" onclick="deleteDeck('${escHtml(deck.id)}')">Delete</button>
             </div>
           </div>`;
@@ -1682,6 +1683,15 @@ ML Data Flow:
 
     renderHomeTab();
     updateTabVisibility();
+  }
+
+  // ── Push a single deck to G2 ──
+  function pushDeckToG2(deckId) {
+    const data = readStorage();
+    const deck = (data?.decks || []).find(d => d.id === deckId);
+    if (!deck) { showToast('Deck not found', 'error'); return; }
+    syncDeckToG2(deck);
+    showToast(`"${deck.name}" sent to G2 — a small window will briefly open and close`);
   }
 
   // ── Delete deck ──
