@@ -49,11 +49,19 @@ echo "[2/5] Installing dependencies..."
 cd "$APP_DIR"
 npm install --silent
 
-# ── Step 3: Open companion after simulator starts (via localhost — same origin as G2 app) ──
-# Delay so Vite has time to start before the browser tries to load the page
+# ── Step 3: Inject companion into even-dev public/ so Vite serves it ──
+# even-dev's Vite uses ~/even-dev/public/ as publicDir, NOT the app's public/.
+# Copying here makes it available at http://localhost:5173/companion/index.html
+echo ""
+echo "[3/5] Injecting companion into even-dev..."
+mkdir -p "$EVEN_DEV/public/companion"
+cp "$APP_DIR/companion/index.html" "$EVEN_DEV/public/companion/index.html"
+echo "  Done. Will be served at http://localhost:5173/companion/index.html"
+
+# ── Step 4: Start simulator + open companion via localhost ────────────
+# Open companion after 8s (Vite needs a moment to start)
 (sleep 8 && cmd.exe /c start "" "http://localhost:5173/companion/index.html" 2>/dev/null) &
 
-# ── Step 4: Start simulator ───────────────────────────
 echo ""
 echo "[4/5] Starting Even Hub simulator..."
 echo ""
