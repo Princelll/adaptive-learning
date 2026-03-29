@@ -1070,7 +1070,7 @@ ML Data Flow:
       // even-dev only serves GET / exactly — no query params allowed
       const b64 = btoa(JSON.stringify(deck)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~');
       const winName = 'AL_import_' + b64;
-      window.open('http://localhost:5173/', winName, 'width=1,height=1,left=-200,top=-200');
+      window.open('http://localhost:5173/', winName, 'width=320,height=120,left=200,top=200');
     } catch (e) {}
   }
 

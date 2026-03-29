@@ -49,24 +49,16 @@ echo "[2/5] Installing dependencies..."
 cd "$APP_DIR"
 npm install --silent
 
-# ── Step 3: Open companion ────────────────────────────
-echo ""
-echo "[3/5] Opening companion app..."
-COMPANION_FILE="$APP_DIR/companion/index.html"
-if command -v explorer.exe &>/dev/null; then
-  explorer.exe "$(cygpath -w "$COMPANION_FILE")" 2>/dev/null || true
-elif command -v xdg-open &>/dev/null; then
-  xdg-open "$COMPANION_FILE" 2>/dev/null || true
-elif command -v open &>/dev/null; then
-  open "$COMPANION_FILE" 2>/dev/null || true
-fi
+# ── Step 3: Open companion after simulator starts (via localhost — same origin as G2 app) ──
+# Delay so Vite has time to start before the browser tries to load the page
+(sleep 8 && cmd.exe /c start "" "http://localhost:5173/companion/index.html" 2>/dev/null) &
 
 # ── Step 4: Start simulator ───────────────────────────
 echo ""
 echo "[4/5] Starting Even Hub simulator..."
 echo ""
 echo "  G2 App:    http://localhost:5173"
-echo "  Companion: opened as file://"
+echo "  Companion: http://localhost:5173/companion/index.html (opens in ~8s)"
 echo ""
 echo "  Windows will auto-arrange in ~10 seconds."
 echo "  Press Ctrl+C to stop."
