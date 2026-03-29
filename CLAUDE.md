@@ -115,6 +115,51 @@ location.reload()
 - `src/core/storage.ts` — IndexedDB persistence
 - `public/companion/index.html` — Companion web app (Even Realities design system); in public/ so Vite always serves it at /companion/index.html regardless of even-dev config
 
+## Production deployment — Even Realities Developer Hub
+
+When ready to publish, the simulator-specific sync bridges must be removed/replaced.
+Everything below is a workaround for the browser origin isolation problem (file:// vs localhost).
+None of it exists in production because the G2 app runs natively on the glasses, not in a browser tab.
+
+### What to remove before publishing
+
+**`index.html` — inline bridge script (top of <body>)**
+The entire IIFE that checks `window.name` for `AL_import_*` and `window.opener` for export.
+In production there is no popup window, no window.name, no postMessage bridge.
+
+**`src/g2/app.ts` — storage event listener (bottom of `initApp()`)**
+The `window.addEventListener('storage', ...)` block.
+In production the G2 runtime is not a browser tab; the storage event does not fire.
+
+**`public/companion/index.html` — sync functions**
+- `syncDeckToG2(deck)` — opens a popup via `window.open` to write to G2's localStorage
+- `syncFromG2(silent)` — opens a popup to receive a `postMessage` export from G2
+- `pushDeckToG2(deckId)` — per-deck "→ G2" button handler
+- The **↺ Sync** button in the header
+- The **→ G2** button on each deck card
+
+### What to replace them with
+
+Even Realities provides an official companion sync API once the app is submitted to the Developer Hub.
+The expected pattern (check Even Hub OS docs at time of submission):
+```javascript
+// Send deck to glasses
+EvenHub.sendData('deck', JSON.stringify(deck));
+
+// Receive data from glasses in companion
+EvenHub.onData('deck', (payload) => { /* merge into companion storage */ });
+```
+Replace `syncDeckToG2` / `syncFromG2` with these SDK calls.
+The `storage` event listener in `app.ts` gets replaced by whatever the G2 runtime's equivalent
+of an incoming-data callback is (likely an `onMessage` or `onData` handler in the Even Hub OS SDK).
+
+### What stays the same
+All business logic is production-ready: FSRS scheduler, k-means clustering, LinUCB bandit,
+card generation via Anthropic API, all screens in renderer.ts, all gesture handling.
+Only the sync transport layer changes.
+
+---
+
 ## Design system
 - Even Realities companion app: light theme, #EEEEEE bg, #232323 text, #FEF991 accent (background only, never text color)
 - Even Hub OS G2 display: white border (#FFFFFF = 16777215), 6px radius, 16px card padding, 32 chars/line
