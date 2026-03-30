@@ -50,20 +50,28 @@ cd "$APP_DIR"
 npm install --silent
 
 # ── Step 3: Serve companion via localhost (same origin as G2 app) ────
+echo ""
+echo "[3/5] Deploying companion to localhost:5173..."
+
+# Free port 5173 — kill any leftover even-dev process from a previous session
+powershell.exe -NoProfile -Command "
+  \$pids = (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess | Sort-Object -Unique
+  foreach (\$p in \$pids) { Stop-Process -Id \$p -Force -ErrorAction SilentlyContinue }
+" 2>/dev/null || true
+sleep 1
+
 # Copy companion into even-dev's public/ so Vite serves it at
 # localhost:5173/companion/index.html — same origin as the G2 app,
 # meaning they share localStorage with NO bridge needed.
-echo ""
-echo "[3/5] Deploying companion to localhost:5173..."
 rm -rf "$EVEN_DEV/public/companion"
 mkdir -p "$EVEN_DEV/public/companion"
 cp "$APP_DIR/companion/index.html" "$EVEN_DEV/public/companion/index.html"
 LINES=$(wc -l < "$EVEN_DEV/public/companion/index.html")
 echo "  Copied companion ($LINES lines) → even-dev/public/companion/"
 
-# Open companion in browser 6 seconds after simulator starts (Vite needs a moment)
-# Uses cmd.exe start so Edge/Chrome opens the localhost URL, not a file
-(sleep 6 && cmd.exe /c start "" "http://localhost:5173/companion/index.html") &
+# Open companion in browser 8 seconds after simulator starts (Vite needs a moment)
+# Use PowerShell Start-Process — more reliable than cmd.exe start in bash
+(sleep 8 && powershell.exe -NoProfile -Command "Start-Process 'http://localhost:5173/companion/index.html'") &
 
 # ── Step 4: Start simulator ───────────────────────────
 echo ""
