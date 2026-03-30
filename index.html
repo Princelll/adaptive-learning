@@ -13,14 +13,16 @@
     <button id="btn-connect">Connect glasses</button>
     <div id="event-log" style="margin-top:1em; font-family:monospace; font-size:12px; max-height:300px; overflow:auto;"></div>
   </div>
-  <!-- Bridges: companion (file://) ↔ G2 app (localhost:5173) localStorage sync -->
-  <!-- Both use window.name to pass data — avoids query-string routing issues with even-dev -->
+  <!-- Sync bridge: companion (file://) ↔ G2 app (localhost:5173) localStorage -->
+  <!-- Companion injects a hidden iframe pointing to /#import=BASE64.             -->
+  <!-- This iframe runs below, writes to localStorage, signals parent, done.      -->
+  <!-- No popup window needed — iframes are never blocked by popup blockers.      -->
   <script>
   (function () {
-    // Import bridge: companion opens /#import=<base64url>
-    // Hash is client-side only — server receives plain '/' so even-dev serves index.html normally.
-    // Unlike window.name, the hash is NOT cleared on cross-origin navigation.
     var hash = location.hash || '';
+
+    // ── Import bridge ────────────────────────────────────────────────────────
+    // Triggered when companion injects an iframe (or opens a popup) to /#import=BASE64
     if (hash.indexOf('#import=') === 0) {
       try {
         var b64 = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/').replace(/~/g, '=');
@@ -33,11 +35,17 @@
         localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
       } catch (e) {}
       location.hash = '';
-      setTimeout(function() { window.close(); }, 100);
+      // Signal parent frame (iframe mode) that import is complete
+      try { window.parent.postMessage({ type: 'al_import_done' }, '*'); } catch(e) {}
+      // Also close if opened as a popup window
+      if (window !== window.top || window.opener) {
+        setTimeout(function() { try { window.close(); } catch(e) {} }, 150);
+      }
       return;
     }
 
-    // Export bridge: companion opens / with window.opener set → send data back then close
+    // ── Export bridge ────────────────────────────────────────────────────────
+    // Triggered when companion opens a popup to / (no hash) — sends G2 data back
     if (window.opener) {
       try {
         window.opener.postMessage({

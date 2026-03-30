@@ -1065,13 +1065,28 @@ ML Data Flow:
   }
 
   function syncDeckToG2(deck) {
-    try {
-      // Use URL hash to pass data — hash is not sent to the server (even-dev serves index.html
-      // for plain '/') and unlike window.name it is NOT cleared on cross-origin navigation
-      // in Chrome/Edge 86+ which broke the previous window.name approach.
-      const b64 = btoa(JSON.stringify(deck)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~');
-      window.open('http://localhost:5173/#import=' + b64, '_blank', 'width=320,height=120,left=200,top=200');
-    } catch (e) {}
+    // Use a hidden iframe instead of window.open — iframes are never blocked by popup blockers.
+    // The iframe loads localhost:5173/#import=BASE64, the bridge script writes to localStorage
+    // (localhost:5173 origin), which fires the storage event in the G2 app tab.
+    const b64 = btoa(JSON.stringify(deck)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~');
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;width:1px;height:1px;left:-100px;top:-100px;border:none;opacity:0;';
+    iframe.src = 'http://localhost:5173/#import=' + b64;
+
+    function cleanup() {
+      window.removeEventListener('message', onMsg);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }
+
+    function onMsg(e) {
+      if (e.data && e.data.type === 'al_import_done') {
+        cleanup();
+      }
+    }
+    window.addEventListener('message', onMsg);
+    setTimeout(cleanup, 8000); // fallback cleanup
+
+    document.body.appendChild(iframe);
   }
 
   // ── Sync data from G2 app (bridges file:// ↔ localhost:5173 localStorage) ──
