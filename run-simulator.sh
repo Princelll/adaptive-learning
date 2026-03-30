@@ -49,22 +49,31 @@ echo "[2/5] Installing dependencies..."
 cd "$APP_DIR"
 npm install --silent
 
-# ── Step 3: Open companion app (file://) ─────────────
+# ── Step 3: Serve companion via localhost (same origin as G2 app) ────
+# Copy companion into even-dev's public/ so Vite serves it at
+# localhost:5173/companion/index.html — same origin as the G2 app,
+# meaning they share localStorage with NO bridge needed.
 echo ""
-echo "[3/5] Opening companion app..."
-# Remove any stale localhost copy to avoid confusion (there is only ONE companion app)
-rm -rf "$EVEN_DEV/public/companion" 2>/dev/null || true
-COMPANION_FILE="$APP_DIR/companion/index.html"
-if command -v explorer.exe &>/dev/null; then
-  explorer.exe "$(cygpath -w "$COMPANION_FILE")" 2>/dev/null || true
-fi
+echo "[3/5] Deploying companion to localhost:5173..."
+rm -rf "$EVEN_DEV/public/companion"
+mkdir -p "$EVEN_DEV/public/companion"
+cp "$APP_DIR/companion/index.html" "$EVEN_DEV/public/companion/index.html"
+LINES=$(wc -l < "$EVEN_DEV/public/companion/index.html")
+echo "  Copied companion ($LINES lines) → even-dev/public/companion/"
+
+# Open companion in browser 6 seconds after simulator starts (Vite needs a moment)
+# Uses cmd.exe start so Edge/Chrome opens the localhost URL, not a file
+(sleep 6 && cmd.exe /c start "" "http://localhost:5173/companion/index.html") &
 
 # ── Step 4: Start simulator ───────────────────────────
 echo ""
 echo "[4/5] Starting Even Hub simulator..."
 echo ""
 echo "  G2 App:    http://localhost:5173"
-echo "  Companion: $COMPANION_FILE"
+echo "  Companion: http://localhost:5173/companion/index.html (opens in ~6s)"
+echo ""
+echo "  IMPORTANT: Use the localhost companion tab, NOT any file:// tab."
+echo "  If an old file:// companion opens, close it and use the localhost one."
 echo ""
 echo "  Windows will auto-arrange in ~10 seconds."
 echo "  Press Ctrl+C to stop."
