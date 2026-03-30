@@ -71,29 +71,23 @@ echo "  Copied companion ($LINES lines) → even-dev/public/companion/"
 
 # Open companion in browser 8 seconds after simulator starts (Vite needs a moment)
 # Use PowerShell Start-Process — more reliable than cmd.exe start in bash
-(sleep 8 && powershell.exe -NoProfile -Command "Start-Process 'http://localhost:5173/companion/index.html'") &
+# Cache-bust with timestamp so Edge/Chrome always loads the latest version
+BUST=$(date +%s)
+(sleep 8 && powershell.exe -NoProfile -Command "Start-Process 'http://localhost:5173/companion/index.html?v=$BUST'") &
 
 # ── Step 4: Start simulator ───────────────────────────
 echo ""
 echo "[4/5] Starting Even Hub simulator..."
 echo ""
 echo "  G2 App:    http://localhost:5173"
-echo "  Companion: http://localhost:5173/companion/index.html (opens in ~6s)"
+echo "  Companion: http://localhost:5173/companion/index.html (opens in ~8s)"
 echo ""
 echo "  IMPORTANT: Use the localhost companion tab, NOT any file:// tab."
 echo "  If an old file:// companion opens, close it and use the localhost one."
 echo ""
-echo "  Windows will auto-arrange in ~10 seconds."
 echo "  Press Ctrl+C to stop."
 echo "=========================================="
 echo ""
-
-# Arrange windows 10s after simulator starts (all windows need time to open)
-ARRANGE="$(cygpath -w "$APP_DIR/arrange-windows.ps1" 2>/dev/null || echo "")"
-if [ -n "$ARRANGE" ]; then
-  # -NonInteractive removed so the window stays open showing debug output
-  (sleep 10 && powershell.exe -ExecutionPolicy Bypass -File "$ARRANGE") &
-fi
 
 cd "$EVEN_DEV"
 ./start-even.sh "$APP_NAME"
