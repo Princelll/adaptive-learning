@@ -147,40 +147,43 @@ const ZONE = {
 // ── Screen builders ──────────────────────────────────────────
 
 function buildSleepCheckin(): PageConfig {
-  // Bar-chart heights per option (rows of █████ stacked bottom-up)
-  const HEIGHTS = [1, 2, 4, 6]; // Bad, Regular, Good, Great
+  // 4 columns × 8 chars = 32 chars (fills the full display width exactly).
+  // Bar heights: Bad=1, Regular=2, Good=4, Great=6 rows.
+  const HEIGHTS = [1, 2, 4, 6];
   const MAX_H   = 6;
-  const BAR     = ' █████ '; // 7 chars wide, centered in column
-  const EMPTY   = '       '; // 7 chars
+  const BAR     = ' ██████ '; // 8 chars: 1sp + 6 blocks + 1sp
+  const EMPTY   = '        '; // 8 chars: spaces
+  const LABELS  = ['Bad', 'Regular', 'Good', 'Great'];
 
-  // Generate rows top-to-bottom. At row r, threshold = MAX_H - r.
-  // A column renders a bar only when its height >= threshold.
+  // Rows generated top-to-bottom. threshold = MAX_H - r.
+  // A column shows a bar only when its height >= threshold.
+  // This produces the stepped bar-chart shape (tall on the right, short on the left).
   const chartRows: string[] = [];
   for (let r = 0; r < MAX_H; r++) {
     const threshold = MAX_H - r;
     chartRows.push(HEIGHTS.map(h => h >= threshold ? BAR : EMPTY).join(''));
   }
 
-  // Label row — selected option wrapped in [ ] brackets
-  const LABELS = ['Bad', 'Reg', 'Good', 'Great'];
+  // Label row: '>' prefix marks the selected column; each column is 8 chars wide.
+  // '>Regular' = 8 chars exactly; padEnd(8) handles shorter labels.
   const labelRow = LABELS.map((lbl, i) => {
-    const text = i === state.sleepSelectIdx ? `[${lbl}]` : lbl;
-    const pad  = 7 - text.length;
-    const l    = Math.floor(pad / 2);
-    return ' '.repeat(l) + text + ' '.repeat(pad - l);
+    const prefix = i === state.sleepSelectIdx ? '>' : ' ';
+    return (prefix + lbl).padEnd(8);
   }).join('');
 
-  // Right-aligned date + time header instead of centered title
+  // Header: "  Welcome to StudyHub." left, date right (e.g. "Mar 30")
   const now     = new Date();
-  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  const dtStr   = `${dateStr} ${timeStr}`;
-  const header  = dtStr.padStart(CHARS_PER_LINE) + '\n' + separator(CHARS_PER_LINE);
+  const leftStr = '  Welcome to StudyHub.';
+  const gapLen  = CHARS_PER_LINE - leftStr.length - dateStr.length;
+  const headerLine = leftStr + ' '.repeat(Math.max(1, gapLen)) + dateStr;
+  const header  = headerLine + '\n' + separator(CHARS_PER_LINE);
 
+  // Body: centered question + 6 chart rows + label row = 8 lines (fits in body zone)
+  const howStr  = 'How did you sleep?';
+  const howPad  = Math.floor((CHARS_PER_LINE - howStr.length) / 2);
   const body = [
-    'Welcome to StudyHub.',
-    'How did you sleep?',
-    '',
+    ' '.repeat(howPad) + howStr,
     ...chartRows,
     labelRow,
   ].join('\n');
