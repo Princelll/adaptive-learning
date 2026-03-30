@@ -35,9 +35,9 @@ else
   git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
 fi
 
-# Verify companion file made it
-if [ ! -f "$APP_DIR/companion/index.html" ]; then
-  echo "ERROR: companion/index.html missing after sync — check network/git"
+# Verify companion file made it (now in public/companion/)
+if [ ! -f "$APP_DIR/public/companion/index.html" ]; then
+  echo "ERROR: public/companion/index.html missing after sync — check network/git"
   read -p "Press enter to exit..."
   exit 1
 fi
@@ -49,29 +49,21 @@ echo "[2/5] Installing dependencies..."
 cd "$APP_DIR"
 npm install --silent
 
-# ── Step 3: Serve companion via localhost (same origin as G2 app) ────
+# ── Step 3: Free port 5173 ────────────────────────────
 echo ""
-echo "[3/5] Deploying companion to localhost:5173..."
+echo "[3/5] Freeing port 5173..."
 
-# Free port 5173 — kill any leftover even-dev process from a previous session
+# Kill any leftover even-dev process from a previous session
 powershell.exe -NoProfile -Command "
   \$pids = (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess | Sort-Object -Unique
   foreach (\$p in \$pids) { Stop-Process -Id \$p -Force -ErrorAction SilentlyContinue }
 " 2>/dev/null || true
 sleep 1
-
-# Copy companion into even-dev's public/ so Vite serves it at
-# localhost:5173/companion/index.html — same origin as the G2 app,
-# meaning they share localStorage with NO bridge needed.
-rm -rf "$EVEN_DEV/public/companion"
-mkdir -p "$EVEN_DEV/public/companion"
-cp "$APP_DIR/companion/index.html" "$EVEN_DEV/public/companion/index.html"
-LINES=$(wc -l < "$EVEN_DEV/public/companion/index.html")
-echo "  Copied companion ($LINES lines) → even-dev/public/companion/"
+echo "  Done."
 
 # Open companion in browser 8 seconds after simulator starts (Vite needs a moment)
-# Use PowerShell Start-Process — more reliable than cmd.exe start in bash
-# Cache-bust with timestamp so Edge/Chrome always loads the latest version
+# The companion is in public/companion/index.html inside the app — Vite serves it
+# at localhost:5173/companion/index.html automatically. Same origin = shared localStorage.
 BUST=$(date +%s)
 (sleep 8 && powershell.exe -NoProfile -Command "Start-Process 'http://localhost:5173/companion/index.html?v=$BUST'") &
 
@@ -82,8 +74,8 @@ echo ""
 echo "  G2 App:    http://localhost:5173"
 echo "  Companion: http://localhost:5173/companion/index.html (opens in ~8s)"
 echo ""
-echo "  IMPORTANT: Use the localhost companion tab, NOT any file:// tab."
-echo "  If an old file:// companion opens, close it and use the localhost one."
+echo "  Both run on the same origin — localStorage is shared automatically."
+echo "  Any deck saved in the companion instantly updates the glasses display."
 echo ""
 echo "  Press Ctrl+C to stop."
 echo "=========================================="
