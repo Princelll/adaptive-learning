@@ -19,6 +19,16 @@ import type { BanditState } from './bandit';
 
 const KEY = 'adaptive_learning_data';
 
+/** One self-reported sleep quality entry per day */
+export interface SleepLogEntry {
+  /** ISO date YYYY-MM-DD */
+  date: string;
+  quality: 'bad' | 'regular' | 'good' | 'great' | 'skipped';
+  /** 0.25 / 0.5 / 0.75 / 1.0, or null if skipped */
+  qualityScore: number | null;
+  timestamp: number;
+}
+
 interface StoredData {
   decks: Deck[];
   reviewStates: CardReviewState[];
@@ -28,6 +38,7 @@ interface StoredData {
   biometricHistory: DailyBiometric[];
   observations: Observation[];
   banditState: BanditState | null;
+  sleepLog: SleepLogEntry[];
 }
 
 function emptyData(): StoredData {
@@ -40,6 +51,7 @@ function emptyData(): StoredData {
     biometricHistory: [],
     observations: [],
     banditState: null,
+    sleepLog: [],
   };
 }
 
@@ -217,5 +229,40 @@ export class Storage {
   async saveBanditState(state: BanditState): Promise<void> {
     this.data.banditState = state;
     this.persist();
+  }
+
+  // ── Sleep Log ───────────────────────────────────────────────
+
+  /** Returns true if no sleep entry has been recorded for today yet */
+  async needsSleepCheckin(): Promise<boolean> {
+    const today = new Date().toISOString().slice(0, 10);
+    if (!Array.isArray(this.data.sleepLog)) this.data.sleepLog = [];
+    return !this.data.sleepLog.some(e => e.date === today);
+  }
+
+  async saveSleepEntry(entry: SleepLogEntry): Promise<void> {
+    if (!Array.isArray(this.data.sleepLog)) this.data.sleepLog = [];
+    // Upsert by date
+    const idx = this.data.sleepLog.findIndex(e => e.date === entry.date);
+    if (idx >= 0) this.data.sleepLog[idx] = entry;
+    else this.data.sleepLog.push(entry);
+    // Keep last 30 days
+    this.data.sleepLog.sort((a, b) => a.date.localeCompare(b.date));
+    if (this.data.sleepLog.length > 30) {
+      this.data.sleepLog = this.data.sleepLog.slice(-30);
+    }
+    this.persist();
+  }
+
+  /** Returns today's self-reported sleep quality score (0-1), or null if not logged */
+  async getTodaySleepQuality(): Promise<number | null> {
+    const today = new Date().toISOString().slice(0, 10);
+    if (!Array.isArray(this.data.sleepLog)) return null;
+    const entry = this.data.sleepLog.find(e => e.date === today);
+    return entry?.qualityScore ?? null;
+  }
+
+  async getSleepLog(): Promise<SleepLogEntry[]> {
+    return this.data.sleepLog ?? [];
   }
 }

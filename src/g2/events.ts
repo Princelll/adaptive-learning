@@ -16,6 +16,8 @@ let returnToDashboardFn: () => Promise<void> = async () => {};
 let selectDeckFn: (idx: number) => Promise<void> = async () => {};
 let startPlannedStudyFn: () => Promise<void> = async () => {};
 let showModelInsightsFn: () => void = () => {};
+let submitSleepCheckinFn: () => Promise<void> = async () => {};
+let skipSleepCheckinFn: () => Promise<void> = async () => {};
 
 export function setAppActions(actions: {
   startSession: () => Promise<void>;
@@ -25,6 +27,8 @@ export function setAppActions(actions: {
   selectDeck: (idx: number) => Promise<void>;
   startPlannedStudy: () => Promise<void>;
   showModelInsights: () => void;
+  submitSleepCheckin: () => Promise<void>;
+  skipSleepCheckin: () => Promise<void>;
 }): void {
   startSessionFn = actions.startSession;
   revealAnswerFn = actions.revealAnswer;
@@ -33,6 +37,8 @@ export function setAppActions(actions: {
   selectDeckFn = actions.selectDeck;
   startPlannedStudyFn = actions.startPlannedStudy;
   showModelInsightsFn = actions.showModelInsights;
+  submitSleepCheckinFn = actions.submitSleepCheckin;
+  skipSleepCheckinFn = actions.skipSleepCheckin;
 }
 
 // ── Gesture debouncing (tuned for G2 hardware per even-toolkit) ──
@@ -136,7 +142,10 @@ export function onEvenHubEvent(event: EvenHubEvent): void {
       break;
 
     case OsEventTypeList.DOUBLE_CLICK_EVENT:
-      if (!doubleTapThrottled()) void returnToDashboardFn();
+      if (!doubleTapThrottled()) {
+        if (state.screen === 'sleep_checkin') void skipSleepCheckinFn();
+        else void returnToDashboardFn();
+      }
       break;
   }
 }
@@ -145,6 +154,10 @@ export function onEvenHubEvent(event: EvenHubEvent): void {
 
 function handleClick(): void {
   switch (state.screen) {
+    case 'sleep_checkin':
+      void submitSleepCheckinFn();
+      break;
+
     case 'welcome':
       void startPlannedStudyFn();
       break;
@@ -183,6 +196,12 @@ function handleClick(): void {
 
 function handleScrollUp(): void {
   switch (state.screen) {
+    case 'sleep_checkin':
+      // Scroll up = move selection left (toward Bad)
+      state.sleepSelectIdx = Math.max(0, state.sleepSelectIdx - 1);
+      void safeShowScreen();
+      break;
+
     case 'welcome':
       state.screen = 'deck_select';
       void safeShowScreen();
@@ -202,6 +221,12 @@ function handleScrollUp(): void {
 
 function handleScrollDown(): void {
   switch (state.screen) {
+    case 'sleep_checkin':
+      // Scroll down = move selection right (toward Great)
+      state.sleepSelectIdx = Math.min(3, state.sleepSelectIdx + 1);
+      void safeShowScreen();
+      break;
+
     case 'welcome':
       state.screen = 'deck_select';
       void safeShowScreen();

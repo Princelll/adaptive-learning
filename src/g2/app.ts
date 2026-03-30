@@ -108,6 +108,35 @@ function showModelInsights(): void {
   void safeShowScreen();
 }
 
+async function submitSleepCheckin(): Promise<void> {
+  const qualities = ['bad', 'regular', 'good', 'great'] as const;
+  const scores    = [0.25,  0.5,      0.75,  1.0];
+  await storage.saveSleepEntry({
+    date:         new Date().toISOString().slice(0, 10),
+    quality:      qualities[state.sleepSelectIdx],
+    qualityScore: scores[state.sleepSelectIdx],
+    timestamp:    Date.now(),
+  });
+  log(`Sleep quality logged: ${qualities[state.sleepSelectIdx]}`);
+  await refreshDashboard();
+  state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+  void safeShowScreen();
+}
+
+async function skipSleepCheckin(): Promise<void> {
+  // Record a skipped entry so the screen doesn't reappear today
+  await storage.saveSleepEntry({
+    date:         new Date().toISOString().slice(0, 10),
+    quality:      'skipped',
+    qualityScore: null,
+    timestamp:    Date.now(),
+  });
+  log('Sleep check-in skipped for today');
+  await refreshDashboard();
+  state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+  void safeShowScreen();
+}
+
 async function returnToDashboard(): Promise<void> {
   await refreshDashboard();
   state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
@@ -226,6 +255,8 @@ export async function initApp(): Promise<void> {
     selectDeck,
     startPlannedStudy,
     showModelInsights,
+    submitSleepCheckin,
+    skipSleepCheckin,
   });
 
   // Connect to glasses bridge with error recovery
@@ -252,8 +283,14 @@ export async function initApp(): Promise<void> {
   state.deckNames = allDecks.map(d => d.name);
   state.deckIds = allDecks.map(d => d.id);
 
-  // Start on welcome or no_decks screen
-  state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+  // Show sleep check-in once per day on first open, otherwise go to welcome
+  const needsSleepCheckin = await storage.needsSleepCheckin();
+  if (needsSleepCheckin) {
+    state.sleepSelectIdx = 1; // default: Regular
+    state.screen = 'sleep_checkin';
+  } else {
+    state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+  }
   await showScreen();
 
   log('StudyHub ready');

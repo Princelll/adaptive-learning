@@ -146,6 +146,60 @@ const ZONE = {
 
 // ── Screen builders ──────────────────────────────────────────
 
+function buildSleepCheckin(): PageConfig {
+  // Bar-chart heights per option (rows of █████ stacked bottom-up)
+  const HEIGHTS = [1, 2, 4, 6]; // Bad, Regular, Good, Great
+  const MAX_H   = 6;
+  const BAR     = ' █████ '; // 7 chars wide, centered in column
+  const EMPTY   = '       '; // 7 chars
+
+  // Generate rows top-to-bottom. At row r, threshold = MAX_H - r.
+  // A column renders a bar only when its height >= threshold.
+  const chartRows: string[] = [];
+  for (let r = 0; r < MAX_H; r++) {
+    const threshold = MAX_H - r;
+    chartRows.push(HEIGHTS.map(h => h >= threshold ? BAR : EMPTY).join(''));
+  }
+
+  // Label row — selected option wrapped in [ ] brackets
+  const LABELS = ['Bad', 'Reg', 'Good', 'Great'];
+  const labelRow = LABELS.map((lbl, i) => {
+    const text = i === state.sleepSelectIdx ? `[${lbl}]` : lbl;
+    const pad  = 7 - text.length;
+    const l    = Math.floor(pad / 2);
+    return ' '.repeat(l) + text + ' '.repeat(pad - l);
+  }).join('');
+
+  // Right-aligned date + time header instead of centered title
+  const now     = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const dtStr   = `${dateStr} ${timeStr}`;
+  const header  = dtStr.padStart(CHARS_PER_LINE) + '\n' + separator(CHARS_PER_LINE);
+
+  const body = [
+    'Welcome to StudyHub.',
+    'How did you sleep?',
+    '',
+    ...chartRows,
+    labelRow,
+  ].join('\n');
+
+  const footer = buildFooter(
+    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Confirm' }],
+    'Sleep',
+  );
+
+  return {
+    textObject: [
+      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
+      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
+      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+    ],
+  };
+}
+
 function buildWelcome(): PageConfig {
   const header = buildTitleBlock('Adaptive Learning');
   const body = [
@@ -366,6 +420,7 @@ function buildSummary(): PageConfig {
 // ── Public API ───────────────────────────────────────────────
 
 const SCREEN_BUILDERS: Record<string, () => PageConfig> = {
+  sleep_checkin: buildSleepCheckin,
   welcome: buildWelcome,
   no_decks: buildNoDecks,
   deck_select: buildDeckSelect,
