@@ -183,7 +183,7 @@ async function loadWelcomeBg(): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
     img.onload = () => { welcomeBgImage = img; resolve(img); };
-    img.onerror = reject;
+    img.onerror = () => reject(new Error('welcome-bg.png not found at /icons/welcome-bg.png'));
     img.src = '/icons/welcome-bg.png';
   });
 }
@@ -309,30 +309,47 @@ async function buildWelcome(): Promise<PageConfig> {
   const dtStr   = `${dateStr}  ${timeStr}`;
   const name    = state.userName || 'Simulator';
 
-  // Full 576×288 display covered by 4 × 288×144 tiles (SDK max per image container).
-  const [tl, tr, bl, br] = await renderWelcomeBg(dtStr, name);
-
-  // List sits over the menu area (y=215..288). No evt text container —
-  // the list's isEventCapture=1 is sufficient (same as buildRating).
   const menuItems = ['Continue Studying', 'View Insights'];
 
-  return {
-    listObject: [
-      listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
-    ],
-    imageObject: [
-      new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition:   0, width: 288, height: 144 }),
-      new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition:   0, width: 288, height: 144 }),
-      new ImageContainerProperty({ containerID: 22, containerName: 'bl', xPosition:   0, yPosition: 144, width: 288, height: 144 }),
-      new ImageContainerProperty({ containerID: 23, containerName: 'br', xPosition: 288, yPosition: 144, width: 288, height: 144 }),
-    ],
-    imageData: [
-      { id: 20, name: 'tl', data: tl },
-      { id: 21, name: 'tr', data: tr },
-      { id: 22, name: 'bl', data: bl },
-      { id: 23, name: 'br', data: br },
-    ],
-  };
+  // Try image-based layout; fall back to plain text if the PNG isn't available.
+  try {
+    const [tl, tr, bl, br] = await renderWelcomeBg(dtStr, name);
+    return {
+      listObject: [
+        listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
+      ],
+      imageObject: [
+        new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition:   0, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition:   0, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 22, containerName: 'bl', xPosition:   0, yPosition: 144, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 23, containerName: 'br', xPosition: 288, yPosition: 144, width: 288, height: 144 }),
+      ],
+      imageData: [
+        { id: 20, name: 'tl', data: tl },
+        { id: 21, name: 'tr', data: tr },
+        { id: 22, name: 'bl', data: bl },
+        { id: 23, name: 'br', data: br },
+      ],
+    };
+  } catch (err) {
+    // welcome-bg.png not yet available — render text-only welcome screen
+    log(`Welcome image unavailable, using text layout: ${err}`);
+    const centerOf = (s: string) =>
+      ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
+    const greeting = [
+      centerOf(`Welcome to StudyHub, ${name}.`),
+      centerOf('What would you like to do?'),
+    ].join('\n');
+    return {
+      textObject: [
+        textContainer(1, 'dt',       dtStr.padStart(CHARS_PER_LINE), 0, 4,   DISPLAY_WIDTH, 36),
+        textContainer(2, 'greeting', greeting,                        0, 100, DISPLAY_WIDTH, 80),
+      ],
+      listObject: [
+        listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+      ],
+    };
+  }
 }
 
 function buildNoDecks(): PageConfig {
