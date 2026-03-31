@@ -234,45 +234,30 @@ function buildSleepCheckin(): PageConfig {
 }
 
 function buildWelcome(): PageConfig {
-  // Header: date right-aligned, same style as sleep check-in
-  const now     = new Date();
-  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dtStr   = `${dateStr} ${timeStr}`;
-  const header  = dtStr.padStart(CHARS_PER_LINE) + '\n' + separator(CHARS_PER_LINE);
-
   // Greeting — use the Even account name when available
-  const name    = state.userName || 'StudyHub';
+  const name     = state.userName || 'StudyHub';
   const greeting = [
     '',
     `Welcome to StudyHub, ${name}.`,
     '  What would you like to do?',
   ].join('\n');
 
-  // Two menu options: rendered as a list so the SDK draws the selection border
-  const menuItems = ['Continue Studying  [=]', 'View Insights  [*]'];
+  // Two menu options — clean labels, no icon placeholders
+  const menuItems = ['Continue Studying', 'View Insights'];
 
-  // Footer: gesture hints
-  const footer = buildFooter(
-    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Confirm' }],
-    'Welcome',
-  );
-
-  // Layout: split body zone vertically
-  //   Greeting text: y=44  h=90  (top half of body)
-  //   Menu list:     y=134 h=118 (bottom half, up to footer at y=252)
+  // Layout: split body zone across full height (no footer on welcome)
+  //   Greeting text: y=44  h=90
+  //   Menu list:     y=134 h=154 (all the way to y=288 — no footer)
   const GREET_Y = ZONE.body.y;         // 44
   const GREET_H = 90;
   const LIST_Y  = GREET_Y + GREET_H;  // 134
-  const LIST_H  = ZONE.footer.y - LIST_Y; // 252-134 = 118
+  const LIST_H  = 288 - LIST_Y;       // 154 — extends to bottom (no footer)
 
   return {
     textObject: [
       // No separate evt container — the list below has isEventCapture=1 (same as rating screen).
       // Adding both would cause "multiple event listeners" validation error.
-      textContainer(1, 'header',   header,   0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'greeting', greeting, 0, GREET_Y,       DISPLAY_WIDTH, GREET_H),
-      textContainer(3, 'footer',   footer,   0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(2, 'greeting', greeting, 0, GREET_Y, DISPLAY_WIDTH, GREET_H),
     ],
     listObject: [
       listContainer(4, 'menu', menuItems, 0, LIST_Y, DISPLAY_WIDTH, LIST_H, true),
