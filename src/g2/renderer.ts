@@ -234,38 +234,38 @@ function buildSleepCheckin(): PageConfig {
 }
 
 function buildWelcome(): PageConfig {
-  // Date/time — top right corner
+  // Date/time — right-aligned at top via character padding (monospace font, 32 cols = 576px)
   const now     = new Date();
   const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dtStr   = `${dateStr}  ${timeStr}`;
-  const dtLine  = dtStr.padStart(CHARS_PER_LINE); // right-align in 32-char line
+  const dtLine  = `${dateStr}  ${timeStr}`.padStart(CHARS_PER_LINE);
 
-  // Greeting — centered on the display
-  const name  = state.userName || 'StudyHub';
-  const line1 = `Welcome to StudyHub, ${name}.`;
-  const line2 = 'What would you like to do?';
+  // Greeting — split into shorter lines so each line centers visibly
+  // "Welcome to StudyHub," = 20 chars → 6 leading spaces (clear centering)
+  // name + "."            = varies   → centered individually
+  // "What would you like to do?" = 26 chars → 3 leading spaces
+  const name   = state.userName || 'StudyHub';
   const center = (s: string) =>
     ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
-  const greeting = [center(line1), center(line2)].join('\n');
+  const greeting = [
+    center('Welcome to StudyHub,'),
+    center(name + '.'),
+    '',
+    center('What would you like to do?'),
+  ].join('\n');
 
-  // List — lower right corner (x=240 gives ~18 chars/line, fits "Continue Studying")
-  const menuItems = ['Continue Studying', 'View Insights'];
-  const LIST_X = 240;
-  const LIST_Y = 196;
-  const LIST_W = DISPLAY_WIDTH - LIST_X; // 336px
-  const LIST_H = 288 - LIST_Y;           // 92px
+  // List — lower portion, items right-shifted with leading spaces so they
+  // appear in the right half of the display (x-position on list may be ignored by SDK)
+  const PAD = ' '.repeat(14); // 14 spaces + 17-char item ≈ right half of 32-col display
+  const menuItems = [PAD + 'Continue Studying', PAD + 'View Insights'];
 
   return {
     textObject: [
-      // dt: small container at top for date/time line only
-      textContainer(1, 'dt',       dtLine,  0,      4,   DISPLAY_WIDTH, 36),
-      // greeting: centered, roughly vertically middle of display
-      textContainer(2, 'greeting', greeting, 0,     90,  DISPLAY_WIDTH, 70),
+      textContainer(1, 'dt',       dtLine,   0, 4,   DISPLAY_WIDTH, 36),
+      textContainer(2, 'greeting', greeting, 0, 88,  DISPLAY_WIDTH, 100),
     ],
     listObject: [
-      // list: lower right — no separate evt container needed, list captures events
-      listContainer(3, 'menu', menuItems, LIST_X, LIST_Y, LIST_W, LIST_H, true),
+      listContainer(3, 'menu', menuItems, 0, 196, DISPLAY_WIDTH, 92, true),
     ],
   };
 }
