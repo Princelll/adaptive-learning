@@ -234,33 +234,38 @@ function buildSleepCheckin(): PageConfig {
 }
 
 function buildWelcome(): PageConfig {
-  // Greeting — use the Even account name when available
-  const name     = state.userName || 'StudyHub';
-  const greeting = [
-    '',
-    `Welcome to StudyHub, ${name}.`,
-    '  What would you like to do?',
-  ].join('\n');
+  // Date/time — top right corner
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dtStr   = `${dateStr}  ${timeStr}`;
+  const dtLine  = dtStr.padStart(CHARS_PER_LINE); // right-align in 32-char line
 
-  // Two menu options — clean labels, no icon placeholders
+  // Greeting — centered on the display
+  const name  = state.userName || 'StudyHub';
+  const line1 = `Welcome to StudyHub, ${name}.`;
+  const line2 = 'What would you like to do?';
+  const center = (s: string) =>
+    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
+  const greeting = [center(line1), center(line2)].join('\n');
+
+  // List — lower right corner (x=240 gives ~18 chars/line, fits "Continue Studying")
   const menuItems = ['Continue Studying', 'View Insights'];
-
-  // Layout: split body zone across full height (no footer on welcome)
-  //   Greeting text: y=44  h=90
-  //   Menu list:     y=134 h=154 (all the way to y=288 — no footer)
-  const GREET_Y = ZONE.body.y;         // 44
-  const GREET_H = 90;
-  const LIST_Y  = GREET_Y + GREET_H;  // 134
-  const LIST_H  = 288 - LIST_Y;       // 154 — extends to bottom (no footer)
+  const LIST_X = 240;
+  const LIST_Y = 196;
+  const LIST_W = DISPLAY_WIDTH - LIST_X; // 336px
+  const LIST_H = 288 - LIST_Y;           // 92px
 
   return {
     textObject: [
-      // No separate evt container — the list below has isEventCapture=1 (same as rating screen).
-      // Adding both would cause "multiple event listeners" validation error.
-      textContainer(2, 'greeting', greeting, 0, GREET_Y, DISPLAY_WIDTH, GREET_H),
+      // dt: small container at top for date/time line only
+      textContainer(1, 'dt',       dtLine,  0,      4,   DISPLAY_WIDTH, 36),
+      // greeting: centered, roughly vertically middle of display
+      textContainer(2, 'greeting', greeting, 0,     90,  DISPLAY_WIDTH, 70),
     ],
     listObject: [
-      listContainer(4, 'menu', menuItems, 0, LIST_Y, DISPLAY_WIDTH, LIST_H, true),
+      // list: lower right — no separate evt container needed, list captures events
+      listContainer(3, 'menu', menuItems, LIST_X, LIST_Y, LIST_W, LIST_H, true),
     ],
   };
 }
