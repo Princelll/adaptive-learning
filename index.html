@@ -13,28 +13,49 @@
     <button id="btn-connect">Connect glasses</button>
     <div id="event-log" style="margin-top:1em; font-family:monospace; font-size:12px; max-height:300px; overflow:auto;"></div>
   </div>
-  <!-- Companion deck import bridge: companion opens /?import=BASE64DECK from file:// -->
+  <!-- Sync bridge: companion (file://) ↔ G2 app (localhost:5173) localStorage -->
+  <!-- Companion injects a hidden iframe pointing to /#import=BASE64.             -->
+  <!-- This iframe runs below, writes to localStorage, signals parent, done.      -->
+  <!-- No popup window needed — iframes are never blocked by popup blockers.      -->
   <script>
   (function () {
-    var raw = new URLSearchParams(location.search).get('import');
-    if (!raw) return;
-    try {
-      var deck = JSON.parse(atob(raw));
-      var stored = {};
-      try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
-      if (!Array.isArray(stored.decks)) stored.decks = [];
-      stored.decks = stored.decks.filter(function (d) { return d.id !== deck.id; });
-      stored.decks.push(deck);
-      localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
-      document.addEventListener('DOMContentLoaded', function () {
-        var bar = document.createElement('div');
-        bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#232323;color:#fff;text-align:center;padding:14px;font-family:sans-serif;font-size:14px;letter-spacing:-.2px';
-        bar.textContent = '\u2713 "' + deck.name + '" (' + deck.cards.length + ' cards) saved to G2 App. You can close this tab.';
-        document.body.appendChild(bar);
-        setTimeout(function () { window.close(); }, 3000);
-      });
-    } catch (e) {}
-    history.replaceState({}, '', '/');
+    var hash = location.hash || '';
+
+    // ── Import bridge ────────────────────────────────────────────────────────
+    // Triggered when companion injects an iframe (or opens a popup) to /#import=BASE64
+    if (hash.indexOf('#import=') === 0) {
+      try {
+        var b64 = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/').replace(/~/g, '=');
+        var deck = JSON.parse(atob(b64));
+        var stored = {};
+        try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
+        if (!Array.isArray(stored.decks)) stored.decks = [];
+        stored.decks = stored.decks.filter(function (d) { return d.id !== deck.id; });
+        stored.decks.push(deck);
+        localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+      } catch (e) {}
+      location.hash = '';
+      // Signal parent frame (iframe mode) that import is complete
+      try { window.parent.postMessage({ type: 'al_import_done' }, '*'); } catch(e) {}
+      // Also close if opened as a popup window
+      if (window !== window.top || window.opener) {
+        setTimeout(function() { try { window.close(); } catch(e) {} }, 150);
+      }
+      return;
+    }
+
+    // ── Export bridge ────────────────────────────────────────────────────────
+    // Triggered when companion opens a popup to / (no hash) — sends G2 data back
+    if (window.opener) {
+      try {
+        window.opener.postMessage({
+          type: 'g2DataExport',
+          data: localStorage.getItem('adaptive_learning_data')
+        }, '*');
+      } catch(e) {}
+      setTimeout(function() { window.close(); }, 200);
+      return;
+    }
   })();
   </script>
   <script type="module" src="/src/main.ts"></script>

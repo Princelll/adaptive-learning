@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>StudyHub Mobile</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>StudyHub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet" />
   <style>
@@ -324,6 +326,70 @@
       font-size: 12px; color: var(--muted); margin-top: 8px;
     }
     .sleep-last-log { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+    /* ── New import section styles ── */
+    .section-label { font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 8px; }
+    .section-sub { font-size:12px;color:var(--muted);margin-top:2px;margin-bottom:12px; }
+    .or-divider { display:flex;align-items:center;gap:12px;margin:24px 0;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px; }
+    .or-divider::before,.or-divider::after { content:'';flex:1;height:1px;background:var(--border); }
+    .provider-pills { display:flex;gap:6px;margin-bottom:12px; }
+    .provider-pill { flex:1;padding:8px 4px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:12px;cursor:pointer;text-align:center;transition:border-color .12s,background .12s; }
+    .provider-pill.active { border-color:#232323;background:#232323;color:#fff; }
+    .count-toggle { display:flex;gap:6px;margin-bottom:8px; }
+    .count-pill { flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:12px;cursor:pointer;text-align:center;transition:border-color .12s; }
+    .count-pill.active { border-color:#232323;background:#232323;color:#fff; }
+    .source-tabs-inner { display:flex;gap:4px;margin-bottom:12px; }
+    .source-tab-inner { flex:1;padding:7px 4px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:11px;cursor:pointer;text-align:center;transition:border-color .12s; }
+    .source-tab-inner.active { border-color:#232323; }
+    .ai-locked { opacity:0.4;pointer-events:none; }
+    .name-input-row { display:flex;gap:8px;margin-top:10px;align-items:center; }
+    .name-input-row input { flex:1; }
+    .name-save-btn { padding:8px 14px;border:1px solid var(--border);border-radius:999px;background:var(--surface);font-size:12px;cursor:pointer;white-space:nowrap; }
+    .name-save-btn:active { background:var(--accent); }
+
+    /* ── Home tab ── */
+    .home-header { padding: 28px 0 24px; }
+    .home-date {
+      font-size: 11px; font-weight: 400; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .home-greeting {
+      font-size: 30px; font-weight: 300; letter-spacing: -1px;
+      color: var(--text); line-height: 1.15;
+    }
+    .home-stats-row {
+      display: flex; margin-bottom: 20px;
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); overflow: hidden;
+    }
+    .home-stat { flex: 1; padding: 14px 8px; text-align: center; border-right: 1px solid var(--border); }
+    .home-stat:last-child { border-right: none; }
+    .home-stat-value { font-size: 24px; font-weight: 300; letter-spacing: -0.8px; color: var(--text); line-height: 1; }
+    .home-stat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+    .home-actions { display: flex; flex-direction: column; gap: 8px; }
+    .home-action-btn {
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 16px; width: 100%; text-align: left;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .home-action-btn:hover { border-color: #c0c0c0; background: #fafafa; }
+    .home-action-btn:active { background: var(--accent); border-color: var(--accent); }
+    .home-action-btn.featured { background: var(--accent); border-color: var(--accent); }
+    .home-action-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--bg); display: flex; align-items: center;
+      justify-content: center; font-size: 17px; flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .home-action-btn.featured .home-action-icon { background: rgba(0,0,0,0.06); border-color: transparent; }
+    .home-action-text { flex: 1; min-width: 0; }
+    .home-action-title { font-size: 14px; font-weight: 400; letter-spacing: -0.2px; color: var(--text); }
+    .home-action-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .home-action-btn.featured .home-action-sub { color: rgba(35,35,35,0.6); }
+    .home-action-arrow { font-size: 16px; color: var(--muted); flex-shrink: 0; }
+    .home-divider { height: 1px; background: var(--border); margin: 20px 0; }
   </style>
 </head>
 <body>
@@ -331,133 +397,111 @@
   <header>
     <div class="header-top">
       <h1>StudyHub</h1>
-      <span class="g2-badge">Even G2</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="sync-btn" onclick="syncFromG2()" title="Sync decks and data from G2 app"
+          style="background:none;border:1px solid var(--border);border-radius:999px;padding:3px 10px;font-size:11px;color:var(--muted);cursor:pointer;letter-spacing:-.1px;transition:border-color .12s,color .12s"
+          onmouseover="this.style.color='#232323';this.style.borderColor='#232323'"
+          onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">↺ Sync</button>
+        <span class="g2-badge">Even G2</span>
+      </div>
     </div>
     <nav class="tabs">
-      <button class="tab active" data-tab="import">Import</button>
-      <button class="tab" data-tab="manual">Anki / CSV</button>
-      <button class="tab" data-tab="pubmed">PubMed</button>
+      <button class="tab active" data-tab="home">Home</button>
+      <button class="tab" data-tab="import">Import</button>
       <button class="tab" data-tab="insights">Insights</button>
       <button class="tab" data-tab="decks">Decks</button>
       <button class="tab" data-tab="flow">Flow</button>
     </nav>
+
   </header>
 
+  <!-- ── Home panel ── -->
+  <div id="tab-home" class="panel active">
+
+    <div class="home-header">
+      <div class="home-date" id="home-date"></div>
+      <div class="home-greeting" id="home-greeting"></div>
+      <div id="home-name-input-row" class="name-input-row" style="display:none">
+        <input id="home-name-input" class="text-input" placeholder="What's your name?" style="font-size:13px" />
+        <button class="name-save-btn" onclick="saveUserName()">Save</button>
+      </div>
+    </div>
+
+    <!-- Quick stats — shown when decks exist -->
+    <div class="home-stats-row" id="home-stats" style="display:none">
+      <div class="home-stat">
+        <div class="home-stat-value" id="home-due">—</div>
+        <div class="home-stat-label">Due today</div>
+      </div>
+      <div class="home-stat">
+        <div class="home-stat-value" id="home-streak">—</div>
+        <div class="home-stat-label">Streak</div>
+      </div>
+      <div class="home-stat">
+        <div class="home-stat-value" id="home-cards">—</div>
+        <div class="home-stat-label">Total cards</div>
+      </div>
+    </div>
+
+    <div class="home-divider"></div>
+
+    <!-- Action buttons -->
+    <div class="home-actions">
+      <button class="home-action-btn" id="home-btn-import" onclick="goToTab('import')">
+        <div class="home-action-icon">✦</div>
+        <div class="home-action-text">
+          <div class="home-action-title">Import Cards</div>
+          <div class="home-action-sub" id="home-import-sub">Generate with AI or import from Anki</div>
+        </div>
+        <div class="home-action-arrow">›</div>
+      </button>
+
+      <button class="home-action-btn" id="home-btn-decks" onclick="goToTab('decks')">
+        <div class="home-action-icon">▤</div>
+        <div class="home-action-text">
+          <div class="home-action-title">Manage Decks</div>
+          <div class="home-action-sub" id="home-decks-sub">No decks yet</div>
+        </div>
+        <div class="home-action-arrow">›</div>
+      </button>
+
+      <button class="home-action-btn" id="home-btn-insights" onclick="goToTab('insights')">
+        <div class="home-action-icon">◈</div>
+        <div class="home-action-text">
+          <div class="home-action-title">Review Insights</div>
+          <div class="home-action-sub" id="home-insights-sub">Complete a session to unlock</div>
+        </div>
+        <div class="home-action-arrow">›</div>
+      </button>
+    </div>
+
+  </div><!-- /tab-home -->
+
   <!-- ── Import panel ── -->
-  <div id="tab-import" class="panel active">
+  <div id="tab-import" class="panel">
 
-    <!-- No API key banner -->
-    <div id="no-key-banner" class="connect-note" style="margin-top:12px;display:none;align-items:center;justify-content:space-between;gap:10px">
-      <span>No API key? Try the Anki / CSV tab — no account needed.</span>
-      <button class="btn-small" onclick="document.querySelector('.tab[data-tab=manual]').click()">Anki / CSV</button>
-    </div>
+    <!-- ── SECTION 1: Import from file ── -->
+    <div class="section-label">Import from file</div>
+    <div class="section-sub">No AI or API key needed</div>
 
-    <!-- API Key -->
-    <div class="card" id="api-key-card">
-      <div class="card-title">Anthropic API Key</div>
-      <div id="api-key-set" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <span style="font-size:13px;color:var(--muted);font-family:monospace" id="api-key-display"></span>
-          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;width:auto" onclick="clearApiKey()">Change</button>
-        </div>
-      </div>
-      <div id="api-key-input-wrap">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Enter your Anthropic API key. It is stored only in your browser's localStorage and never sent anywhere except Anthropic's API.</p>
-        <input type="password" id="api-key-input" class="text-input" placeholder="sk-ant-..." autocomplete="off" />
-        <div id="api-key-error" class="form-error">Key must start with sk-</div>
-        <button class="btn btn-primary" style="margin-top:8px" onclick="saveApiKey()">Save Key</button>
-      </div>
-    </div>
-
-    <!-- Study material -->
+    <!-- File drop zone + Q&A paste -->
     <div class="card">
-      <div class="card-title">Study Material</div>
-      <div class="drop-zone" id="drop-zone">
-        <div style="font-size:24px;margin-bottom:6px">↑</div>
-        <div class="drop-label" style="font-weight:400;font-size:15px;letter-spacing:-0.15px">Drop a file here</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse &nbsp;·&nbsp; .txt .md .pdf supported</div>
-        <input type="file" id="file-input" accept=".txt,.md,.pdf" style="display:none" />
-      </div>
-      <div style="margin-top:10px">
-        <textarea id="text-input" class="text-input" placeholder="Or paste your notes / extracted PDF text here…" rows="6" style="resize:vertical;width:100%"></textarea>
-      </div>
-      <div id="text-stats" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right"></div>
-    </div>
-
-    <!-- Deck settings -->
-    <div class="card">
-      <div class="card-title">Deck Settings</div>
-      <div class="form-row">
-        <label class="form-label">Deck name</label>
-        <input type="text" id="deck-name" class="text-input" placeholder="e.g. Cardiac Pharmacology" />
-      </div>
-      <div class="form-row">
-        <label class="form-label">Course / subject</label>
-        <input type="text" id="deck-course" class="text-input" placeholder="e.g. Internal Medicine" />
-      </div>
-    </div>
-
-    <!-- Generate -->
-    <button class="btn btn-primary" id="btn-generate" onclick="generateCards()">Generate Flashcards</button>
-
-    <!-- Progress -->
-    <div id="gen-status" style="display:none;margin-top:12px">
-      <div class="card">
-        <div id="gen-status-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
-        <div class="progress-track" style="margin-top:10px">
-          <div class="progress-fill" id="gen-progress" style="width:0%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Preview -->
-    <div id="preview-section" style="display:none;margin-top:12px">
-      <div class="card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-          <span>Preview</span>
-          <span id="preview-count" style="color:var(--muted);font-weight:400;font-size:11px"></span>
-        </div>
-        <div id="preview-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
-      </div>
-      <button class="btn btn-primary" id="btn-save" onclick="saveDeck()" style="margin-top:10px">Save to G2 App</button>
-      <div id="save-status" style="font-size:12px;color:var(--green);text-align:center;margin-top:8px;display:none"></div>
-    </div>
-
-  </div><!-- /tab-import -->
-
-  <!-- ── Manual / Anki / CSV panel ── -->
-  <div id="tab-manual" class="panel">
-
-    <!-- Anki / CSV file upload -->
-    <div class="card">
-      <div class="card-title">Import from Anki or Spreadsheet</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">
-        No API key needed. Supports:<br>
-        • <strong>Anki</strong> — File → Export → "Notes in Plain Text" (.txt)<br>
-        • <strong>CSV / TSV</strong> — two columns: front, back<br>
-        • <strong>NotebookLM / ChatGPT</strong> — paste Q&amp;A text below
-      </p>
+      <div class="card-title">Upload or Paste</div>
       <div class="drop-zone" id="manual-drop-zone">
         <div style="font-size:24px;margin-bottom:6px">↑</div>
-        <div class="drop-label" style="font-weight:400;font-size:15px;letter-spacing:-0.15px">Drop .txt or .csv here</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse</div>
-        <input type="file" id="manual-file-input" accept=".txt,.csv,.tsv" style="display:none" />
+        <div class="drop-label" style="font-weight:400;font-size:15px;letter-spacing:-0.15px">Drop a file here</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">or click to browse &nbsp;·&nbsp; .txt .md .csv .tsv .anki</div>
+        <input type="file" id="manual-file-input" accept=".txt,.md,.csv,.tsv,.anki" style="display:none" />
       </div>
       <div id="manual-file-status" style="font-size:12px;color:var(--muted);margin-top:6px;text-align:center;display:none"></div>
+      <div style="margin-top:10px">
+        <textarea id="manual-qa-input" class="text-input" rows="5"
+          placeholder="Paste Q: / A: pairs, Anki text export, CSV (front,back), or any tab-separated format."
+          style="resize:vertical;width:100%;font-size:13px"></textarea>
+      </div>
     </div>
 
-    <!-- Q&A text paste (NotebookLM / ChatGPT) -->
-    <div class="card">
-      <div class="card-title">Paste Q&amp;A Text</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6">
-        Paste text with <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px">Q:</code> / <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px">A:</code> pairs — works great with NotebookLM FAQ exports or ChatGPT-generated Q&amp;A.
-      </p>
-      <textarea id="manual-qa-input" class="text-input" rows="7"
-        placeholder="Q: What is HRV?&#10;A: Heart rate variability is the variation in time between successive heartbeats…&#10;&#10;Q: How does sleep affect HRV?&#10;A: Poor sleep quality reduces overnight HRV recovery…"
-        style="resize:vertical;width:100%;font-size:13px"></textarea>
-    </div>
-
-    <!-- Deck settings + preview -->
+    <!-- File import deck settings -->
     <div class="card">
       <div class="card-title">Deck Settings</div>
       <div class="form-row">
@@ -470,9 +514,9 @@
       </div>
     </div>
 
-    <button class="btn btn-primary" onclick="importManualDeck()">Preview Cards</button>
+    <button class="btn btn-primary" onclick="importManualDeck()">Import</button>
 
-    <!-- Preview area -->
+    <!-- Manual preview area -->
     <div id="manual-preview-section" style="display:none;margin-top:12px">
       <div class="card">
         <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
@@ -484,50 +528,170 @@
       <button class="btn btn-primary" id="manual-btn-save" onclick="saveManualDeck()" style="margin-top:10px">Save to G2 App</button>
     </div>
 
-  </div><!-- /tab-manual -->
+    <!-- ── OR divider ── -->
+    <div class="or-divider">OR</div>
 
-  <!-- ── PubMed panel ── -->
-  <div id="tab-pubmed" class="panel">
+    <!-- ── SECTION 2: Generate with AI ── -->
+    <div class="section-label">Generate with AI</div>
+    <div class="section-sub">Use any AI API to generate cards from your content</div>
 
-    <!-- Search -->
-    <div class="card">
-      <div class="card-title">Search PubMed</div>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="pubmed-query" class="text-input" placeholder="e.g. HRV sleep cognition" style="flex:1"
-          onkeydown="if(event.key==='Enter') searchPubMed()" />
-        <button class="btn btn-primary" style="width:auto;padding:0 16px;white-space:nowrap" onclick="searchPubMed()">Search</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-        <label class="form-label" style="margin:0;white-space:nowrap">Results</label>
-        <select id="pubmed-retmax" class="text-input" style="width:70px;padding:6px 8px">
-          <option value="5">5</option>
-          <option value="10" selected>10</option>
-          <option value="20">20</option>
-        </select>
-      </div>
-    </div>
+    <!-- AI Provider Setup -->
+    <div class="card" id="ai-setup-card">
+      <div class="card-title">AI Provider</div>
 
-    <!-- Search status -->
-    <div id="pubmed-search-status" style="display:none;margin-bottom:12px">
-      <div class="card">
-        <div id="pubmed-search-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
-      </div>
-    </div>
-
-    <!-- Results -->
-    <div id="pubmed-results" style="display:flex;flex-direction:column;gap:10px"></div>
-
-    <!-- Import progress (per article) -->
-    <div id="pubmed-import-status" style="display:none;margin-top:12px">
-      <div class="card">
-        <div id="pubmed-import-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
-        <div class="progress-track" style="margin-top:10px">
-          <div class="progress-fill" id="pubmed-import-progress" style="width:0%"></div>
+      <!-- Collapsed view (key saved) -->
+      <div id="ai-setup-collapsed" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font-size:13px;color:var(--muted);font-family:monospace" id="api-key-display"></span>
+          <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;width:auto" onclick="clearApiKey()">Change</button>
         </div>
       </div>
+
+      <!-- Expanded view (setup) -->
+      <div id="ai-setup-expanded">
+        <div class="provider-pills" id="provider-pills">
+          <button class="provider-pill active" data-provider="anthropic" onclick="selectProvider('anthropic')">Anthropic Claude</button>
+          <button class="provider-pill" data-provider="openai" onclick="selectProvider('openai')">OpenAI</button>
+          <button class="provider-pill" data-provider="google" onclick="selectProvider('google')">Google AI</button>
+        </div>
+        <div class="form-row" style="margin-bottom:10px">
+          <label class="form-label">Model</label>
+          <input type="text" id="ai-model-input" class="text-input" placeholder="claude-sonnet-4-6" value="claude-sonnet-4-6" />
+        </div>
+        <div class="form-row" style="margin-bottom:10px">
+          <label class="form-label">API Key</label>
+          <input type="password" id="api-key-input" class="text-input" placeholder="Paste your API key…" autocomplete="off" />
+          <div id="api-key-error" class="form-error">Please enter a valid API key</div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:4px" onclick="saveApiKey()">Save</button>
+      </div>
     </div>
 
-  </div><!-- /tab-pubmed -->
+    <!-- AI generate section (locked until key saved) -->
+    <div id="ai-generate-section">
+
+      <!-- Learning objectives -->
+      <div class="card">
+        <div class="card-title">Learning Objectives</div>
+        <textarea id="ai-objectives" class="text-input" rows="3"
+          placeholder="e.g. Master cardiac pharmacology mechanisms for USMLE Step 1"
+          style="resize:vertical;width:100%;font-size:13px"></textarea>
+      </div>
+
+      <!-- Card count -->
+      <div class="card">
+        <div class="card-title">Card Count</div>
+        <div class="count-toggle">
+          <button class="count-pill active" id="count-ai-btn" onclick="selectCountMode('ai')">AI decides</button>
+          <button class="count-pill" id="count-manual-btn" onclick="selectCountMode('manual')">I'll choose</button>
+        </div>
+        <div id="count-ai-note" style="font-size:12px;color:var(--muted);line-height:1.5">
+          The AI will determine the optimal number based on your objectives and content depth.
+        </div>
+        <div id="count-manual-wrap" style="display:none;margin-top:8px">
+          <input type="number" id="card-count-input" class="text-input" min="5" max="50" value="15" style="width:80px" />
+          <span style="font-size:12px;color:var(--muted);margin-left:8px">cards (5–50)</span>
+        </div>
+      </div>
+
+      <!-- Content source (sub-tabs) -->
+      <div class="card">
+        <div class="card-title">Content Source</div>
+        <div class="source-tabs-inner">
+          <button class="source-tab-inner active" id="src-tab-upload" onclick="selectSourceTab('upload')">Upload</button>
+          <button class="source-tab-inner" id="src-tab-paste" onclick="selectSourceTab('paste')">Paste text</button>
+          <button class="source-tab-inner" id="src-tab-pubmed" onclick="selectSourceTab('pubmed')">PubMed</button>
+        </div>
+
+        <!-- Upload sub-panel -->
+        <div id="src-panel-upload">
+          <div class="drop-zone" id="drop-zone">
+            <div style="font-size:24px;margin-bottom:6px">↑</div>
+            <div class="drop-label" style="font-weight:400;font-size:15px;letter-spacing:-0.15px">Drop a file here</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">PDF, .txt, .md &nbsp;·&nbsp; click to browse</div>
+            <input type="file" id="file-input" accept=".txt,.md,.pdf" style="display:none" />
+          </div>
+          <div id="text-stats" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right"></div>
+        </div>
+
+        <!-- Paste text sub-panel -->
+        <div id="src-panel-paste" style="display:none">
+          <textarea id="text-input" class="text-input" placeholder="Paste article text, notes, or any study material here…" rows="6" style="resize:vertical;width:100%"></textarea>
+          <div id="text-stats-paste" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right"></div>
+        </div>
+
+        <!-- PubMed sub-panel -->
+        <div id="src-panel-pubmed" style="display:none">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="text" id="pubmed-query" class="text-input" placeholder="e.g. HRV sleep cognition" style="flex:1"
+              onkeydown="if(event.key==='Enter') searchPubMed()" />
+            <button class="btn btn-primary" style="width:auto;padding:0 16px;white-space:nowrap" onclick="searchPubMed()">Search</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+            <label class="form-label" style="margin:0;white-space:nowrap">Results</label>
+            <select id="pubmed-retmax" class="text-input" style="width:70px;padding:6px 8px">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+          <div id="pubmed-search-status" style="display:none;margin-bottom:8px">
+            <div style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0" id="pubmed-search-text"></div>
+          </div>
+          <div id="pubmed-results" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div id="pubmed-import-status" style="display:none;margin-top:12px">
+            <div class="card">
+              <div id="pubmed-import-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
+              <div class="progress-track" style="margin-top:10px">
+                <div class="progress-fill" id="pubmed-import-progress" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI deck settings -->
+      <div class="card">
+        <div class="card-title">Deck Settings</div>
+        <div class="form-row">
+          <label class="form-label">Deck name</label>
+          <input type="text" id="deck-name" class="text-input" placeholder="e.g. Cardiac Pharmacology" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Course / subject</label>
+          <input type="text" id="deck-course" class="text-input" placeholder="e.g. Internal Medicine" />
+        </div>
+      </div>
+
+      <!-- Generate button -->
+      <button class="btn btn-primary" id="btn-generate-ai" onclick="generateCards()">Generate Flashcards</button>
+
+      <!-- Progress -->
+      <div id="gen-status" style="display:none;margin-top:12px">
+        <div class="card">
+          <div id="gen-status-text" style="font-size:13px;color:var(--muted);text-align:center;padding:4px 0"></div>
+          <div class="progress-track" style="margin-top:10px">
+            <div class="progress-fill" id="gen-progress" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div id="preview-section" style="display:none;margin-top:12px">
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>Preview</span>
+            <span id="preview-count" style="color:var(--muted);font-weight:400;font-size:11px"></span>
+          </div>
+          <div id="preview-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+        </div>
+        <button class="btn btn-primary" id="btn-save" onclick="saveDeck()" style="margin-top:10px">Save to G2 App</button>
+        <div id="save-status" style="font-size:12px;color:var(--green);text-align:center;margin-top:8px;display:none"></div>
+      </div>
+
+    </div><!-- /ai-generate-section -->
+
+  </div><!-- /tab-import -->
 
   <!-- ── ML Insights panel ── -->
   <div id="tab-insights" class="panel">
@@ -819,11 +983,164 @@ ML Data Flow:
   // localhost:5173. Opening /?import=BASE64DECK in a named tab bridges
   // the gap — the G2 app's inline script (index.html) receives the deck
   // and writes it to the correct localStorage origin.
+  // ── Home tab ─────────────────────────────────────────────────
+  function goToTab(tabId) {
+    const btn = document.querySelector(`.tab[data-tab="${tabId}"]`);
+    if (!btn || btn.style.display === 'none') {
+      const fallback = { decks: 'import', insights: 'decks', pubmed: 'import' };
+      if (fallback[tabId]) goToTab(fallback[tabId]);
+      return;
+    }
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+    btn.classList.add('active');
+    const panel = document.getElementById('tab-' + tabId);
+    if (panel) { panel.classList.add('active'); panel.style.display = 'block'; }
+  }
+
+  function saveUserName() {
+    const val = document.getElementById('home-name-input').value.trim();
+    if (!val) return;
+    localStorage.setItem('user_name', val);
+    renderHomeTab();
+  }
+
+  function renderHomeTab() {
+    const now = new Date();
+    const h = now.getHours();
+    document.getElementById('home-date').textContent =
+      now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const userName = localStorage.getItem('user_name');
+    const base = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('home-greeting').textContent =
+      userName ? `${base}, ${userName}.` : `${base}.`;
+    const nameRow = document.getElementById('home-name-input-row');
+    if (nameRow) nameRow.style.display = userName ? 'none' : 'flex';
+
+    const data = readStorage();
+    const { hasKey, hasDecks, hasActivity } = getAppState();
+    const decks = data?.decks || [];
+    const reviewStates = data?.reviewStates || [];
+
+    // Stats row
+    const statsRow = document.getElementById('home-stats');
+    if (hasDecks) {
+      const nowTs = Date.now();
+      const due = reviewStates.filter(s => new Date(s.fsrs?.due || 0).getTime() <= nowTs).length;
+      const streak = data?.profile?.streak ?? 0;
+      const total = decks.reduce((n, d) => n + (d.cards?.length || 0), 0);
+      document.getElementById('home-due').textContent = due;
+      document.getElementById('home-streak').textContent = streak;
+      document.getElementById('home-cards').textContent = total;
+      statsRow.style.display = 'flex';
+    } else {
+      statsRow.style.display = 'none';
+    }
+
+    // Button subtitles + featured highlight
+    const importBtn = document.getElementById('home-btn-import');
+    const decksBtn  = document.getElementById('home-btn-decks');
+    const insightsBtn = document.getElementById('home-btn-insights');
+
+    // Featured = most actionable action right now
+    [importBtn, decksBtn, insightsBtn].forEach(b => b.classList.remove('featured'));
+
+    if (!hasDecks) {
+      importBtn.classList.add('featured');
+      document.getElementById('home-import-sub').textContent = 'Start here — generate or import your first deck';
+    } else {
+      const due = parseInt(document.getElementById('home-due').textContent, 10) || 0;
+      document.getElementById('home-import-sub').textContent = hasKey
+        ? 'Generate with AI, upload Anki export, or search PubMed'
+        : 'Upload Anki export, CSV, or paste Q&A text';
+      if (due > 0) {
+        decksBtn.classList.add('featured');
+        document.getElementById('home-decks-sub').textContent = `${due} card${due !== 1 ? 's' : ''} due today`;
+      } else {
+        document.getElementById('home-decks-sub').textContent =
+          `${decks.length} deck${decks.length !== 1 ? 's' : ''} · all caught up`;
+      }
+    }
+    document.getElementById('home-insights-sub').textContent = hasActivity
+      ? 'View ML performance and study patterns'
+      : 'Complete a session on the G2 to unlock';
+  }
+
   function syncDeckToG2(deck) {
-    try {
-      const encoded = btoa(JSON.stringify(deck));
-      window.open('http://localhost:5173/?import=' + encoded, 'g2-import-bridge');
-    } catch (e) {}
+    // When running at localhost:5173 (same origin as G2 app), localStorage is already
+    // shared — no bridge needed. The G2 app's storage event fires automatically when
+    // any localStorage write happens here.
+    // When running at file:// (fallback), use a hidden iframe bridge.
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      // Same origin — localStorage is shared. Just re-save to ensure G2 sees it.
+      const stored = readStorage();
+      if (!Array.isArray(stored.decks)) stored.decks = [];
+      stored.decks = stored.decks.filter(d => d.id !== deck.id);
+      stored.decks.push(deck);
+      localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
+      return;
+    }
+    // file:// fallback — hidden iframe bridge
+    const b64 = btoa(JSON.stringify(deck)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~');
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;width:1px;height:1px;left:-100px;top:-100px;border:none;opacity:0;';
+    iframe.src = 'http://localhost:5173/#import=' + b64;
+    function cleanup() {
+      window.removeEventListener('message', onMsg);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }
+    function onMsg(e) {
+      if (e.data && e.data.type === 'al_import_done') cleanup();
+    }
+    window.addEventListener('message', onMsg);
+    setTimeout(cleanup, 8000);
+    document.body.appendChild(iframe);
+  }
+
+  // ── Sync data from G2 app ──────────────────────────────────────────────────
+  function syncFromG2(silent) {
+    // When at localhost:5173 (same origin), just reload — localStorage is already shared.
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      loadData();
+      if (!silent) showToast('Synced — data is always live at localhost');
+      return;
+    }
+    const btn = document.getElementById('sync-btn');
+    if (btn) { btn.textContent = '↺ Syncing…'; btn.disabled = true; }
+
+    let resolved = false;
+    const timer = setTimeout(() => {
+      if (resolved) return;
+      resolved = true;
+      window.removeEventListener('message', handler);
+      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
+      if (!silent) showToast('Could not reach G2 app — make sure localhost:5173 is running and allow popups from this page.', 'error', 0);
+    }, 6000);
+
+    function handler(e) {
+      if (!e.data || e.data.type !== 'g2DataExport') return;
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timer);
+      window.removeEventListener('message', handler);
+      if (e.data.data) {
+        localStorage.setItem('adaptive_learning_data', e.data.data);
+        loadData();
+        if (!silent) showToast('Synced from G2 app');
+      }
+      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
+    }
+
+    window.addEventListener('message', handler);
+    const w = window.open('http://localhost:5173/', 'g2-export-bridge',
+      'width=320,height=120,left=200,top=200');
+    if (!w) {
+      clearTimeout(timer);
+      resolved = true;
+      window.removeEventListener('message', handler);
+      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
+      showToast('Allow popups from this page in your browser, then click Sync again.', 'error', 0);
+    }
   }
 
   // ── Load config.json and apply to UI ──
@@ -881,9 +1198,10 @@ ML Data Flow:
     tab.addEventListener('click', () => {
       if (tab.style.display === 'none') return;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
       tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      const p = document.getElementById('tab-' + tab.dataset.tab);
+      if (p) { p.classList.add('active'); p.style.display = 'block'; }
     });
   });
 
@@ -912,9 +1230,8 @@ ML Data Flow:
     const { hasKey, hasDecks, hasActivity } = getAppState();
 
     const rules = {
+      home:     true,
       import:   true,
-      manual:   true,
-      pubmed:   hasKey,
       decks:    hasDecks,
       insights: hasActivity,
       flow:     true,
@@ -931,7 +1248,7 @@ ML Data Flow:
     // If active tab is now hidden, switch to first visible
     const activeTab = document.querySelector('.tab.active');
     if (!activeTab || activeTab.style.display === 'none') {
-      let target = hasActivity ? 'insights' : hasDecks ? 'decks' : 'import';
+      let target = 'home';
       // Verify target is visible; fall back to first visible tab
       const targetEl = document.querySelector(`.tab[data-tab="${target}"]`);
       if (!targetEl || targetEl.style.display === 'none') {
@@ -946,9 +1263,8 @@ ML Data Flow:
       if (newPanel) { newPanel.classList.add('active'); newPanel.style.display = 'block'; }
     }
 
-    // Update Import tab banner
-    const banner = document.getElementById('no-key-banner');
-    if (banner) banner.style.display = hasKey ? 'none' : 'flex';
+    // Update AI setup state
+    renderAISetupState();
 
     // Update Flow tab state
     renderFlowState(hasDecks);
@@ -1315,13 +1631,11 @@ ML Data Flow:
       const r2Display = document.getElementById('r2-display');
       const r2Value = document.getElementById('r2-value');
       if (typeof r2 === 'number') {
-        r2Display.textContent = 'R² = ' + r2.toFixed(3);
-        r2Value.textContent = r2.toFixed(2);
-        r2Value.className = 'stat-value ' + (r2 > 0.5 ? 'green' : r2 > 0.2 ? 'yellow' : 'accent');
+        if (r2Display) r2Display.textContent = 'R² = ' + r2.toFixed(3);
+        if (r2Value) { r2Value.textContent = r2.toFixed(2); r2Value.className = 'stat-value ' + (r2 > 0.5 ? 'green' : r2 > 0.2 ? 'yellow' : 'accent'); }
       } else {
-        r2Display.textContent = 'R² pending';
-        r2Value.textContent = '—';
-        r2Value.className = 'stat-value muted';
+        if (r2Display) r2Display.textContent = 'R² pending';
+        if (r2Value) { r2Value.textContent = '—'; r2Value.className = 'stat-value muted'; }
       }
 
       // Observation progress bar
@@ -1330,10 +1644,14 @@ ML Data Flow:
                      profile.modelStatus === 'initial_model' ? 30 :
                      profile.modelStatus === 'refined' ? 50 : 50;
       const pct = Math.min(100, Math.round((obsCount / target) * 100));
-      document.getElementById('obs-count').textContent = obsCount;
-      document.getElementById('obs-bar').style.width = pct + '%';
-      document.getElementById('obs-label').textContent = obsCount + ' / ' + target;
-      document.getElementById('obs-note').textContent =
+      const obsCountEl = document.getElementById('obs-count');
+      const obsBarEl = document.getElementById('obs-bar');
+      const obsLabelEl = document.getElementById('obs-label');
+      const obsNoteEl = document.getElementById('obs-note');
+      if (obsCountEl) obsCountEl.textContent = obsCount;
+      if (obsBarEl) obsBarEl.style.width = pct + '%';
+      if (obsLabelEl) obsLabelEl.textContent = obsCount + ' / ' + target;
+      if (obsNoteEl) obsNoteEl.textContent =
         profile.modelStatus === 'mature'
           ? '✓ Model fully trained'
           : `Collect ${Math.max(0, target - obsCount)} more to reach next milestone`;
@@ -1342,11 +1660,12 @@ ML Data Flow:
       const prefs = profile.stylePreferences || {};
       const entries = Object.entries(prefs).sort(([, a], [, b]) => b - a);
       const bestStyle = entries[0]?.[0] || '—';
-      document.getElementById('best-style').textContent = bestStyle.replace(/_/g, ' ');
+      const bestStyleEl = document.getElementById('best-style');
+      if (bestStyleEl) bestStyleEl.textContent = bestStyle.replace(/_/g, ' ');
 
       const maxScore = entries[0]?.[1] || 1;
       const styleList = document.getElementById('style-list');
-      if (entries.length > 0) {
+      if (styleList && entries.length > 0) {
         styleList.innerHTML = entries.map(([style, score], i) => `
           <div class="style-item">
             <span class="style-rank">${i + 1}</span>
@@ -1382,15 +1701,26 @@ ML Data Flow:
               <div class="deck-name">${escHtml(deck.name)}</div>
               <div class="deck-meta">${deck.cards.length} cards · ${due} due</div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:6px">
               <span class="deck-due ${due === 0 ? 'zero' : ''}">${due}</span>
+              <button class="btn-small" style="padding:4px 10px;font-size:11px" onclick="pushDeckToG2('${escHtml(deck.id)}')">→ G2</button>
               <button class="btn-small" style="color:var(--red);border-color:var(--red);padding:4px 10px;font-size:11px" onclick="deleteDeck('${escHtml(deck.id)}')">Delete</button>
             </div>
           </div>`;
       }).join('');
     }
 
+    renderHomeTab();
     updateTabVisibility();
+  }
+
+  // ── Push a single deck to G2 ──
+  function pushDeckToG2(deckId) {
+    const data = readStorage();
+    const deck = (data?.decks || []).find(d => d.id === deckId);
+    if (!deck) { showToast('Deck not found', 'error'); return; }
+    syncDeckToG2(deck);
+    showToast(`"${deck.name}" sent to G2 — a small window will briefly open and close`);
   }
 
   // ── Delete deck ──
@@ -1412,27 +1742,67 @@ ML Data Flow:
 
   // ── Import tab ─────────────────────────────────────────────
 
+  // AI Provider constants
+  const AI_PROVIDERS = {
+    anthropic: { name: 'Anthropic Claude', defaultModel: 'claude-sonnet-4-6' },
+    openai:    { name: 'OpenAI',           defaultModel: 'gpt-4o' },
+    google:    { name: 'Google AI',        defaultModel: 'gemini-1.5-pro' },
+  };
+
   // API Key management
   const API_KEY_STORE = 'bioloop_api_key';
-  // _generatedCards already declared above
+  let _generatedCards = [];
   let _generatedDeckName = '';
   let _pdfFileId = null;
   let _pdfFileName = '';
 
   function getApiKey() { return localStorage.getItem(API_KEY_STORE) || ''; }
 
-  function renderApiKeyState() {
+  function selectProvider(provider) {
+    localStorage.setItem('ai_provider', provider);
+    document.querySelectorAll('.provider-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.provider === provider);
+    });
+    const modelInput = document.getElementById('ai-model-input');
+    if (modelInput && !localStorage.getItem('ai_model')) {
+      modelInput.value = AI_PROVIDERS[provider]?.defaultModel || '';
+    }
+  }
+
+  function selectCountMode(mode) {
+    document.getElementById('count-ai-btn').classList.toggle('active', mode === 'ai');
+    document.getElementById('count-manual-btn').classList.toggle('active', mode === 'manual');
+    document.getElementById('count-ai-note').style.display = mode === 'ai' ? '' : 'none';
+    document.getElementById('count-manual-wrap').style.display = mode === 'manual' ? '' : 'none';
+  }
+
+  function selectSourceTab(tab) {
+    ['upload','paste','pubmed'].forEach(t => {
+      document.getElementById('src-tab-' + t).classList.toggle('active', t === tab);
+      document.getElementById('src-panel-' + t).style.display = t === tab ? '' : 'none';
+    });
+  }
+
+  function renderAISetupState() {
     const key = getApiKey();
-    const setEl = document.getElementById('api-key-set');
-    const inputEl = document.getElementById('api-key-input-wrap');
+    const collapsed = document.getElementById('ai-setup-collapsed');
+    const expanded  = document.getElementById('ai-setup-expanded');
+    const genSection = document.getElementById('ai-generate-section');
+    const genBtn = document.getElementById('btn-generate-ai');
     if (key) {
-      setEl.style.display = 'block';
-      inputEl.style.display = 'none';
+      if (collapsed) collapsed.style.display = 'block';
+      if (expanded)  expanded.style.display  = 'none';
+      if (genSection) genSection.classList.remove('ai-locked');
+      if (genBtn) genBtn.disabled = false;
+      const provider = localStorage.getItem('ai_provider') || 'anthropic';
+      const providerName = AI_PROVIDERS[provider]?.name || provider;
       document.getElementById('api-key-display').textContent =
-        key.slice(0, 12) + '••••••••' + key.slice(-4);
+        providerName + ' · ' + key.slice(0, 8) + '••••••••' + key.slice(-4);
     } else {
-      setEl.style.display = 'none';
-      inputEl.style.display = 'block';
+      if (collapsed) collapsed.style.display = 'none';
+      if (expanded)  expanded.style.display  = 'block';
+      if (genSection) genSection.classList.add('ai-locked');
+      if (genBtn) genBtn.disabled = true;
     }
   }
 
@@ -1440,7 +1810,7 @@ ML Data Flow:
     const input = document.getElementById('api-key-input');
     const errEl = document.getElementById('api-key-error');
     const val = input.value.trim();
-    if (!val.startsWith('sk-')) {
+    if (!val) {
       input.classList.add('error');
       errEl.classList.add('visible');
       return;
@@ -1448,13 +1818,61 @@ ML Data Flow:
     input.classList.remove('error');
     errEl.classList.remove('visible');
     localStorage.setItem(API_KEY_STORE, val);
+    // Save model selection
+    const modelInput = document.getElementById('ai-model-input');
+    if (modelInput && modelInput.value.trim()) {
+      localStorage.setItem('ai_model', modelInput.value.trim());
+    }
     input.value = '';
-    renderApiKeyState();
+    renderAISetupState();
+    updateTabVisibility();
   }
 
   function clearApiKey() {
     localStorage.removeItem(API_KEY_STORE);
-    renderApiKeyState();
+    localStorage.removeItem('ai_model');
+    renderAISetupState();
+    updateTabVisibility();
+  }
+
+  // ── callAI: multi-provider AI abstraction ──
+  async function callAI(prompt) {
+    const provider = localStorage.getItem('ai_provider') || 'anthropic';
+    const apiKey = getApiKey();
+    const model = localStorage.getItem('ai_model') || AI_PROVIDERS[provider]?.defaultModel;
+    if (!apiKey) throw new Error('No API key saved');
+
+    if (provider === 'anthropic') {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+        body: JSON.stringify({ model, max_tokens: 8000, messages: [{ role:'user', content: prompt }] }),
+      });
+      if (!res.ok) throw new Error(`Anthropic API error ${res.status}`);
+      const d = await res.json();
+      return d.content?.find(b => b.type==='text')?.text ?? '';
+    }
+    if (provider === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}` },
+        body: JSON.stringify({ model, max_tokens: 8000, messages: [{ role:'user', content: prompt }] }),
+      });
+      if (!res.ok) throw new Error(`OpenAI API error ${res.status}`);
+      const d = await res.json();
+      return d.choices?.[0]?.message?.content ?? '';
+    }
+    if (provider === 'google') {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      });
+      if (!res.ok) throw new Error(`Google AI API error ${res.status}`);
+      const d = await res.json();
+      return d.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    }
+    throw new Error('Unknown provider: ' + provider);
   }
 
   // File upload / drag-and-drop
@@ -1462,10 +1880,13 @@ ML Data Flow:
   const fileInput = document.getElementById('file-input');
   const textInput = document.getElementById('text-input');
 
-  document.getElementById('api-key-input').addEventListener('input', function() {
-    this.classList.remove('error');
-    document.getElementById('api-key-error').classList.remove('visible');
-  });
+  if (document.getElementById('api-key-input')) {
+    document.getElementById('api-key-input').addEventListener('input', function() {
+      this.classList.remove('error');
+      const errEl = document.getElementById('api-key-error');
+      if (errEl) errEl.classList.remove('visible');
+    });
+  }
 
   dropZone.addEventListener('click', () => fileInput.click());
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
@@ -1507,25 +1928,50 @@ ML Data Flow:
     return data.id;
   }
 
+  async function extractPdfText(file) {
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Could not load PDF.js — check your internet connection'));
+        document.head.appendChild(s);
+      });
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let out = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      out += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    return out.trim();
+  }
+
   async function readFile(file) {
     if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-      const apiKey = getApiKey();
-      if (!apiKey) { showToast('Save your Anthropic API key first.', 'error'); return; }
+      const label = dropZone.querySelector('.drop-label');
+      label.textContent = 'Extracting text from PDF…';
       dropZone.classList.add('uploading');
-      dropZone.querySelector('.drop-label').textContent = 'Uploading PDF…';
       try {
-        _pdfFileId = await uploadPdf(file);
-        _pdfFileName = file.name;
-        dropZone.querySelector('.drop-label').textContent = `✓ ${file.name}`;
-        textInput.value = '';
+        const text = await extractPdfText(file);
+        if (!text) throw new Error('No text found — PDF may be a scanned image. Try pasting text manually.');
+        // Switch to Paste tab and fill in the extracted text
+        selectSourceTab('paste');
+        textInput.value = text;
+        _pdfFileId = null; _pdfFileName = '';
         updateTextStats();
         const nameInput = document.getElementById('deck-name');
         if (!nameInput.value)
           nameInput.value = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
+        label.textContent = `✓ ${file.name}`;
+        showToast(`PDF extracted — ${text.length.toLocaleString()} characters ready`, 'info');
       } catch (err) {
-        dropZone.querySelector('.drop-label').textContent = 'Drop a file here';
-        showToast('PDF upload failed: ' + err.message, 'error', 0);
-        _pdfFileId = null;
+        label.textContent = 'Drop a file here';
+        showToast('PDF failed: ' + err.message, 'error', 0);
       } finally {
         dropZone.classList.remove('uploading');
       }
@@ -1565,20 +2011,30 @@ ML Data Flow:
 
   async function generateCards() {
     const apiKey = getApiKey();
-    if (!apiKey) { showToast('Save your Anthropic API key first.', 'error'); return; }
+    if (!apiKey) { showToast('Save your API key first.', 'error'); return; }
+    const provider = localStorage.getItem('ai_provider') || 'anthropic';
 
-    const text = textInput.value.trim();
-    const usingPdf = Boolean(_pdfFileId);
-    if (!usingPdf && !text) { showToast('Add study material or upload a PDF first.', 'error'); return; }
+    const text = textInput ? textInput.value.trim() : '';
+    const usingPdf = Boolean(_pdfFileId) && provider === 'anthropic';
+    if (!usingPdf && !text) { showToast('Add study material or upload a file first.', 'error'); return; }
 
     const deckName = document.getElementById('deck-name').value.trim() || 'Untitled Deck';
     const course = document.getElementById('deck-course').value.trim() || 'General';
     _generatedDeckName = deckName;
     document.getElementById('preview-section').style.display = 'none';
-    document.getElementById('btn-generate').disabled = true;
-    document.getElementById('btn-generate').textContent = 'Generating…';
+    const genBtn = document.getElementById('btn-generate-ai');
+    if (genBtn) { genBtn.disabled = true; genBtn.textContent = 'Generating…'; }
 
     setGenStatus('Analyzing study material…', 20);
+
+    // Card count instruction
+    const countAiActive = document.getElementById('count-ai-btn')?.classList.contains('active');
+    const countInstruction = countAiActive
+      ? 'Generate as many high-quality flashcards as needed to fully cover the content and achieve the learning objectives. Do not cap artificially.'
+      : `Generate exactly ${document.getElementById('card-count-input')?.value || 15} flashcards.`;
+
+    const objectives = document.getElementById('ai-objectives')?.value.trim();
+    const objectivesSection = objectives ? `\nLEARNING OBJECTIVES: ${objectives}\n` : '';
 
     const excerpt = text.length > 80000 ? text.slice(0, 80000) : text;
     const materialSection = usingPdf
@@ -1586,8 +2042,8 @@ ML Data Flow:
       : `MATERIAL:\n"""\n${excerpt}\n"""`;
 
     const prompt = `You are an expert educator specializing in spaced repetition and active recall.
-Analyze the following study material and generate as many high-quality flashcards as needed to fully cover the content. Let the depth and breadth of the material determine the number — do not cap it artificially.
-
+${countInstruction}
+${objectivesSection}
 Rules:
 - Each card tests exactly ONE idea — no compound questions
 - Questions probe UNDERSTANDING and mechanism ("Why does X cause Y?", "What happens when…?") not just definition recall
@@ -1612,40 +2068,53 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
   }
 ]`;
 
-    const messageContent = usingPdf
-      ? [{ type: 'document', source: { type: 'file', file_id: _pdfFileId } }, { type: 'text', text: prompt }]
-      : [{ type: 'text', text: prompt }];
-
-    const reqHeaders = {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-      ...(usingPdf ? { 'anthropic-beta': 'files-api-2025-04-14' } : {}),
-    };
-
     try {
-      setGenStatus('Calling Claude (this takes 20–40 s for large texts)…', 40);
+      setGenStatus(`Calling ${AI_PROVIDERS[provider]?.name || provider} (this may take 20–40 s)…`, 40);
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: reqHeaders,
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 8000,
-          messages: [{ role: 'user', content: messageContent }],
-        }),
-      });
-
-      setGenStatus('Parsing response…', 80);
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `API error ${res.status}`);
+      let raw;
+      if (usingPdf && provider === 'anthropic') {
+        // PDF path: use Anthropic Files API directly
+        const model = localStorage.getItem('ai_model') || AI_PROVIDERS.anthropic.defaultModel;
+        const messageContent = [
+          { type: 'document', source: { type: 'file', file_id: _pdfFileId } },
+          { type: 'text', text: prompt },
+        ];
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'files-api-2025-04-14',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({ model, max_tokens: 8000, messages: [{ role: 'user', content: messageContent }] }),
+        });
+        setGenStatus('Parsing response…', 80);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err?.error?.message || `API error ${res.status}`);
+        }
+        const d = await res.json();
+        raw = d.content?.find(b => b.type === 'text')?.text ?? '';
+        // Fire-and-forget: delete uploaded PDF
+        const idToDelete = _pdfFileId;
+        _pdfFileId = null; _pdfFileName = '';
+        if (dropZone) dropZone.querySelector('.drop-label').textContent = 'Drop a file here';
+        fetch(`https://api.anthropic.com/v1/files/${idToDelete}`, {
+          method: 'DELETE',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'files-api-2025-04-14',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+        }).catch(() => {});
+      } else {
+        raw = await callAI(prompt);
+        setGenStatus('Parsing response…', 80);
       }
 
-      const data = await res.json();
-      const raw = data.content?.find(b => b.type === 'text')?.text ?? '';
       const cleaned = raw.replace(/```json|```/g, '').trim();
       _generatedCards = JSON.parse(cleaned);
 
@@ -1656,27 +2125,10 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
       setGenStatus(`Done — ${_generatedCards.length} cards generated`, 100);
       renderPreview(_generatedCards, deckName, course);
 
-      // Fire-and-forget: delete uploaded PDF from Anthropic Files API
-      if (_pdfFileId) {
-        const idToDelete = _pdfFileId;
-        _pdfFileId = null; _pdfFileName = '';
-        dropZone.querySelector('.drop-label').textContent = 'Drop a file here';
-        fetch(`https://api.anthropic.com/v1/files/${idToDelete}`, {
-          method: 'DELETE',
-          headers: {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-beta': 'files-api-2025-04-14',
-            'anthropic-dangerous-direct-browser-access': 'true',
-          },
-        }).catch(() => {});
-      }
-
     } catch (err) {
       setGenStatus('Error: ' + err.message, 0);
     } finally {
-      document.getElementById('btn-generate').disabled = false;
-      document.getElementById('btn-generate').textContent = 'Generate Flashcards';
+      if (genBtn) { genBtn.disabled = false; genBtn.textContent = 'Generate Flashcards'; }
     }
   }
 
@@ -1896,7 +2348,8 @@ Return ONLY a valid JSON array. No markdown, no commentary, no preamble.
       return;
     }
 
-    setPubmedImportStatus('Generating flashcards with Claude…', 40);
+    const provider = localStorage.getItem('ai_provider') || 'anthropic';
+    setPubmedImportStatus(`Generating flashcards with ${AI_PROVIDERS[provider]?.name || provider}…`, 40);
 
     const prompt = `You are an expert medical educator specializing in spaced repetition.
 Generate as many high-quality flashcards as needed to fully cover the article content. Let the depth and breadth of the material determine the number.
@@ -1922,26 +2375,8 @@ Return ONLY a valid JSON array, no markdown, no commentary.
 [{"front":"…","back":"…","complexity":"concept","tags":["tag"],"presentations":{"analogy":{"front":"…","back":"…"}}}]`;
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 6000,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
-
+      const raw = await callAI(prompt);
       setPubmedImportStatus('Parsing cards…', 80);
-      if (!res.ok) throw new Error(`API error ${res.status}`);
-
-      const data = await res.json();
-      const raw = data.content?.find(b => b.type === 'text')?.text ?? '';
       const cards = JSON.parse(raw.replace(/```json|```/g, '').trim());
       if (!Array.isArray(cards) || cards.length === 0) throw new Error('Empty card array');
 
@@ -2146,7 +2581,18 @@ Return ONLY a valid JSON array, no markdown, no commentary.
   // Auto-load on page open
   loadConfig();
   loadData();
-  renderApiKeyState();
+  // Silently attempt to sync from G2 app on startup (popup-blocker-safe: fails quietly)
+  setTimeout(() => syncFromG2(true), 400);
+  // Init provider pill state
+  (function() {
+    const saved = localStorage.getItem('ai_provider') || 'anthropic';
+    selectProvider(saved);
+    const modelInput = document.getElementById('ai-model-input');
+    const savedModel = localStorage.getItem('ai_model');
+    if (modelInput && savedModel) modelInput.value = savedModel;
+  })();
+  renderAISetupState();
+  renderHomeTab();
   updateTabVisibility();
   // Initialize sleep slider from stored value (works even before deck data exists)
   try {

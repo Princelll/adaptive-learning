@@ -14,8 +14,11 @@ import {
   TextContainerProperty,
   ListContainerProperty,
   ListItemContainerProperty,
+  ImageContainerProperty,
+  ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
+import { bedIconBytes, bookIconBytes, globeIconBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -108,17 +111,23 @@ function listContainer(
 interface PageConfig {
   textObject?: TextContainerProperty[];
   listObject?: ListContainerProperty[];
+  imageObject?: ImageContainerProperty[];
+  /** Raw pixel data to push after page build, one entry per image container. */
+  imageData?: Array<{ id: number; name: string; data: number[] }>;
 }
 
 async function rebuildPage(config: PageConfig): Promise<void> {
   const bridge = getBridge();
   const totalContainers =
-    (config.textObject?.length ?? 0) + (config.listObject?.length ?? 0);
+    (config.textObject?.length ?? 0) +
+    (config.listObject?.length ?? 0) +
+    (config.imageObject?.length ?? 0);
 
   const payload = {
     containerTotalNum: totalContainers,
     textObject: config.textObject ?? [],
     listObject: config.listObject ?? [],
+    imageObject: config.imageObject ?? [],
   };
 
   if (!state.startupRendered) {
@@ -128,6 +137,15 @@ async function rebuildPage(config: PageConfig): Promise<void> {
     state.startupRendered = true;
   } else {
     await bridge.rebuildPageContainer(new RebuildPageContainer(payload));
+  }
+
+  // Push raw pixel data for each image container (must be sequential per SDK docs)
+  if (config.imageData?.length) {
+    for (const img of config.imageData) {
+      await bridge.updateImageRawData(
+        new ImageRawDataUpdate({ containerID: img.id, containerName: img.name, imageData: img.data }),
+      );
+    }
   }
 }
 
@@ -146,20 +164,58 @@ const ZONE = {
 
 // ── Screen builders ──────────────────────────────────────────
 
-function buildWelcome(): PageConfig {
-  const header = buildTitleBlock('Adaptive Learning');
+function buildSleepCheckin(): PageConfig {
+  // 4 columns × 8 chars = 32 chars (fills the full display width exactly).
+  // Bar heights: Bad=1, Regular=2, Good=3, Great=4 rows (MAX_H=4 leaves room for image below).
+  const HEIGHTS = [1, 2, 3, 4];
+  const MAX_H   = 4;
+  const BAR     = ' ██████ '; // 8 chars: 1sp + 6 blocks + 1sp
+  const EMPTY   = '        '; // 8 chars: spaces
+  const LABELS  = ['Bad', 'Regular', 'Good', 'Great'];
+
+  // Rows generated top-to-bottom. threshold = MAX_H - r.
+  // A column shows a bar only when its height >= threshold.
+  // This produces the stepped bar-chart shape (tall on the right, short on the left).
+  const chartRows: string[] = [];
+  for (let r = 0; r < MAX_H; r++) {
+    const threshold = MAX_H - r;
+    chartRows.push(HEIGHTS.map(h => h >= threshold ? BAR : EMPTY).join(''));
+  }
+
+  // Label row: '>' prefix marks the selected column; each column is 8 chars wide.
+  // '>Regular' = 8 chars exactly; padEnd(8) handles shorter labels.
+  const labelRow = LABELS.map((lbl, i) => {
+    const prefix = i === state.sleepSelectIdx ? '>' : ' ';
+    return (prefix + lbl).padEnd(8);
+  }).join('');
+
+  // Header: "  Welcome to StudyHub." left, date right (e.g. "Mar 30")
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const leftStr = '  Welcome to StudyHub.';
+  const gapLen  = CHARS_PER_LINE - leftStr.length - dateStr.length;
+  const headerLine = leftStr + ' '.repeat(Math.max(1, gapLen)) + dateStr;
+  const header  = headerLine + '\n' + separator(CHARS_PER_LINE);
+
+  // Body: centered question + 4 chart rows + label row = 6 text lines (~120px from y=44 → ~y=164).
+  // Bed icon renders below the text at y≈170, centered horizontally.
+  const howStr  = 'How did you sleep?';
+  const howPad  = Math.floor((CHARS_PER_LINE - howStr.length) / 2);
   const body = [
-    '',
-    'Biometric-adaptive',
-    'spaced repetition.',
-    '',
-    'Click  : Planned session',
-    'Scroll : Pick a subject',
+    ' '.repeat(howPad) + howStr,
+    ...chartRows,
+    labelRow,
   ].join('\n');
+
   const footer = buildFooter(
-    [{ gesture: 'Tap', action: 'Start' }],
-    'Welcome',
+    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Confirm' }],
+    'Sleep',
   );
+
+  // Bed icon: 128×72px, centered horizontally, below bar chart text
+  const IMG_W = 128, IMG_H = 72;
+  const imgX  = Math.round((DISPLAY_WIDTH - IMG_W) / 2); // 224
+  const imgY  = 170; // below 6 text lines (~y=164), above footer (y=252)
 
   return {
     textObject: [
@@ -167,6 +223,57 @@ function buildWelcome(): PageConfig {
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
       textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 10, containerName: 'bed', xPosition: imgX, yPosition: imgY, width: IMG_W, height: IMG_H }),
+    ],
+    imageData: [
+      { id: 10, name: 'bed', data: bedIconBytes(IMG_W, IMG_H) },
+    ],
+  };
+}
+
+function buildWelcome(): PageConfig {
+  // Date/time — upper left corner, no padding
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dtLine  = `${dateStr}  ${timeStr}`; // left-aligned
+
+  // Greeting — single line with small left indent; question centered below
+  const name     = state.userName || 'StudyHub';
+  const greetStr = `Welcome to StudyHub, ${name}.`;
+  const questStr = 'What would you like to do?';
+  const centerOf = (s: string) =>
+    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
+  const greeting = [
+    centerOf(greetStr),  // centers within 32 cols
+    centerOf(questStr),
+  ].join('\n');
+
+  // List — bottom left, icons positioned to the right of each item
+  // List items at y=200, each ~44px tall → item0 ≈ y=204, item1 ≈ y=248
+  const menuItems = ['Continue Studying', 'View Insights'];
+  const ICON_W = 40, ICON_H = 40;
+  const ICON_X = DISPLAY_WIDTH - ICON_W - 8; // 8px from right edge
+  const ICON_Y0 = 202; // aligned with first list item
+  const ICON_Y1 = 246; // aligned with second list item
+
+  return {
+    textObject: [
+      textContainer(1, 'dt',       dtLine,   0, 4,   DISPLAY_WIDTH, 36),
+      textContainer(2, 'greeting', greeting, 0, 110, DISPLAY_WIDTH, 70),
+    ],
+    listObject: [
+      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 11, containerName: 'book',  xPosition: ICON_X, yPosition: ICON_Y0, width: ICON_W, height: ICON_H }),
+      new ImageContainerProperty({ containerID: 12, containerName: 'globe', xPosition: ICON_X, yPosition: ICON_Y1, width: ICON_W, height: ICON_H }),
+    ],
+    imageData: [
+      { id: 11, name: 'book',  data: bookIconBytes(ICON_W, ICON_H) },
+      { id: 12, name: 'globe', data: globeIconBytes(ICON_W, ICON_H) },
     ],
   };
 }
@@ -366,6 +473,7 @@ function buildSummary(): PageConfig {
 // ── Public API ───────────────────────────────────────────────
 
 const SCREEN_BUILDERS: Record<string, () => PageConfig> = {
+  sleep_checkin: buildSleepCheckin,
   welcome: buildWelcome,
   no_decks: buildNoDecks,
   deck_select: buildDeckSelect,

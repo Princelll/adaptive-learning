@@ -3,7 +3,7 @@
 // Connects SDK bridge, storage, session manager, and renderer
 // ============================================================
 
-import { state, RATING_OPTIONS } from './state';
+import { state, RATING_OPTIONS, getBridge } from './state';
 import { showScreen } from './renderer';
 import { onEvenHubEvent, setAppActions } from './events';
 import { log } from './log';
@@ -105,6 +105,35 @@ async function rateCard(idx: number): Promise<void> {
 
 function showModelInsights(): void {
   state.screen = 'model_insights';
+  void safeShowScreen();
+}
+
+async function submitSleepCheckin(): Promise<void> {
+  const qualities = ['bad', 'regular', 'good', 'great'] as const;
+  const scores    = [0.25,  0.5,      0.75,  1.0];
+  await storage.saveSleepEntry({
+    date:         new Date().toISOString().slice(0, 10),
+    quality:      qualities[state.sleepSelectIdx],
+    qualityScore: scores[state.sleepSelectIdx],
+    timestamp:    Date.now(),
+  });
+  log(`Sleep quality logged: ${qualities[state.sleepSelectIdx]}`);
+  await refreshDashboard();
+  state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+  void safeShowScreen();
+}
+
+async function skipSleepCheckin(): Promise<void> {
+  // Record a skipped entry so the screen doesn't reappear today
+  await storage.saveSleepEntry({
+    date:         new Date().toISOString().slice(0, 10),
+    quality:      'skipped',
+    qualityScore: null,
+    timestamp:    Date.now(),
+  });
+  log('Sleep check-in skipped for today');
+  await refreshDashboard();
+  state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
   void safeShowScreen();
 }
 
@@ -226,6 +255,8 @@ export async function initApp(): Promise<void> {
     selectDeck,
     startPlannedStudy,
     showModelInsights,
+    submitSleepCheckin,
+    skipSleepCheckin,
   });
 
   // Connect to glasses bridge with error recovery
@@ -246,16 +277,83 @@ export async function initApp(): Promise<void> {
   await connectToGlasses(onEvenHubEvent);
   log('Bridge connected with error recovery');
 
+  // Fetch the logged-in Even user's name for the welcome greeting
+  try {
+    const userInfo = await getBridge().getUserInfo();
+    if (userInfo?.name) state.userName = userInfo.name;
+  } catch {
+    // name stays '' — welcome screen falls back to generic greeting
+  }
+
   // Load deck list for selection screen and dashboard data
   await refreshDashboard();
   const allDecks = await storage.getAllDecks();
   state.deckNames = allDecks.map(d => d.name);
   state.deckIds = allDecks.map(d => d.id);
 
-  // Start on welcome or no_decks screen
-  state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+  // Show sleep check-in once per day on first open, otherwise go to welcome
+  const needsSleepCheckin = await storage.needsSleepCheckin();
+  if (needsSleepCheckin) {
+    state.sleepSelectIdx = 1; // default: Regular
+    state.screen = 'sleep_checkin';
+  } else {
+    state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+  }
   await showScreen();
 
   log('StudyHub ready');
   updateBrowserStatus();
+
+  // ── Deck sync: storage event + polling fallback ──────────────
+  //
+  // The storage event only fires when localStorage is changed by a DIFFERENT
+  // browsing context (tab/window). If the companion and G2 app are on different
+  // origins (e.g. localhost vs 127.0.0.1) or in the same window, the event may
+  // not fire. The 2-second poll below catches all cases.
+
+  let lastStorageHash = localStorage.getItem('adaptive_learning_data') ?? '';
+
+  async function syncDecksFromStorage(): Promise<void> {
+    await storage.open();
+    const allDecks = await storage.getAllDecks();
+    state.deckNames = allDecks.map(d => d.name);
+    state.deckIds = allDecks.map(d => d.id);
+    state.deckSelectIdx = 0;
+    if (allDecks.length > 0) {
+      currentDeckId = allDecks[0].id;
+      state.deckName = allDecks[0].name;
+      const reviewStates = await storage.getReviewStatesForDeck(allDecks[0].id);
+      const now = Date.now();
+      state.cardsDue = reviewStates.filter(s => s.fsrs.due.getTime() <= now).length;
+      if (state.cardsDue === 0) {
+        state.cardsDue = reviewStates.filter(s => s.fsrs.state === State.New).length;
+      }
+    }
+    if (state.screen === 'welcome' || state.screen === 'deck_select' || state.screen === 'no_decks') {
+      state.screen = state.deckNames.length > 0 ? 'welcome' : 'no_decks';
+      void safeShowScreen();
+    }
+    updateBrowserStatus();
+    log(`Decks reloaded: ${allDecks.length} total`);
+  }
+
+  // storage event — fires immediately when another tab on the same origin writes
+  window.addEventListener('storage', async (e: StorageEvent) => {
+    if (e.key === 'adaptive_learning_data') {
+      log('Storage event: companion updated data');
+      lastStorageHash = localStorage.getItem('adaptive_learning_data') ?? '';
+      await syncDecksFromStorage();
+    }
+  });
+
+  // Polling fallback — catches changes the storage event misses (cross-origin,
+  // same-window writes, or race conditions). Runs every 2 s, only on idle screens.
+  setInterval(() => {
+    const current = localStorage.getItem('adaptive_learning_data') ?? '';
+    if (current !== lastStorageHash) {
+      lastStorageHash = current;
+      log('Poll detected storage change — reloading decks');
+      void syncDecksFromStorage();
+    }
+  }, 2000);
 }

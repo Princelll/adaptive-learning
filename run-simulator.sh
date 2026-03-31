@@ -35,9 +35,9 @@ else
   git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
 fi
 
-# Verify companion file made it
-if [ ! -f "$APP_DIR/companion/index.html" ]; then
-  echo "ERROR: companion/index.html missing after sync — check network/git"
+# Verify companion file made it (now in public/companion/)
+if [ ! -f "$APP_DIR/public/companion/index.html" ]; then
+  echo "ERROR: public/companion/index.html missing after sync — check network/git"
   read -p "Press enter to exit..."
   exit 1
 fi
@@ -49,36 +49,37 @@ echo "[2/5] Installing dependencies..."
 cd "$APP_DIR"
 npm install --silent
 
-# ── Step 3: Open companion ────────────────────────────
+# ── Step 3: Free port 5173 ────────────────────────────
 echo ""
-echo "[3/5] Opening companion app..."
-COMPANION_FILE="$APP_DIR/companion/index.html"
-if command -v explorer.exe &>/dev/null; then
-  explorer.exe "$(cygpath -w "$COMPANION_FILE")" 2>/dev/null || true
-elif command -v xdg-open &>/dev/null; then
-  xdg-open "$COMPANION_FILE" 2>/dev/null || true
-elif command -v open &>/dev/null; then
-  open "$COMPANION_FILE" 2>/dev/null || true
-fi
+echo "[3/5] Freeing port 5173..."
+
+# Kill any leftover even-dev process from a previous session
+powershell.exe -NoProfile -Command "
+  \$pids = (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess | Sort-Object -Unique
+  foreach (\$p in \$pids) { Stop-Process -Id \$p -Force -ErrorAction SilentlyContinue }
+" 2>/dev/null || true
+sleep 1
+echo "  Done."
+
+# Open companion in browser 8 seconds after simulator starts (Vite needs a moment)
+# The companion is in public/companion/index.html inside the app — Vite serves it
+# at localhost:5173/companion/index.html automatically. Same origin = shared localStorage.
+BUST=$(date +%s)
+(sleep 8 && powershell.exe -NoProfile -Command "Start-Process 'http://localhost:5173/companion/index.html?v=$BUST'") &
 
 # ── Step 4: Start simulator ───────────────────────────
 echo ""
 echo "[4/5] Starting Even Hub simulator..."
 echo ""
 echo "  G2 App:    http://localhost:5173"
-echo "  Companion: opened as file://"
+echo "  Companion: http://localhost:5173/companion/index.html (opens in ~8s)"
 echo ""
-echo "  Windows will auto-arrange in ~10 seconds."
+echo "  Both run on the same origin — localStorage is shared automatically."
+echo "  Any deck saved in the companion instantly updates the glasses display."
+echo ""
 echo "  Press Ctrl+C to stop."
 echo "=========================================="
 echo ""
-
-# Arrange windows 10s after simulator starts (all windows need time to open)
-ARRANGE="$(cygpath -w "$APP_DIR/arrange-windows.ps1" 2>/dev/null || echo "")"
-if [ -n "$ARRANGE" ]; then
-  # -NonInteractive removed so the window stays open showing debug output
-  (sleep 10 && powershell.exe -ExecutionPolicy Bypass -File "$ARRANGE") &
-fi
 
 cd "$EVEN_DEV"
 ./start-even.sh "$APP_NAME"

@@ -7,6 +7,7 @@ import type { ConfidenceRating } from '../core/models';
 
 /** All screens the glasses can show */
 export type Screen =
+  | 'sleep_checkin'
   | 'welcome'
   | 'no_decks'
   | 'deck_select'
@@ -23,6 +24,9 @@ export const RATING_OPTIONS: ConfidenceRating[] = ['again', 'hard', 'good', 'eas
 export interface AppState {
   screen: Screen;
   startupRendered: boolean;
+
+  // User
+  userName: string;
 
   // Session
   questionText: string;
@@ -47,11 +51,16 @@ export interface AppState {
   deckNames: string[];
   deckIds: string[];
   deckSelectIdx: number;
+
+  // Sleep check-in (0=Bad 1=Regular 2=Good 3=Great)
+  sleepSelectIdx: number;
 }
 
 export const state: AppState = {
   screen: 'welcome',
   startupRendered: false,
+
+  userName: '',
 
   questionText: '',
   answerText: '',
@@ -72,6 +81,8 @@ export const state: AppState = {
   deckNames: [],
   deckIds: [],
   deckSelectIdx: 0,
+
+  sleepSelectIdx: 1, // default: Regular
 };
 
 // Bridge reference — set once at init
