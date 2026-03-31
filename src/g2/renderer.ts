@@ -234,38 +234,33 @@ function buildSleepCheckin(): PageConfig {
 }
 
 function buildWelcome(): PageConfig {
-  // Date/time — right-aligned at top via character padding (monospace font, 32 cols = 576px)
+  // Date/time — top right corner, right-aligned via monospace padding
   const now     = new Date();
   const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const dtLine  = `${dateStr}  ${timeStr}`.padStart(CHARS_PER_LINE);
 
-  // Greeting — split into shorter lines so each line centers visibly
-  // "Welcome to StudyHub," = 20 chars → 6 leading spaces (clear centering)
-  // name + "."            = varies   → centered individually
-  // "What would you like to do?" = 26 chars → 3 leading spaces
-  const name   = state.userName || 'StudyHub';
-  const center = (s: string) =>
+  // Greeting — one line for name, centered question below
+  const name     = state.userName || 'StudyHub';
+  const greetStr = `Welcome to StudyHub, ${name}.`; // single line — never split
+  const questStr = 'What would you like to do?';
+  const centerOf = (s: string) =>
     ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
   const greeting = [
-    center('Welcome to StudyHub,'),
-    center(name + '.'),
-    '',
-    center('What would you like to do?'),
+    ' ' + greetStr,      // 1-space left indent to match mockup
+    centerOf(questStr),  // centered (3 leading spaces for 26-char string)
   ].join('\n');
 
-  // List — lower portion, items right-shifted with leading spaces so they
-  // appear in the right half of the display (x-position on list may be ignored by SDK)
-  const PAD = ' '.repeat(14); // 14 spaces + 17-char item ≈ right half of 32-col display
-  const menuItems = [PAD + 'Continue Studying', PAD + 'View Insights'];
+  // List — bottom left, no leading spaces, selection highlight provided by SDK
+  const menuItems = ['Continue Studying', 'View Insights'];
 
   return {
     textObject: [
       textContainer(1, 'dt',       dtLine,   0, 4,   DISPLAY_WIDTH, 36),
-      textContainer(2, 'greeting', greeting, 0, 88,  DISPLAY_WIDTH, 100),
+      textContainer(2, 'greeting', greeting, 0, 100, DISPLAY_WIDTH, 80),
     ],
     listObject: [
-      listContainer(3, 'menu', menuItems, 0, 196, DISPLAY_WIDTH, 92, true),
+      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
     ],
   };
 }
