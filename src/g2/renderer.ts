@@ -164,7 +164,12 @@ const ZONE = {
 
 // ── Welcome background template ──────────────────────────────
 // Loads the 576×288 template PNG, paints over the [DATE AND TIME]
-// and [NAME] placeholders with real values, returns PNG bytes.
+// and [NAME] placeholders, then splits into two 288×144 halves.
+//
+// G2 SDK limits: ImageContainerProperty width ≤ 288, height ≤ 144.
+// The 576×288 display requires two side-by-side 288×144 image containers.
+// Only the top half (y=0–144) is needed as an image — the bottom menu
+// area (y=215–288) is rendered by the list container.
 //
 // Template pixel measurements (from BMP analysis):
 //   [DATE AND TIME]  → y=0–17,   x=423–575  (right-aligned, top)
@@ -188,21 +193,23 @@ const G2_GREEN = '#39ff14';
 // Approximate the Even OS monospace font on canvas (~10px per char at 16px size)
 const G2_FONT  = '16px "Courier New", monospace';
 
-async function renderWelcomeBg(dtStr: string, name: string): Promise<number[]> {
-  const W = 576, H = 288;
-  const canvas = document.createElement('canvas');
-  canvas.width  = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d')!;
+// Returns [leftHalfPng, rightHalfPng] — each 288×144 px
+async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], number[]]> {
+  const W = 576, H_FULL = 288, HALF_W = 288, HALF_H = 144;
 
-  // Draw the template (static layout, icons, question text, menu labels)
+  // Draw entire template onto a full-size canvas
+  const full = document.createElement('canvas');
+  full.width  = W;
+  full.height = H_FULL;
+  const ctx = full.getContext('2d')!;
+
   const bg = await loadWelcomeBg();
-  ctx.drawImage(bg, 0, 0, W, H);
+  ctx.drawImage(bg, 0, 0, W, H_FULL);
 
   // Erase placeholder regions with black
   ctx.fillStyle = '#000';
-  ctx.fillRect(408, 0,  170, 22);   // [DATE AND TIME] — top-right
-  ctx.fillRect( 62, 46, 300, 30);   // "Welcome to StudyHub, [NAME]." greeting line
+  ctx.fillRect(408, 0,  170, 22);  // [DATE AND TIME] — top-right
+  ctx.fillRect( 62, 46, 300, 30);  // greeting line
 
   // Draw real values in G2 green
   ctx.fillStyle    = G2_GREEN;
@@ -216,7 +223,16 @@ async function renderWelcomeBg(dtStr: string, name: string): Promise<number[]> {
   // Greeting — left-indented at same x as template (~64px)
   ctx.fillText(`Welcome to StudyHub, ${name}.`, 64, 51);
 
-  return canvasToPngBytes(canvas);
+  // Extract left half (x=0..287, y=0..143) and right half (x=288..575, y=0..143)
+  const mkHalf = (srcX: number) => {
+    const c = document.createElement('canvas');
+    c.width  = HALF_W;
+    c.height = HALF_H;
+    c.getContext('2d')!.drawImage(full, srcX, 0, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
+    return canvasToPngBytes(c);
+  };
+
+  return [mkHalf(0), mkHalf(HALF_W)];
 }
 
 // ── Screen builders ──────────────────────────────────────────
@@ -297,29 +313,25 @@ async function buildWelcome(): Promise<PageConfig> {
   const dtStr   = `${dateStr}  ${timeStr}`;
   const name    = state.userName || 'Simulator';
 
-  // Render full-screen template with real date/time and name baked in
-  const bgPng = await renderWelcomeBg(dtStr, name);
+  // SDK limit: ImageContainerProperty max 288×144 px.
+  // Split top half of template into left (x=0..287) and right (x=288..575) 288×144 tiles.
+  const [bgLeft, bgRight] = await renderWelcomeBg(dtStr, name);
 
-  // List container sits over the menu area at the bottom of the template.
-  // Template positions: "Continue Studying" y≈225, "View Insights" y≈264.
-  // The list renders its own selection box on top of the template's static text.
+  // List sits over the menu area (y=215..288). No evt text container needed —
+  // the list's isEventCapture=1 is sufficient (same pattern as buildRating).
   const menuItems = ['Continue Studying', 'View Insights'];
 
   return {
-    textObject: [
-      // Event-capture container required for ring gesture events
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-    ],
     listObject: [
-      // Positioned over the bottom menu area of the template (y=215, covers both items)
       listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
     ],
     imageObject: [
-      // Full-screen background: 576×288, behind all other containers
-      new ImageContainerProperty({ containerID: 20, containerName: 'welcome_bg', xPosition: 0, yPosition: 0, width: DISPLAY_WIDTH, height: 288 }),
+      new ImageContainerProperty({ containerID: 20, containerName: 'bg_left',  xPosition: 0,   yPosition: 0, width: 288, height: 144 }),
+      new ImageContainerProperty({ containerID: 21, containerName: 'bg_right', xPosition: 288, yPosition: 0, width: 288, height: 144 }),
     ],
     imageData: [
-      { id: 20, name: 'welcome_bg', data: bgPng },
+      { id: 20, name: 'bg_left',  data: bgLeft  },
+      { id: 21, name: 'bg_right', data: bgRight },
     ],
   };
 }
