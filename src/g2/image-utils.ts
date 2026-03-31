@@ -108,21 +108,87 @@ export function bedIconBytes(w = 128, h = 80): number[] {
 // ── Book icon ─────────────────────────────────────────────────
 // Used on the welcome screen "Continue Studying" item.
 
-export function bookIconBytes(w = 24, h = 20): number[] {
+// Open book: two pages, spine in center, horizontal lines for text rows.
+export function bookIconBytes(w = 40, h = 40): number[] {
   return renderIcon(w, h, (ctx, w, h) => {
     ctx.fillStyle = '#FFF';
-    const lw = 2;
+    const lw   = Math.max(2, Math.round(w / 20));
+    const cx   = Math.round(w / 2); // center spine x
+    const padT = Math.round(h * 0.10);
+    const padB = Math.round(h * 0.10);
+    const padL = Math.round(w * 0.05);
+    const padR = Math.round(w * 0.05);
 
-    // Spine (left edge)
-    ctx.fillRect(0, 0, lw, h);
+    // Left page outline
+    ctx.fillRect(padL, padT, cx - padL, lw);           // top
+    ctx.fillRect(padL, padT, lw, h - padT - padB);     // left edge
+    ctx.fillRect(padL, h - padB - lw, cx - padL, lw);  // bottom
 
-    // Cover (outline)
-    ctx.fillRect(0, 0, w, lw);          // top
-    ctx.fillRect(0, h - lw, w, lw);     // bottom
-    ctx.fillRect(w - lw, 0, lw, h);     // right
+    // Right page outline
+    ctx.fillRect(cx, padT, w - cx - padR, lw);         // top
+    ctx.fillRect(w - padR - lw, padT, lw, h - padT - padB); // right edge
+    ctx.fillRect(cx, h - padB - lw, w - cx - padR, lw); // bottom
 
-    // Pages (two lines inside)
-    ctx.fillRect(4, Math.round(h * 0.3), w - 6, lw);
-    ctx.fillRect(4, Math.round(h * 0.6), w - 6, lw);
+    // Spine (center line)
+    ctx.fillRect(cx - lw, padT, lw * 2, h - padT - padB);
+
+    // Text lines — left page
+    const lineGap = Math.round((h - padT - padB) / 4);
+    for (let i = 1; i <= 2; i++) {
+      const ly = padT + lineGap * i;
+      ctx.fillRect(padL + lw + 2, ly, cx - padL - lw - 4, lw);
+    }
+    // Text lines — right page
+    for (let i = 1; i <= 2; i++) {
+      const ly = padT + lineGap * i;
+      ctx.fillRect(cx + lw + 2, ly, w - cx - padR - lw - 4, lw);
+    }
+
+    // Curved bottom (page curl) — two small arcs at bottom center
+    ctx.beginPath();
+    ctx.arc(cx, h - padB, Math.round(w * 0.08), 0, Math.PI);
+    ctx.fill();
+  });
+}
+
+// Globe / compass icon for "View Insights" list item.
+export function globeIconBytes(w = 40, h = 40): number[] {
+  return renderIcon(w, h, (ctx, w, h) => {
+    ctx.fillStyle = '#FFF';
+    const lw = Math.max(2, Math.round(w / 20));
+    const cx = Math.round(w / 2);
+    const cy = Math.round(h / 2);
+    const r  = Math.round(Math.min(w, h) / 2) - lw;
+
+    // Outer circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = '#FFF';
+    ctx.stroke();
+
+    // Horizontal equator line
+    ctx.fillRect(cx - r, cy - Math.round(lw / 2), r * 2, lw);
+
+    // Vertical meridian line
+    ctx.fillRect(cx - Math.round(lw / 2), cy - r, lw, r * 2);
+
+    // Ellipse arcs (longitude lines) using bezier curves
+    // Left arc
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.bezierCurveTo(cx - Math.round(r * 0.6), cy - Math.round(r * 0.5),
+                      cx - Math.round(r * 0.6), cy + Math.round(r * 0.5),
+                      cx, cy + r);
+    ctx.lineWidth = lw;
+    ctx.stroke();
+    // Right arc
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.bezierCurveTo(cx + Math.round(r * 0.6), cy - Math.round(r * 0.5),
+                      cx + Math.round(r * 0.6), cy + Math.round(r * 0.5),
+                      cx, cy + r);
+    ctx.lineWidth = lw;
+    ctx.stroke();
   });
 }

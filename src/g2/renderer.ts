@@ -18,7 +18,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes } from './image-utils';
+import { bedIconBytes, bookIconBytes, globeIconBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -234,33 +234,46 @@ function buildSleepCheckin(): PageConfig {
 }
 
 function buildWelcome(): PageConfig {
-  // Date/time — top right corner, right-aligned via monospace padding
+  // Date/time — upper left corner, no padding
   const now     = new Date();
   const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dtLine  = `${dateStr}  ${timeStr}`.padStart(CHARS_PER_LINE);
+  const dtLine  = `${dateStr}  ${timeStr}`; // left-aligned
 
-  // Greeting — one line for name, centered question below
+  // Greeting — single line with small left indent; question centered below
   const name     = state.userName || 'StudyHub';
-  const greetStr = `Welcome to StudyHub, ${name}.`; // single line — never split
+  const greetStr = `Welcome to StudyHub, ${name}.`;
   const questStr = 'What would you like to do?';
   const centerOf = (s: string) =>
     ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
   const greeting = [
-    ' ' + greetStr,      // 1-space left indent to match mockup
-    centerOf(questStr),  // centered (3 leading spaces for 26-char string)
+    centerOf(greetStr),  // centers within 32 cols
+    centerOf(questStr),
   ].join('\n');
 
-  // List — bottom left, no leading spaces, selection highlight provided by SDK
+  // List — bottom left, icons positioned to the right of each item
+  // List items at y=200, each ~44px tall → item0 ≈ y=204, item1 ≈ y=248
   const menuItems = ['Continue Studying', 'View Insights'];
+  const ICON_W = 40, ICON_H = 40;
+  const ICON_X = DISPLAY_WIDTH - ICON_W - 8; // 8px from right edge
+  const ICON_Y0 = 202; // aligned with first list item
+  const ICON_Y1 = 246; // aligned with second list item
 
   return {
     textObject: [
       textContainer(1, 'dt',       dtLine,   0, 4,   DISPLAY_WIDTH, 36),
-      textContainer(2, 'greeting', greeting, 0, 100, DISPLAY_WIDTH, 80),
+      textContainer(2, 'greeting', greeting, 0, 110, DISPLAY_WIDTH, 70),
     ],
     listObject: [
       listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 11, containerName: 'book',  xPosition: ICON_X, yPosition: ICON_Y0, width: ICON_W, height: ICON_H }),
+      new ImageContainerProperty({ containerID: 12, containerName: 'globe', xPosition: ICON_X, yPosition: ICON_Y1, width: ICON_W, height: ICON_H }),
+    ],
+    imageData: [
+      { id: 11, name: 'book',  data: bookIconBytes(ICON_W, ICON_H) },
+      { id: 12, name: 'globe', data: globeIconBytes(ICON_W, ICON_H) },
     ],
   };
 }
