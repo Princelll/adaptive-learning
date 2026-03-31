@@ -3,7 +3,7 @@
 // Connects SDK bridge, storage, session manager, and renderer
 // ============================================================
 
-import { state, RATING_OPTIONS } from './state';
+import { state, RATING_OPTIONS, getBridge } from './state';
 import { showScreen } from './renderer';
 import { onEvenHubEvent, setAppActions } from './events';
 import { log } from './log';
@@ -276,6 +276,14 @@ export async function initApp(): Promise<void> {
   log('Waiting for glasses bridge...');
   await connectToGlasses(onEvenHubEvent);
   log('Bridge connected with error recovery');
+
+  // Fetch the logged-in Even user's name for the welcome greeting
+  try {
+    const userInfo = await getBridge().getUserInfo();
+    if (userInfo?.name) state.userName = userInfo.name;
+  } catch {
+    // name stays '' — welcome screen falls back to generic greeting
+  }
 
   // Load deck list for selection screen and dashboard data
   await refreshDashboard();

@@ -115,6 +115,18 @@ export function resolveEventType(
 export function onEvenHubEvent(event: EvenHubEvent): void {
   const eventType = resolveEventType(event);
 
+  // Welcome menu: 0 = Continue Studying, 1 = View Insights
+  if (state.screen === 'welcome' && event.listEvent) {
+    const listIdx = event.listEvent.currentSelectItemIndex ?? 0;
+    if (eventType === OsEventTypeList.CLICK_EVENT) {
+      log(`Welcome menu selected: ${listIdx}`);
+      if (listIdx === 0) void startPlannedStudyFn();
+      else showModelInsightsFn();
+      return;
+    }
+    return;
+  }
+
   // For rating screen with list, check for list selection
   if (state.screen === 'rating' && event.listEvent) {
     const listIdx = event.listEvent.currentSelectItemIndex ?? 0;
@@ -158,10 +170,6 @@ function handleClick(): void {
       void submitSleepCheckinFn();
       break;
 
-    case 'welcome':
-      void startPlannedStudyFn();
-      break;
-
     case 'deck_select':
       void selectDeckFn(state.deckSelectIdx);
       break;
@@ -202,11 +210,6 @@ function handleScrollUp(): void {
       void safeShowScreen();
       break;
 
-    case 'welcome':
-      state.screen = 'deck_select';
-      void safeShowScreen();
-      break;
-
     case 'model_insights':
       state.screen = 'dashboard';
       void safeShowScreen();
@@ -224,11 +227,6 @@ function handleScrollDown(): void {
     case 'sleep_checkin':
       // Scroll down = move selection right (toward Great)
       state.sleepSelectIdx = Math.min(3, state.sleepSelectIdx + 1);
-      void safeShowScreen();
-      break;
-
-    case 'welcome':
-      state.screen = 'deck_select';
       void safeShowScreen();
       break;
 

@@ -25,6 +25,9 @@ export interface AppState {
   screen: Screen;
   startupRendered: boolean;
 
+  // User
+  userName: string;
+
   // Session
   questionText: string;
   answerText: string;
@@ -56,6 +59,8 @@ export interface AppState {
 export const state: AppState = {
   screen: 'welcome',
   startupRendered: false,
+
+  userName: '',
 
   questionText: '',
   answerText: '',
