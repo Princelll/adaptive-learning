@@ -151,6 +151,100 @@ export function bookIconBytes(w = 40, h = 40): number[] {
   });
 }
 
+// ── BMP-derived icons (from user-uploaded public/icons/*.bmp) ────────────
+// Pixel data decoded from 49×40 24-bit BMPs at threshold >5 brightness.
+// Each byte is 255 (lit) or 0 (off). Width=49, Height=40.
+
+function decodeBmpB64(b64: string): number[] {
+  const bin = atob(b64);
+  const bytes: number[] = new Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+const BOOK_BMP_B64 =
+  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////' +
+  '//////8AAAAAAAAA//////////////////8AAAAAAAAAAAAAAAAA////////////////////////' +
+  '//////////////////////////8AAAAAAAAAAP///////wAAAAAAAAAAAAAA/////////////wAA' +
+  'AAAAAAAAAAAA////////AAAAAP////////8AAAAAAAAAAAAAAAD//////////wAAAAAAAAAAAAAA' +
+  'AP////////8AAP//////////AAAAAAAAAAAAAAAAAAD///8AAAAAAAAAAAAAAAAAAAD/////////' +
+  '/wD///8AAP///wAAAP//////////AAAA////AAAA////////////AAAA////AAD///8A////AAD/' +
+  '//8AAP////////////8AAP///wAA//////////////8AAP///wAA////AP///wAA////AP//////' +
+  '////////AAD///8AAP//////////////AAD///8AAP///wD///8AAP///wAAAAAAAAAAAAAAAAAA' +
+  '////AAAAAAAAAAAAAAAAAAAA////AAD///8A////AAD///8A//////////////8AAP///wAAAP//' +
+  '/////////wAAAP///wAA////AP///wAA////AP//////////////AAD///8AAP//////////////' +
+  'AAD///8AAP///wD///8AAP///wD//////////////wAA////AAD//////////////wAA////AAD/' +
+  '//8A////AAD///8AAAAAAAAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAP///wAA////AP///wAA' +
+  '////AAAAAAAAAAAAAAAAAAD///8AAAAAAAAAAAAAAAAAAAD///8AAP///wD///8AAP///wD/////' +
+  '/////////wAA////AAD//////////////wAA////AAD///8A////AAD///8A//////////////8A' +
+  'AP///wAA//////////////8AAP///wAA////AP///wAA////AAD///////////8AAAD///8AAAD/' +
+  '////////////AAD///8AAP///wD///8AAP///wAAAAAAAAAAAAAAAAAA////AAAAAAAAAAAAAAAA' +
+  'AAAA////AAD///8A////AAD///8A//////////////8AAP///wAA//////////////8AAP///wAA' +
+  '////AP///wAA////AP//////////////AAD///8AAP//////////////AAD///8AAP///wD///8A' +
+  'AP///wD//////////////wAA////AAAA/////////////wAA////AAD///8A////AAD///8AAAAA' +
+  'AAAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAP///wAA////AP///wAA////AAAAAAAAAAAAAAAA' +
+  'AAD///8AAAAAAAAAAAAAAAAAAAD///8AAP///wD///8AAP///wAAAAAAAAAAAAAAAAAA////AAAA' +
+  'AAAAAAAAAAAAAAAA////AAD///8A////AAD///8AAAAAAAAAAAAAAAAAAP///wAAAAAAAAAAAAAAAA' +
+  'AAAP///wAA////AP///wAA////AAAAAAAAAAAAAAAAAAD///8AAAAAAAAAAAAAAAAAAAD///8AAP' +
+  '///wD///8AAP///wAAAAAAAAAAAAAAAAAA////AAAAAAAAAAAAAAAAAAAA////AAD///8A////AA' +
+  'D/////////////////AAAAAP///wAAAAAA/////////////////wAA////AP///wAA///////////' +
+  '///////////////8A//////////////////////8AAP///wD///8AAP//////////////////////////' +
+  '//////////////////////AAD///8A////AAD/////AAAAAAAAAAD//////////////////wAAAAAAAAAA' +
+  '/////wAA////AP///wAAAAAAAAAAAAAAAAAAAAAA//////////8AAAAAAAAAAAAAAAAAAAAAAP///wD/////' +
+  '/////////////////////wAAAP//AAD///////////////////////////8A/////////////////////'+
+  '////////wAAAAD/////////////////////////////AP///////////////////////////////////////////'+
+  '////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAA/////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+  'AAAAAAAAAAAAAAAAAAAAAAAD//////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+
+const GLOBE_BMP_B64 =
+  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+  'AAAAAAAAAAAA//////8AAAAA////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/' +
+  '/////////wAA//////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAA////' +
+  '/////wAAAP////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAAAAD/////AAAAAAAA' +
+  '/////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////AAAAAAAAAP///wAAAAAAAP////////8A' +
+  'AAAAAAAAAAAAAAAAAAAAAAAA/////////wAAAP//AAD///8AAAAAAAD//////////wAAAAAAAAAA' +
+  'AAAAAAAAAAAA////AAAA//////////8A////AAAAAAD//wD//wAA////AAAAAAAAAAAAAAAAAAAA' +
+  'AP//AAAAAP///////////////wAAAP//////////AAD//wAAAAAAAAAAAAAAAAAAAP///wAAAAD/' +
+  'AAD//////////////////////wD/AAAA////AAAAAAAAAAAAAAAAAP///////wD//wD///8A//8A' +
+  '////////////AAAAAAAA//////8AAAAAAAAAAAAAAP///wAA//////////8AAP//AP///wD/////' +
+  '////AAAA//8AAP//AAAAAAAAAAAAAAD//wAAAAAA/////wAAAAD//wD//////////wD///8AAP//' +
+  'AAD///8AAAAAAAAAAAAA//8AAAAA////////AAAAAP///////wAA//8AAAD//////wAAAP//AAAA' +
+  'AAAAAAAAAP//AP///////////////wD//////wAAAP//AAAAAP//////AAD//wAAAAAAAAAAAAD/' +
+  '/////wAA/////wAA//////////8AAAD//wAAAP////////////8AAAAAAAAAAAD//////wAAAP//' +
+  '//8AAAAA////////AAAA//8AAP///wD/AAAA/////wAAAAAAAAD///8AAP//AP//AAD//wAAAP//' +
+  '////////AP//AP//AAAA//8AAAAA////AAAAAAAA//8AAAAA/////wAA//8AAAD//wD/////////' +
+  '////AAAAAP//AAAAAAD//wAAAAAAAP//AAAAAP////8AAP//AAD//wAA////AAD/////AAAAAAAA' +
+  '/wAAAAAA//8AAAAAAAD//wD/////////AAAA/////wAAAP///wD/////////AAAAAP//AAAAAP//' +
+  'AAAAAAAA//8A////////////AP////8AAAD///////////////////////8AAAD//wAAAAAAAP//' +
+  'AP//////////////////////////AAD//wD//wAA////////AAAA//8AAAAAAAD///8A//8AAAAA' +
+  'AAD/////////AP///wD//wAA//8AAAAA//////8A////AAAAAAAAAP////8AAAAAAAAA//////8A' +
+  'AAD///////8AAAD//wAAAP//AP//////AAAAAAAAAAAA////AAAAAAAA////AAD///8A//////8A' +
+  'AAAAAP//AP//AAAA////AAAAAAAAAAAAAP//AAAAAAAA//8AAAAAAP////////8AAAAAAAD/////' +
+  '/wAAAAD//wAAAAAAAAAAAAD//wAAAAD///8AAAAAAAAAAP///////////wAA/////wAAAAAA//8A' +
+  'AAAAAAAAAAAA////AAAA////AAAAAAAAAAAA//////////8AAP////8AAAAA////AAAAAAAAAAAA' +
+  'AAD///8AAP//AP////8AAAAAAP///wAA////////////AAAA////AAAAAAAAAAAAAAAAAP///wAA' +
+  '/////wD///8AAAD///8AAAAAAAD/////AAD/////AAAAAAAAAAAAAAAAAAAA////////AAAAAP//' +
+  '/wAA////AAAAAAAAAAD/////////AAAAAAAAAAAAAAAAAAAAAAD/////AAAAAAAA/wAAAP///wAA' +
+  'AAAAAAAAAP////8AAAAAAAAAAAAAAAAAAAAAAAAAAAD///8AAAAAAAAAAAD///8AAAAAAAAAAAD/' +
+  '/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//AAAAAAAAAAD//////wAAAAAAAAD///8AAAAAAAAA' +
+  'AAAAAAAAAAAAAAAAAAAAAAD/////AAAAAP//////////AAAAAP////8AAAAAAAAAAAAAAAAAAAAA' +
+  'AAAAAAAAAAAAAP////////////8AAP//////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+  'AAAAAP////////8AAAAA//////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////' +
+  '//8AAAAAAAD///////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+
+/** Book icon from user BMP (49×40 px). */
+export function bookIconBytesFromBmp(): { w: number; h: number; pixels: number[] } {
+  return { w: 49, h: 40, pixels: decodeBmpB64(BOOK_BMP_B64) };
+}
+
+/** Globe icon from user BMP (49×40 px). */
+export function globeIconBytesFromBmp(): { w: number; h: number; pixels: number[] } {
+  return { w: 49, h: 40, pixels: decodeBmpB64(GLOBE_BMP_B64) };
+}
+
 // Globe / compass icon for "View Insights" list item.
 export function globeIconBytes(w = 40, h = 40): number[] {
   return renderIcon(w, h, (ctx, w, h) => {

@@ -82,7 +82,10 @@ echo "=========================================="
 echo ""
 
 cd "$EVEN_DEV"
-./start-even.sh "$APP_NAME"
+# NPM_CONFIG_PREFER_OFFLINE forces npx to use the cached simulator binary
+# instead of downloading @latest from the registry (the latest may be broken).
+# If no cache exists, it falls back to network automatically.
+NPM_CONFIG_PREFER_OFFLINE=true ./start-even.sh "$APP_NAME"
 
 echo ""
 read -p "Simulator stopped. Press enter to close..."
