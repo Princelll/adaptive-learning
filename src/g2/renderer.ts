@@ -193,11 +193,10 @@ const G2_GREEN = '#39ff14';
 // Approximate the Even OS monospace font on canvas (~10px per char at 16px size)
 const G2_FONT  = '16px "Courier New", monospace';
 
-// Returns [leftHalfPng, rightHalfPng] — each 288×144 px
-async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], number[]]> {
+// Returns [topLeft, topRight, bottomLeft, bottomRight] — each 288×144 px
+async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], number[], number[], number[]]> {
   const W = 576, H_FULL = 288, HALF_W = 288, HALF_H = 144;
 
-  // Draw entire template onto a full-size canvas
   const full = document.createElement('canvas');
   full.width  = W;
   full.height = H_FULL;
@@ -208,7 +207,7 @@ async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], 
 
   // Erase placeholder regions with black
   ctx.fillStyle = '#000';
-  ctx.fillRect(408, 0,  170, 22);  // [DATE AND TIME] — top-right
+  ctx.fillRect(408, 0,  170, 22);  // [DATE AND TIME]
   ctx.fillRect( 62, 46, 300, 30);  // greeting line
 
   // Draw real values in G2 green
@@ -216,23 +215,20 @@ async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], 
   ctx.font         = G2_FONT;
   ctx.textBaseline = 'top';
 
-  // Date/time — right-aligned to match template
   const dtWidth = ctx.measureText(dtStr).width;
   ctx.fillText(dtStr, W - dtWidth - 3, 2);
-
-  // Greeting — left-indented at same x as template (~64px)
   ctx.fillText(`Welcome to StudyHub, ${name}.`, 64, 51);
 
-  // Extract left half (x=0..287, y=0..143) and right half (x=288..575, y=0..143)
-  const mkHalf = (srcX: number) => {
+  // Slice into 4 × 288×144 tiles (2 wide × 2 tall)
+  const tile = (srcX: number, srcY: number) => {
     const c = document.createElement('canvas');
     c.width  = HALF_W;
     c.height = HALF_H;
-    c.getContext('2d')!.drawImage(full, srcX, 0, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
+    c.getContext('2d')!.drawImage(full, srcX, srcY, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
     return canvasToPngBytes(c);
   };
 
-  return [mkHalf(0), mkHalf(HALF_W)];
+  return [tile(0, 0), tile(HALF_W, 0), tile(0, HALF_H), tile(HALF_W, HALF_H)];
 }
 
 // ── Screen builders ──────────────────────────────────────────
@@ -313,12 +309,11 @@ async function buildWelcome(): Promise<PageConfig> {
   const dtStr   = `${dateStr}  ${timeStr}`;
   const name    = state.userName || 'Simulator';
 
-  // SDK limit: ImageContainerProperty max 288×144 px.
-  // Split top half of template into left (x=0..287) and right (x=288..575) 288×144 tiles.
-  const [bgLeft, bgRight] = await renderWelcomeBg(dtStr, name);
+  // Full 576×288 display covered by 4 × 288×144 tiles (SDK max per image container).
+  const [tl, tr, bl, br] = await renderWelcomeBg(dtStr, name);
 
-  // List sits over the menu area (y=215..288). No evt text container needed —
-  // the list's isEventCapture=1 is sufficient (same pattern as buildRating).
+  // List sits over the menu area (y=215..288). No evt text container —
+  // the list's isEventCapture=1 is sufficient (same as buildRating).
   const menuItems = ['Continue Studying', 'View Insights'];
 
   return {
@@ -326,12 +321,16 @@ async function buildWelcome(): Promise<PageConfig> {
       listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 20, containerName: 'bg_left',  xPosition: 0,   yPosition: 0, width: 288, height: 144 }),
-      new ImageContainerProperty({ containerID: 21, containerName: 'bg_right', xPosition: 288, yPosition: 0, width: 288, height: 144 }),
+      new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition:   0, width: 288, height: 144 }),
+      new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition:   0, width: 288, height: 144 }),
+      new ImageContainerProperty({ containerID: 22, containerName: 'bl', xPosition:   0, yPosition: 144, width: 288, height: 144 }),
+      new ImageContainerProperty({ containerID: 23, containerName: 'br', xPosition: 288, yPosition: 144, width: 288, height: 144 }),
     ],
     imageData: [
-      { id: 20, name: 'bg_left',  data: bgLeft  },
-      { id: 21, name: 'bg_right', data: bgRight },
+      { id: 20, name: 'tl', data: tl },
+      { id: 21, name: 'tr', data: tr },
+      { id: 22, name: 'bl', data: bl },
+      { id: 23, name: 'br', data: br },
     ],
   };
 }
