@@ -14,8 +14,11 @@ import {
   TextContainerProperty,
   ListContainerProperty,
   ListItemContainerProperty,
+  ImageContainerProperty,
+  ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
+import { bedIconBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -108,17 +111,23 @@ function listContainer(
 interface PageConfig {
   textObject?: TextContainerProperty[];
   listObject?: ListContainerProperty[];
+  imageObject?: ImageContainerProperty[];
+  /** Raw pixel data to push after page build, one entry per image container. */
+  imageData?: Array<{ id: number; name: string; data: number[] }>;
 }
 
 async function rebuildPage(config: PageConfig): Promise<void> {
   const bridge = getBridge();
   const totalContainers =
-    (config.textObject?.length ?? 0) + (config.listObject?.length ?? 0);
+    (config.textObject?.length ?? 0) +
+    (config.listObject?.length ?? 0) +
+    (config.imageObject?.length ?? 0);
 
   const payload = {
     containerTotalNum: totalContainers,
     textObject: config.textObject ?? [],
     listObject: config.listObject ?? [],
+    imageObject: config.imageObject ?? [],
   };
 
   if (!state.startupRendered) {
@@ -128,6 +137,15 @@ async function rebuildPage(config: PageConfig): Promise<void> {
     state.startupRendered = true;
   } else {
     await bridge.rebuildPageContainer(new RebuildPageContainer(payload));
+  }
+
+  // Push raw pixel data for each image container (must be sequential per SDK docs)
+  if (config.imageData?.length) {
+    for (const img of config.imageData) {
+      await bridge.updateImageRawData(
+        new ImageRawDataUpdate({ containerID: img.id, containerName: img.name, imageData: img.data }),
+      );
+    }
   }
 }
 
@@ -148,9 +166,9 @@ const ZONE = {
 
 function buildSleepCheckin(): PageConfig {
   // 4 columns × 8 chars = 32 chars (fills the full display width exactly).
-  // Bar heights: Bad=1, Regular=2, Good=4, Great=6 rows.
-  const HEIGHTS = [1, 2, 4, 6];
-  const MAX_H   = 6;
+  // Bar heights: Bad=1, Regular=2, Good=3, Great=4 rows (MAX_H=4 leaves room for image below).
+  const HEIGHTS = [1, 2, 3, 4];
+  const MAX_H   = 4;
   const BAR     = ' ██████ '; // 8 chars: 1sp + 6 blocks + 1sp
   const EMPTY   = '        '; // 8 chars: spaces
   const LABELS  = ['Bad', 'Regular', 'Good', 'Great'];
@@ -179,7 +197,8 @@ function buildSleepCheckin(): PageConfig {
   const headerLine = leftStr + ' '.repeat(Math.max(1, gapLen)) + dateStr;
   const header  = headerLine + '\n' + separator(CHARS_PER_LINE);
 
-  // Body: centered question + 6 chart rows + label row = 8 lines (fits in body zone)
+  // Body: centered question + 4 chart rows + label row = 6 text lines (~120px from y=44 → ~y=164).
+  // Bed icon renders below the text at y≈170, centered horizontally.
   const howStr  = 'How did you sleep?';
   const howPad  = Math.floor((CHARS_PER_LINE - howStr.length) / 2);
   const body = [
@@ -193,12 +212,23 @@ function buildSleepCheckin(): PageConfig {
     'Sleep',
   );
 
+  // Bed icon: 128×72px, centered horizontally, below bar chart text
+  const IMG_W = 128, IMG_H = 72;
+  const imgX  = Math.round((DISPLAY_WIDTH - IMG_W) / 2); // 224
+  const imgY  = 170; // below 6 text lines (~y=164), above footer (y=252)
+
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
       textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
       textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 10, containerName: 'bed', xPosition: imgX, yPosition: imgY, width: IMG_W, height: IMG_H }),
+    ],
+    imageData: [
+      { id: 10, name: 'bed', data: bedIconBytes(IMG_W, IMG_H) },
     ],
   };
 }
