@@ -18,7 +18,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, bookIconBytes, globeIconBytes } from './image-utils';
+import { bedIconBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -162,6 +162,63 @@ const ZONE = {
   footer: { y: 252, h: 36  },
 } as const;
 
+// ── Welcome background template ──────────────────────────────
+// Loads the 576×288 template PNG, paints over the [DATE AND TIME]
+// and [NAME] placeholders with real values, returns PNG bytes.
+//
+// Template pixel measurements (from BMP analysis):
+//   [DATE AND TIME]  → y=0–17,   x=423–575  (right-aligned, top)
+//   Greeting line    → y=51–72,  x=64–357   ("Welcome to StudyHub, [NAME].")
+//   Menu area        → y=215–288             (list container sits here)
+
+let welcomeBgImage: HTMLImageElement | null = null;
+
+async function loadWelcomeBg(): Promise<HTMLImageElement> {
+  if (welcomeBgImage) return welcomeBgImage;
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => { welcomeBgImage = img; resolve(img); };
+    img.onerror = reject;
+    img.src = '/icons/welcome-bg.png';
+  });
+}
+
+// G2 display green: sampled from the template BMP (#39ff14 peak)
+const G2_GREEN = '#39ff14';
+// Approximate the Even OS monospace font on canvas (~10px per char at 16px size)
+const G2_FONT  = '16px "Courier New", monospace';
+
+async function renderWelcomeBg(dtStr: string, name: string): Promise<number[]> {
+  const W = 576, H = 288;
+  const canvas = document.createElement('canvas');
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d')!;
+
+  // Draw the template (static layout, icons, question text, menu labels)
+  const bg = await loadWelcomeBg();
+  ctx.drawImage(bg, 0, 0, W, H);
+
+  // Erase placeholder regions with black
+  ctx.fillStyle = '#000';
+  ctx.fillRect(408, 0,  170, 22);   // [DATE AND TIME] — top-right
+  ctx.fillRect( 62, 46, 300, 30);   // "Welcome to StudyHub, [NAME]." greeting line
+
+  // Draw real values in G2 green
+  ctx.fillStyle    = G2_GREEN;
+  ctx.font         = G2_FONT;
+  ctx.textBaseline = 'top';
+
+  // Date/time — right-aligned to match template
+  const dtWidth = ctx.measureText(dtStr).width;
+  ctx.fillText(dtStr, W - dtWidth - 3, 2);
+
+  // Greeting — left-indented at same x as template (~64px)
+  ctx.fillText(`Welcome to StudyHub, ${name}.`, 64, 51);
+
+  return canvasToPngBytes(canvas);
+}
+
 // ── Screen builders ──────────────────────────────────────────
 
 function buildSleepCheckin(): PageConfig {
@@ -233,47 +290,36 @@ function buildSleepCheckin(): PageConfig {
   };
 }
 
-function buildWelcome(): PageConfig {
-  // Date/time — upper left corner, no padding
+async function buildWelcome(): Promise<PageConfig> {
   const now     = new Date();
   const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dtLine  = `${dateStr}  ${timeStr}`; // left-aligned
+  const dtStr   = `${dateStr}  ${timeStr}`;
+  const name    = state.userName || 'Simulator';
 
-  // Greeting — single line with small left indent; question centered below
-  const name     = state.userName || 'StudyHub';
-  const greetStr = `Welcome to StudyHub, ${name}.`;
-  const questStr = 'What would you like to do?';
-  const centerOf = (s: string) =>
-    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
-  const greeting = [
-    centerOf(greetStr),  // centers within 32 cols
-    centerOf(questStr),
-  ].join('\n');
+  // Render full-screen template with real date/time and name baked in
+  const bgPng = await renderWelcomeBg(dtStr, name);
 
-  // List — bottom left, icons positioned to the right of each item
-  // List items at y=200, each ~44px tall → item0 ≈ y=204, item1 ≈ y=248
+  // List container sits over the menu area at the bottom of the template.
+  // Template positions: "Continue Studying" y≈225, "View Insights" y≈264.
+  // The list renders its own selection box on top of the template's static text.
   const menuItems = ['Continue Studying', 'View Insights'];
-  const ICON_W = 40, ICON_H = 40;
-  const ICON_X = DISPLAY_WIDTH - ICON_W - 8; // 8px from right edge
-  const ICON_Y0 = 202; // aligned with first list item
-  const ICON_Y1 = 246; // aligned with second list item
 
   return {
     textObject: [
-      textContainer(1, 'dt',       dtLine,   0, 4,   DISPLAY_WIDTH, 36),
-      textContainer(2, 'greeting', greeting, 0, 110, DISPLAY_WIDTH, 70),
+      // Event-capture container required for ring gesture events
+      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
     ],
     listObject: [
-      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+      // Positioned over the bottom menu area of the template (y=215, covers both items)
+      listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 11, containerName: 'book',  xPosition: ICON_X, yPosition: ICON_Y0, width: ICON_W, height: ICON_H }),
-      new ImageContainerProperty({ containerID: 12, containerName: 'globe', xPosition: ICON_X, yPosition: ICON_Y1, width: ICON_W, height: ICON_H }),
+      // Full-screen background: 576×288, behind all other containers
+      new ImageContainerProperty({ containerID: 20, containerName: 'welcome_bg', xPosition: 0, yPosition: 0, width: DISPLAY_WIDTH, height: 288 }),
     ],
     imageData: [
-      { id: 11, name: 'book',  data: bookIconBytes(ICON_W, ICON_H) },
-      { id: 12, name: 'globe', data: globeIconBytes(ICON_W, ICON_H) },
+      { id: 20, name: 'welcome_bg', data: bgPng },
     ],
   };
 }
@@ -472,7 +518,7 @@ function buildSummary(): PageConfig {
 
 // ── Public API ───────────────────────────────────────────────
 
-const SCREEN_BUILDERS: Record<string, () => PageConfig> = {
+const SCREEN_BUILDERS: Record<string, () => PageConfig | Promise<PageConfig>> = {
   sleep_checkin: buildSleepCheckin,
   welcome: buildWelcome,
   no_decks: buildNoDecks,
@@ -491,7 +537,7 @@ export async function showScreen(): Promise<void> {
     log(`Unknown screen: ${state.screen}`);
     return;
   }
-  const config = builder();
+  const config = await Promise.resolve(builder());
   log(`Rendering: ${state.screen}`);
   await rebuildPage(config);
 }
