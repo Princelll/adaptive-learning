@@ -18,7 +18,8 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, bookIconBytes, globeIconBytes } from './image-utils';
+import { bedIconBytes, canvasToPngBytes } from './image-utils';
+import { WELCOME_BG_DATA_URL } from './welcome-bg-data';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -162,6 +163,76 @@ const ZONE = {
   footer: { y: 252, h: 36  },
 } as const;
 
+// ── Welcome background template ──────────────────────────────
+// Loads the 576×288 template PNG, paints over the [DATE AND TIME]
+// and [NAME] placeholders, then splits into two 288×144 halves.
+//
+// G2 SDK limits: ImageContainerProperty width ≤ 288, height ≤ 144.
+// The 576×288 display requires two side-by-side 288×144 image containers.
+// Only the top half (y=0–144) is needed as an image — the bottom menu
+// area (y=215–288) is rendered by the list container.
+//
+// Template pixel measurements (from BMP analysis):
+//   [DATE AND TIME]  → y=0–17,   x=423–575  (right-aligned, top)
+//   Greeting line    → y=51–72,  x=64–357   ("Welcome to StudyHub, [NAME].")
+//   Menu area        → y=215–288             (list container sits here)
+
+let welcomeBgImage: HTMLImageElement | null = null;
+
+async function loadWelcomeBg(): Promise<HTMLImageElement> {
+  if (welcomeBgImage) return welcomeBgImage;
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => { welcomeBgImage = img; resolve(img); };
+    img.onerror = () => reject(new Error('welcome-bg data URL failed to load'));
+    // Use embedded data URL — not dependent on Vite file serving
+    img.src = WELCOME_BG_DATA_URL;
+  });
+}
+
+// G2 display green: sampled from the template BMP (#39ff14 peak)
+const G2_GREEN = '#39ff14';
+// Approximate the Even OS monospace font on canvas (~10px per char at 16px size)
+const G2_FONT  = '16px "Courier New", monospace';
+
+// Returns [topLeft, topRight, bottomLeft, bottomRight] — each 288×144 px
+async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], number[], number[], number[]]> {
+  const W = 576, H_FULL = 288, HALF_W = 288, HALF_H = 144;
+
+  const full = document.createElement('canvas');
+  full.width  = W;
+  full.height = H_FULL;
+  const ctx = full.getContext('2d')!;
+
+  const bg = await loadWelcomeBg();
+  ctx.drawImage(bg, 0, 0, W, H_FULL);
+
+  // Erase placeholder regions with black
+  ctx.fillStyle = '#000';
+  ctx.fillRect(408, 0,  170, 22);  // [DATE AND TIME]
+  ctx.fillRect( 62, 46, 300, 30);  // greeting line
+
+  // Draw real values in G2 green
+  ctx.fillStyle    = G2_GREEN;
+  ctx.font         = G2_FONT;
+  ctx.textBaseline = 'top';
+
+  const dtWidth = ctx.measureText(dtStr).width;
+  ctx.fillText(dtStr, W - dtWidth - 3, 2);
+  ctx.fillText(`Welcome to StudyHub, ${name}.`, 64, 51);
+
+  // Slice into 4 × 288×144 tiles (2 wide × 2 tall)
+  const tile = (srcX: number, srcY: number) => {
+    const c = document.createElement('canvas');
+    c.width  = HALF_W;
+    c.height = HALF_H;
+    c.getContext('2d')!.drawImage(full, srcX, srcY, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
+    return canvasToPngBytes(c);
+  };
+
+  return [tile(0, 0), tile(HALF_W, 0), tile(0, HALF_H), tile(HALF_W, HALF_H)];
+}
+
 // ── Screen builders ──────────────────────────────────────────
 
 function buildSleepCheckin(): PageConfig {
@@ -233,49 +304,54 @@ function buildSleepCheckin(): PageConfig {
   };
 }
 
-function buildWelcome(): PageConfig {
-  // Date/time — upper left corner, no padding
+async function buildWelcome(): Promise<PageConfig> {
   const now     = new Date();
   const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dtLine  = `${dateStr}  ${timeStr}`; // left-aligned
+  const dtStr   = `${dateStr}  ${timeStr}`;
+  const name    = state.userName || 'Simulator';
 
-  // Greeting — single line with small left indent; question centered below
-  const name     = state.userName || 'StudyHub';
-  const greetStr = `Welcome to StudyHub, ${name}.`;
-  const questStr = 'What would you like to do?';
-  const centerOf = (s: string) =>
-    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
-  const greeting = [
-    centerOf(greetStr),  // centers within 32 cols
-    centerOf(questStr),
-  ].join('\n');
-
-  // List — bottom left, icons positioned to the right of each item
-  // List items at y=200, each ~44px tall → item0 ≈ y=204, item1 ≈ y=248
   const menuItems = ['Continue Studying', 'View Insights'];
-  const ICON_W = 40, ICON_H = 40;
-  const ICON_X = DISPLAY_WIDTH - ICON_W - 8; // 8px from right edge
-  const ICON_Y0 = 202; // aligned with first list item
-  const ICON_Y1 = 246; // aligned with second list item
 
-  return {
-    textObject: [
-      textContainer(1, 'dt',       dtLine,   0, 4,   DISPLAY_WIDTH, 36),
-      textContainer(2, 'greeting', greeting, 0, 110, DISPLAY_WIDTH, 70),
-    ],
-    listObject: [
-      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
-    ],
-    imageObject: [
-      new ImageContainerProperty({ containerID: 11, containerName: 'book',  xPosition: ICON_X, yPosition: ICON_Y0, width: ICON_W, height: ICON_H }),
-      new ImageContainerProperty({ containerID: 12, containerName: 'globe', xPosition: ICON_X, yPosition: ICON_Y1, width: ICON_W, height: ICON_H }),
-    ],
-    imageData: [
-      { id: 11, name: 'book',  data: bookIconBytes(ICON_W, ICON_H) },
-      { id: 12, name: 'globe', data: globeIconBytes(ICON_W, ICON_H) },
-    ],
-  };
+  // Try image-based layout; fall back to plain text if the PNG isn't available.
+  try {
+    const [tl, tr, bl, br] = await renderWelcomeBg(dtStr, name);
+    return {
+      listObject: [
+        listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
+      ],
+      imageObject: [
+        new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition:   0, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition:   0, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 22, containerName: 'bl', xPosition:   0, yPosition: 144, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 23, containerName: 'br', xPosition: 288, yPosition: 144, width: 288, height: 144 }),
+      ],
+      imageData: [
+        { id: 20, name: 'tl', data: tl },
+        { id: 21, name: 'tr', data: tr },
+        { id: 22, name: 'bl', data: bl },
+        { id: 23, name: 'br', data: br },
+      ],
+    };
+  } catch (err) {
+    // welcome-bg.png not yet available — render text-only welcome screen
+    log(`Welcome image unavailable, using text layout: ${err}`);
+    const centerOf = (s: string) =>
+      ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
+    const greeting = [
+      centerOf(`Welcome to StudyHub, ${name}.`),
+      centerOf('What would you like to do?'),
+    ].join('\n');
+    return {
+      textObject: [
+        textContainer(1, 'dt',       dtStr.padStart(CHARS_PER_LINE), 0, 4,   DISPLAY_WIDTH, 36),
+        textContainer(2, 'greeting', greeting,                        0, 100, DISPLAY_WIDTH, 80),
+      ],
+      listObject: [
+        listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+      ],
+    };
+  }
 }
 
 function buildNoDecks(): PageConfig {
@@ -472,7 +548,7 @@ function buildSummary(): PageConfig {
 
 // ── Public API ───────────────────────────────────────────────
 
-const SCREEN_BUILDERS: Record<string, () => PageConfig> = {
+const SCREEN_BUILDERS: Record<string, () => PageConfig | Promise<PageConfig>> = {
   sleep_checkin: buildSleepCheckin,
   welcome: buildWelcome,
   no_decks: buildNoDecks,
@@ -491,7 +567,7 @@ export async function showScreen(): Promise<void> {
     log(`Unknown screen: ${state.screen}`);
     return;
   }
-  const config = builder();
+  const config = await Promise.resolve(builder());
   log(`Rendering: ${state.screen}`);
   await rebuildPage(config);
 }
