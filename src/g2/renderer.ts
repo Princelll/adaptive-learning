@@ -268,7 +268,8 @@ function buildWelcome(): PageConfig {
 
   return {
     textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
+      // No separate evt container — the list below has isEventCapture=1 (same as rating screen).
+      // Adding both would cause "multiple event listeners" validation error.
       textContainer(1, 'header',   header,   0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
       textContainer(2, 'greeting', greeting, 0, GREET_Y,       DISPLAY_WIDTH, GREET_H),
       textContainer(3, 'footer',   footer,   0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
