@@ -19,6 +19,7 @@ import {
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
 import { bedIconBytes, canvasToPngBytes } from './image-utils';
+import { WELCOME_BG_DATA_URL } from './welcome-bg-data';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -183,8 +184,9 @@ async function loadWelcomeBg(): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
     img.onload = () => { welcomeBgImage = img; resolve(img); };
-    img.onerror = () => reject(new Error('welcome-bg.png not found at /icons/welcome-bg.png'));
-    img.src = '/icons/welcome-bg.png';
+    img.onerror = () => reject(new Error('welcome-bg data URL failed to load'));
+    // Use embedded data URL — not dependent on Vite file serving
+    img.src = WELCOME_BG_DATA_URL;
   });
 }
 
