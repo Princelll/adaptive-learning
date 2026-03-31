@@ -1,33 +1,35 @@
 // ============================================================
 // G2 Image Utilities
-// Draws icons on an offscreen HTML Canvas and converts them
-// to the grayscale byte format the G2 display uses.
+// Draws icons on an offscreen HTML Canvas and encodes them
+// as PNG bytes for the G2 simulator's image decoder.
 //
-// Format: row-major, 1 byte per pixel (R channel, 0–255).
-// The G2 firmware converts this to 4-bit grayscale internally.
-// Use 0 = black (off), 255 = white (lit/green on glasses).
-// Total bytes = width × height.
+// The Even Hub simulator uses Rust's image crate internally,
+// which requires a properly-encoded image format (PNG/JPEG/etc.)
+// with a file header — raw pixel buffers are not accepted.
+// On real G2 hardware the firmware converts to 4-bit grayscale,
+// but the toDataURL('image/png') path satisfies both paths.
 // ============================================================
 
 /**
- * Convert an already-drawn canvas to grayscale bytes (1 byte per pixel).
- * Pixels with R > 127 are treated as "lit" (255); others as 0.
+ * Convert an already-drawn canvas to PNG bytes.
+ * Returns the full PNG file as a number[] (byte values 0-255).
  */
-export function canvasToGrayscale(canvas: HTMLCanvasElement): number[] {
-  const ctx = canvas.getContext('2d')!;
-  const { width, height } = canvas;
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const bytes: number[] = new Array(width * height);
-
-  for (let i = 0; i < width * height; i++) {
-    const r = imageData.data[i * 4]; // R channel
-    bytes[i] = r > 127 ? 255 : 0;
-  }
+export function canvasToPngBytes(canvas: HTMLCanvasElement): number[] {
+  const dataUrl = canvas.toDataURL('image/png');
+  const base64  = dataUrl.split(',')[1];
+  const binary  = atob(base64);
+  const bytes   = new Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
 
+/** @deprecated Use canvasToPngBytes — raw grayscale bytes are rejected by the simulator. */
+export function canvasToGrayscale(canvas: HTMLCanvasElement): number[] {
+  return canvasToPngBytes(canvas);
+}
+
 /**
- * Render a function onto an offscreen canvas and return grayscale bytes.
+ * Render a function onto an offscreen canvas and return PNG bytes.
  * drawFn should use ctx.fillStyle = '#FFF' for lit pixels.
  * Background is automatically cleared to black first.
  */
@@ -45,7 +47,7 @@ export function renderIcon(
   ctx.fillRect(0, 0, width, height);
 
   drawFn(ctx, width, height);
-  return canvasToGrayscale(canvas);
+  return canvasToPngBytes(canvas);
 }
 
 // ── Bed icon ─────────────────────────────────────────────────
