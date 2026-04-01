@@ -217,11 +217,12 @@ const G2_GREEN = '#39ff14';
 // Approximate the Even OS monospace font on canvas (~10px per char at 16px size)
 const G2_FONT  = '16px "Courier New", monospace';
 
-// Returns top-left and top-right 288×144 tiles (y=0..143 only).
-// Dynamic text areas (date, greeting) are BLACKED OUT in the image —
-// text containers render those with G2's actual pixel font.
-// "What would you like to do?" and the frame stay in the image.
-async function renderWelcomeBg(): Promise<[number[], number[]]> {
+// Returns all 4 × 288×144 tiles covering the full 576×288 display.
+// Dynamic text areas are BLACKED OUT so text containers render those
+// with the G2's actual pixel font on top (higher containerID = higher z-order).
+// Menu area is also blacked out — the list container (ID 50 > image IDs 20-23)
+// renders on top with proper interactive selection highlight.
+async function renderWelcomeBg(): Promise<[number[], number[], number[], number[]]> {
   const W = 576, H_FULL = 288, HALF_W = 288, HALF_H = 144;
 
   const full = document.createElement('canvas');
@@ -234,19 +235,20 @@ async function renderWelcomeBg(): Promise<[number[], number[]]> {
 
   // Black out dynamic text regions — text containers draw real values on top
   ctx.fillStyle = '#000';
-  ctx.fillRect(0,   0, W,   28);  // entire top row: date/time line
+  ctx.fillRect(0,   0, W,   28);  // date/time line
   ctx.fillRect(0,  44, W,   36);  // greeting line "Welcome to StudyHub, [NAME]."
+  ctx.fillRect(0, 215, W,   73);  // menu area — list container (ID 50) renders on top
 
-  // Crop to top half only (y=0..143) — bottom is left to the list container
-  const tile = (srcX: number) => {
+  // Slice into 4 × 288×144 tiles (2 wide × 2 tall)
+  const tile = (srcX: number, srcY: number) => {
     const c = document.createElement('canvas');
     c.width  = HALF_W;
     c.height = HALF_H;
-    c.getContext('2d')!.drawImage(full, srcX, 0, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
+    c.getContext('2d')!.drawImage(full, srcX, srcY, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
     return canvasToPngBytes(c);
   };
 
-  return [tile(0), tile(HALF_W)];
+  return [tile(0, 0), tile(HALF_W, 0), tile(0, HALF_H), tile(HALF_W, HALF_H)];
 }
 
 // ── Screen builders ──────────────────────────────────────────
@@ -331,9 +333,9 @@ async function buildWelcome(): Promise<PageConfig> {
 
   // Try image-based layout; fall back to plain text if the PNG isn't available.
   try {
-    // renderWelcomeBg() returns 2 tiles (top half only, y=0..143).
-    // Bottom half (y=144–288) is left to the list container — no image tiles overlap it.
-    const [tl, tr] = await renderWelcomeBg();
+    // renderWelcomeBg() returns 4 tiles covering the full 576×288 display.
+    // z-order: image IDs 20-23 < text IDs 30-31 < list ID 50 (highest = on top).
+    const [tl, tr, bl, br] = await renderWelcomeBg();
 
     // Date/time: right-aligned in the blacked-out top row (y=0..28 in template).
     const dtPadded = dtStr.padStart(CHARS_PER_LINE);
@@ -343,23 +345,26 @@ async function buildWelcome(): Promise<PageConfig> {
     const greeting = greetPad + greetStr;
 
     return {
-      // Text containers (IDs 30, 31) render above the image tiles (IDs 20, 21).
-      // Higher containerID = higher z-order in the G2 SDK.
+      // Text containers (IDs 30, 31) render above image tiles (IDs 20-23).
+      // List (ID 50) renders above everything — event capture for navigation.
       textObject: [
         textContainer(30, 'dt',       dtPadded, 0,  4, DISPLAY_WIDTH, 24),
         textContainer(31, 'greeting', greeting,  0, 48, DISPLAY_WIDTH, 32),
       ],
-      // List at y=215 — no image tile covers this area; navigation works normally.
       listObject: [
-        listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
+        listContainer(50, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
       ],
       imageObject: [
-        new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition: 0, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition: 0, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition:   0, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition:   0, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 22, containerName: 'bl', xPosition:   0, yPosition: 144, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 23, containerName: 'br', xPosition: 288, yPosition: 144, width: 288, height: 144 }),
       ],
       imageData: [
         { id: 20, name: 'tl', data: tl },
         { id: 21, name: 'tr', data: tr },
+        { id: 22, name: 'bl', data: bl },
+        { id: 23, name: 'br', data: br },
       ],
     };
   } catch (err) {
@@ -568,35 +573,4 @@ function buildSummary(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
-    ],
-  };
-}
-
-// ── Public API ───────────────────────────────────────────────
-
-const SCREEN_BUILDERS: Record<string, () => PageConfig | Promise<PageConfig>> = {
-  sleep_checkin: buildSleepCheckin,
-  welcome: buildWelcome,
-  no_decks: buildNoDecks,
-  deck_select: buildDeckSelect,
-  dashboard: buildDashboard,
-  model_insights: buildModelInsights,
-  question: buildQuestion,
-  answer: buildAnswer,
-  rating: buildRating,
-  summary: buildSummary,
-};
-
-export async function showScreen(): Promise<void> {
-  const builder = SCREEN_BUILDERS[state.screen];
-  if (!builder) {
-    log(`Unknown screen: ${state.screen}`);
-    return;
-  }
-  const config = await Promise.resolve(builder());
-  log(`Rendering: ${state.screen}`);
-  await rebuildPage(config);
-}
+      textContainer(1, 'header', header, 0, ZONE.h
