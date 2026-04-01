@@ -195,8 +195,11 @@ const G2_GREEN = '#39ff14';
 // Approximate the Even OS monospace font on canvas (~10px per char at 16px size)
 const G2_FONT  = '16px "Courier New", monospace';
 
-// Returns [topLeft, topRight, bottomLeft, bottomRight] — each 288×144 px
-async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], number[], number[], number[]]> {
+// Returns top-left and top-right 288×144 tiles (y=0..143 only).
+// Dynamic text areas (date, greeting) are BLACKED OUT in the image —
+// text containers render those with G2's actual pixel font.
+// "What would you like to do?" and the frame stay in the image.
+async function renderWelcomeBg(): Promise<[number[], number[]]> {
   const W = 576, H_FULL = 288, HALF_W = 288, HALF_H = 144;
 
   const full = document.createElement('canvas');
@@ -207,30 +210,21 @@ async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], 
   const bg = await loadWelcomeBg();
   ctx.drawImage(bg, 0, 0, W, H_FULL);
 
-  // Erase placeholder regions with black
+  // Black out dynamic text regions — text containers draw real values on top
   ctx.fillStyle = '#000';
-  ctx.fillRect(408, 0,  170, 22);  // [DATE AND TIME]
-  ctx.fillRect( 62, 46, 300, 30);  // greeting line
+  ctx.fillRect(0,   0, W,   28);  // entire top row: date/time line
+  ctx.fillRect(0,  44, W,   36);  // greeting line "Welcome to StudyHub, [NAME]."
 
-  // Draw real values in G2 green
-  ctx.fillStyle    = G2_GREEN;
-  ctx.font         = G2_FONT;
-  ctx.textBaseline = 'top';
-
-  const dtWidth = ctx.measureText(dtStr).width;
-  ctx.fillText(dtStr, W - dtWidth - 3, 2);
-  ctx.fillText(`Welcome to StudyHub, ${name}.`, 64, 51);
-
-  // Slice into 4 × 288×144 tiles (2 wide × 2 tall)
-  const tile = (srcX: number, srcY: number) => {
+  // Crop to top half only (y=0..143) — bottom is left to the list container
+  const tile = (srcX: number) => {
     const c = document.createElement('canvas');
     c.width  = HALF_W;
     c.height = HALF_H;
-    c.getContext('2d')!.drawImage(full, srcX, srcY, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
+    c.getContext('2d')!.drawImage(full, srcX, 0, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
     return canvasToPngBytes(c);
   };
 
-  return [tile(0, 0), tile(HALF_W, 0), tile(0, HALF_H), tile(HALF_W, HALF_H)];
+  return [tile(0), tile(HALF_W)];
 }
 
 // ── Screen builders ──────────────────────────────────────────
@@ -315,26 +309,39 @@ async function buildWelcome(): Promise<PageConfig> {
 
   // Try image-based layout; fall back to plain text if the PNG isn't available.
   try {
-    const [tl, tr, bl, br] = await renderWelcomeBg(dtStr, name);
+    // renderWelcomeBg() returns 2 tiles (top half only, y=0..143).
+    // Bottom half (y=144–288) is left to the list container — no image tiles overlap it.
+    const [tl, tr] = await renderWelcomeBg();
+
+    // Date/time: right-aligned in the blacked-out top row (y=0..28 in template).
+    const dtPadded = dtStr.padStart(CHARS_PER_LINE);
+    // Greeting: centered in the blacked-out greeting row (y=44..80 in template).
+    const greetStr = `Welcome to StudyHub, ${name}.`;
+    const greetPad = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - greetStr.length) / 2)));
+    const greeting = greetPad + greetStr;
+
     return {
+      // Text containers (IDs 30, 31) render above the image tiles (IDs 20, 21).
+      // Higher containerID = higher z-order in the G2 SDK.
+      textObject: [
+        textContainer(30, 'dt',       dtPadded, 0,  4, DISPLAY_WIDTH, 24),
+        textContainer(31, 'greeting', greeting,  0, 48, DISPLAY_WIDTH, 32),
+      ],
+      // List at y=215 — no image tile covers this area; navigation works normally.
       listObject: [
         listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
       ],
       imageObject: [
-        new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition:   0, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition:   0, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 22, containerName: 'bl', xPosition:   0, yPosition: 144, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 23, containerName: 'br', xPosition: 288, yPosition: 144, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition: 0, width: 288, height: 144 }),
+        new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition: 0, width: 288, height: 144 }),
       ],
       imageData: [
         { id: 20, name: 'tl', data: tl },
         { id: 21, name: 'tr', data: tr },
-        { id: 22, name: 'bl', data: bl },
-        { id: 23, name: 'br', data: br },
       ],
     };
   } catch (err) {
-    // welcome-bg.png not yet available — render text-only welcome screen
+    // Template PNG unavailable — render text-only welcome screen
     log(`Welcome image unavailable, using text layout: ${err}`);
     const centerOf = (s: string) =>
       ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
