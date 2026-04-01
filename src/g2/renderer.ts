@@ -117,6 +117,18 @@ interface PageConfig {
   imageData?: Array<{ id: number; name: string; data: number[] }>;
 }
 
+// Wraps a bridge promise and converts DOM Event rejections (from SDK WebSocket
+// internals) to proper Error objects so callers get readable messages
+// instead of "[object Event]".
+function wrapBridgePromise<T>(promise: Promise<T>): Promise<T> {
+  return promise.catch((err) => {
+    if (err instanceof Event) {
+      throw new Error(`SDK bridge error (${(err as Event).type || 'unknown'})`);
+    }
+    throw err;
+  });
+}
+
 async function rebuildPage(config: PageConfig): Promise<void> {
   const bridge = getBridge();
   const totalContainers =
@@ -132,20 +144,30 @@ async function rebuildPage(config: PageConfig): Promise<void> {
   };
 
   if (!state.startupRendered) {
-    await bridge.createStartUpPageContainer(
-      new CreateStartUpPageContainer(payload),
+    await wrapBridgePromise(
+      bridge.createStartUpPageContainer(new CreateStartUpPageContainer(payload)),
     );
     state.startupRendered = true;
   } else {
-    await bridge.rebuildPageContainer(new RebuildPageContainer(payload));
+    await wrapBridgePromise(
+      bridge.rebuildPageContainer(new RebuildPageContainer(payload)),
+    );
   }
 
-  // Push raw pixel data for each image container (must be sequential per SDK docs)
+  // Push raw pixel data for each image container (must be sequential per SDK docs).
+  // Image upload failures are non-fatal: the text/list layers still render.
   if (config.imageData?.length) {
     for (const img of config.imageData) {
-      await bridge.updateImageRawData(
-        new ImageRawDataUpdate({ containerID: img.id, containerName: img.name, imageData: img.data }),
-      );
+      try {
+        await wrapBridgePromise(
+          bridge.updateImageRawData(
+            new ImageRawDataUpdate({ containerID: img.id, containerName: img.name, imageData: img.data }),
+          ),
+        );
+      } catch (err) {
+        log(`Image upload failed (${img.name}): ${err instanceof Error ? err.message : String(err)}`);
+        // Non-fatal — screen continues to render without this image
+      }
     }
   }
 }
