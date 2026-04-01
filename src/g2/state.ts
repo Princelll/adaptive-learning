@@ -10,6 +10,7 @@ export type Screen =
   | 'sleep_checkin'
   | 'welcome'
   | 'no_decks'
+  | 'study_menu'
   | 'deck_select'
   | 'dashboard'
   | 'model_insights'
