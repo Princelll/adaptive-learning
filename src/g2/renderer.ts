@@ -15,7 +15,6 @@ import {
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
 import { bedIconBytes, canvasToPngBytes } from './image-utils';
-import { WELCOME_BG_DATA_URL } from './welcome-bg-data';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -170,57 +169,6 @@ function currentDtStr(): string {
   return `${d}  ${t}`.padStart(CHARS_PER_LINE);
 }
 
-// ── Welcome background template ──────────────────────────────
-// welcome-bg.png is the finished welcome screen design (matches
-// "Regular User Dashboard After biometrics added for the day" mockup).
-// Dynamic regions ([DATE AND TIME], [NAME]) are blacked out so
-// text containers render real values on top.
-//
-// G2 SDK image limit: width ≤ 288, height ≤ 144.
-// 576×288 display → four 288×144 tiles (2 wide × 2 tall).
-
-let welcomeBgImage: HTMLImageElement | null = null;
-
-async function loadWelcomeBg(): Promise<HTMLImageElement> {
-  if (welcomeBgImage) return welcomeBgImage;
-  return new Promise((resolve, reject) => {
-    const img = new window.Image();
-    img.onload = () => { welcomeBgImage = img; resolve(img); };
-    img.onerror = () => reject(new Error('welcome-bg data URL failed to load'));
-    img.src = WELCOME_BG_DATA_URL;
-  });
-}
-
-// Returns all 4 × 288×144 tiles covering the full 576×288 display.
-// Dynamic text areas are blacked out — text containers (higher z-order) draw on top.
-async function renderWelcomeBg(): Promise<[number[], number[], number[], number[]]> {
-  const W = 576, H_FULL = 288, HALF_W = 288, HALF_H = 144;
-
-  const full = document.createElement('canvas');
-  full.width  = W;
-  full.height = H_FULL;
-  const ctx = full.getContext('2d')!;
-
-  const bg = await loadWelcomeBg();
-  ctx.drawImage(bg, 0, 0, W, H_FULL);
-
-  // Black out dynamic text regions
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0,   0, W,   28);  // date/time row
-  ctx.fillRect(0,  44, W,   36);  // greeting line "Welcome to StudyHub, [NAME]."
-  ctx.fillRect(0, 215, W,   73);  // menu area — list container renders on top
-
-  const tile = (srcX: number, srcY: number) => {
-    const c = document.createElement('canvas');
-    c.width  = HALF_W;
-    c.height = HALF_H;
-    c.getContext('2d')!.drawImage(full, srcX, srcY, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
-    return canvasToPngBytes(c);
-  };
-
-  return [tile(0, 0), tile(HALF_W, 0), tile(0, HALF_H), tile(HALF_W, HALF_H)];
-}
-
 // ── Screen builders ──────────────────────────────────────────
 
 // Sleep check-in screen ("Before biometrics added for the day" mockup).
@@ -274,57 +222,29 @@ function buildSleepCheckin(): PageConfig {
 }
 
 // Welcome screen ("After biometrics added for the day" mockup).
-// Uses welcome-bg.png as background; falls back to text-only layout if unavailable.
-async function buildWelcome(): Promise<PageConfig> {
-  const dtStr  = currentDtStr();
-  const name   = state.userName || 'Simulator';
+// Pure text layout — image tiles cover text containers in the G2 SDK regardless
+// of container ID, so we use text-only which matches the mockup and always works.
+function buildWelcome(): PageConfig {
+  const name      = state.userName || 'Simulator';
   const menuItems = ['Continue Studying', 'View Insights'];
 
-  try {
-    const [tl, tr, bl, br] = await renderWelcomeBg();
+  const center = (s: string) =>
+    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
 
-    const greetStr = `Welcome to StudyHub, ${name}.`;
-    const greetPad = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - greetStr.length) / 2)));
+  const greeting = [
+    center(`Welcome to StudyHub, ${name}.`),
+    center('What would you like to do?'),
+  ].join('\n');
 
-    return {
-      textObject: [
-        textContainer(30, 'dt',       dtStr,                    0,  4, DISPLAY_WIDTH, 24),
-        textContainer(31, 'greeting', greetPad + greetStr,      0, 48, DISPLAY_WIDTH, 32),
-      ],
-      listObject: [
-        listContainer(50, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
-      ],
-      imageObject: [
-        new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition:   0, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition:   0, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 22, containerName: 'bl', xPosition:   0, yPosition: 144, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 23, containerName: 'br', xPosition: 288, yPosition: 144, width: 288, height: 144 }),
-      ],
-      imageData: [
-        { id: 20, name: 'tl', data: tl },
-        { id: 21, name: 'tr', data: tr },
-        { id: 22, name: 'bl', data: bl },
-        { id: 23, name: 'br', data: br },
-      ],
-    };
-  } catch (err) {
-    log(`Welcome image unavailable, using text layout: ${err}`);
-    const center = (s: string) =>
-      ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
-    const greeting = [
-      center(`Welcome to StudyHub, ${name}.`),
-      center('What would you like to do?'),
-    ].join('\n');
-    return {
-      textObject: [
-        textContainer(1, 'dt',       dtStr,    0, 4,   DISPLAY_WIDTH, 36),
-        textContainer(2, 'greeting', greeting, 0, 100, DISPLAY_WIDTH, 80),
-      ],
-      listObject: [
-        listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
-      ],
-    };
-  }
+  return {
+    textObject: [
+      textContainer(1, 'dt',       currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
+      textContainer(2, 'greeting', greeting,        0, 100, DISPLAY_WIDTH, 80),
+    ],
+    listObject: [
+      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+    ],
+  };
 }
 
 // No-decks placeholder screen.
