@@ -170,8 +170,19 @@ async function startPlannedStudy(): Promise<void> {
     void safeShowScreen();
     return;
   }
-  // Go to dashboard with the default (first) deck
+  // Show study mode menu (Programmed Study | Select Deck)
+  state.screen = 'study_menu';
+  void safeShowScreen();
+}
+
+function startProgrammedStudy(): void {
+  // Use the default (first) deck already loaded by refreshDashboard
   state.screen = 'dashboard';
+  void safeShowScreen();
+}
+
+function goToDeckSelect(): void {
+  state.screen = 'deck_select';
   void safeShowScreen();
 }
 
@@ -254,6 +265,8 @@ export async function initApp(): Promise<void> {
     returnToDashboard,
     selectDeck,
     startPlannedStudy,
+    startProgrammedStudy,
+    goToDeckSelect,
     showModelInsights,
     submitSleepCheckin,
     skipSleepCheckin,

@@ -1,11 +1,7 @@
 // ============================================================
 // BioLoop G2 — Glasses Display Renderer
 // Renders to Even G2 576×288 display via SDK containers.
-// Follows Even Hub OS 2.0 Guidelines:
-//   - Header: centered title + separator line
-//   - Body: content in the middle zone
-//   - Footer: gesture hints (left) + screen label (right)
-//   - Two-column key-value layout for data-dense screens
+// Screen designs match the BMP mockups in public/icons/.
 // ============================================================
 
 import {
@@ -19,7 +15,6 @@ import {
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
 import { bedIconBytes, canvasToPngBytes } from './image-utils';
-import { WELCOME_BG_DATA_URL } from './welcome-bg-data';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -36,12 +31,9 @@ import {
 } from './display-utils';
 
 // ── Container helpers ────────────────────────────────────────
-// Even Hub OS background layer renders content in a rounded-corner card
-// with a visible white border (per App Layer dashboard screenshot).
-// WHITE = 0xFFFFFF = 16777215 (RGB integer used by SDK).
 
 const BORDER_COLOR_WHITE = 16777215; // 0xFFFFFF
-const CARD_BORDER_RADIUS = 6;        // Even OS 2.0 spec: list items and cards use 6px radius
+const CARD_BORDER_RADIUS = 6;
 
 function textContainer(
   id: number,
@@ -52,7 +44,7 @@ function textContainer(
   w: number,
   h: number,
   isEvt = false,
-  card = false,   // true → add white border + radius (background layer card style)
+  card = false,
 ): TextContainerProperty {
   return new TextContainerProperty({
     containerID: id,
@@ -63,9 +55,6 @@ function textContainer(
     width: w,
     height: h,
     isEventCapture: isEvt ? 1 : 0,
-    // Card: 16px T/B, 20px L/R per Even OS 2.0 Card margin spec.
-    // SDK paddingLength is uniform; use 16 as the balanced value.
-    // Non-card (header/footer): 4px minimal padding.
     paddingLength: card ? 16 : 4,
     borderWidth: card ? 1 : 0,
     borderColor: card ? BORDER_COLOR_WHITE : 0,
@@ -92,9 +81,6 @@ function listContainer(
     height: h,
     isEventCapture: isEvt ? 1 : 0,
     paddingLength: 4,
-    // No outer border on list — per Even OS focus-based navigation:
-    // only the selected item (isItemSelectBorderEn) has a focus outline.
-    // Two simultaneous borders create visual ambiguity about actionable target.
     borderWidth: 0,
     borderColor: 0,
     borderRadius: 0,
@@ -113,8 +99,17 @@ interface PageConfig {
   textObject?: TextContainerProperty[];
   listObject?: ListContainerProperty[];
   imageObject?: ImageContainerProperty[];
-  /** Raw pixel data to push after page build, one entry per image container. */
   imageData?: Array<{ id: number; name: string; data: number[] }>;
+}
+
+// Converts DOM Event rejections from SDK WebSocket internals to readable Errors.
+function wrapBridgePromise<T>(promise: Promise<T>): Promise<T> {
+  return promise.catch((err) => {
+    if (err instanceof Event) {
+      throw new Error(`SDK bridge error (${(err as Event).type || 'unknown'})`);
+    }
+    throw err;
+  });
 }
 
 async function rebuildPage(config: PageConfig): Promise<void> {
@@ -132,168 +127,90 @@ async function rebuildPage(config: PageConfig): Promise<void> {
   };
 
   if (!state.startupRendered) {
-    await bridge.createStartUpPageContainer(
-      new CreateStartUpPageContainer(payload),
+    await wrapBridgePromise(
+      bridge.createStartUpPageContainer(new CreateStartUpPageContainer(payload)),
     );
     state.startupRendered = true;
   } else {
-    await bridge.rebuildPageContainer(new RebuildPageContainer(payload));
+    await wrapBridgePromise(
+      bridge.rebuildPageContainer(new RebuildPageContainer(payload)),
+    );
   }
 
-  // Push raw pixel data for each image container (must be sequential per SDK docs)
   if (config.imageData?.length) {
     for (const img of config.imageData) {
-      await bridge.updateImageRawData(
-        new ImageRawDataUpdate({ containerID: img.id, containerName: img.name, imageData: img.data }),
-      );
+      try {
+        await wrapBridgePromise(
+          bridge.updateImageRawData(
+            new ImageRawDataUpdate({ containerID: img.id, containerName: img.name, imageData: img.data }),
+          ),
+        );
+      } catch (err) {
+        log(`Image upload failed (${img.name}): ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
   }
 }
 
 // ── Layout zones (576×288 display) ───────────────────────────
-// Even OS 2.0 card margin spec: L/R 20px, T/B 16px.
-// Body container uses paddingLength=16 (uniform, closest approximation).
-// Header  y=0   h=44  — title + separator (no card border)
-// Body    y=44  h=208 — scrollable content (card border, radius 6px)
-// Footer  y=252 h=36  — gesture hints | screen label (no card border)
-
 const ZONE = {
   header: { y: 0,   h: 44  },
   body:   { y: 44,  h: 208 },
   footer: { y: 252, h: 36  },
 } as const;
 
-// ── Welcome background template ──────────────────────────────
-// Loads the 576×288 template PNG, paints over the [DATE AND TIME]
-// and [NAME] placeholders, then splits into two 288×144 halves.
-//
-// G2 SDK limits: ImageContainerProperty width ≤ 288, height ≤ 144.
-// The 576×288 display requires two side-by-side 288×144 image containers.
-// Only the top half (y=0–144) is needed as an image — the bottom menu
-// area (y=215–288) is rendered by the list container.
-//
-// Template pixel measurements (from BMP analysis):
-//   [DATE AND TIME]  → y=0–17,   x=423–575  (right-aligned, top)
-//   Greeting line    → y=51–72,  x=64–357   ("Welcome to StudyHub, [NAME].")
-//   Menu area        → y=215–288             (list container sits here)
-
-let welcomeBgImage: HTMLImageElement | null = null;
-
-async function loadWelcomeBg(): Promise<HTMLImageElement> {
-  if (welcomeBgImage) return welcomeBgImage;
-  return new Promise((resolve, reject) => {
-    const img = new window.Image();
-    img.onload = () => { welcomeBgImage = img; resolve(img); };
-    img.onerror = () => reject(new Error('welcome-bg data URL failed to load'));
-    // Use embedded data URL — not dependent on Vite file serving
-    img.src = WELCOME_BG_DATA_URL;
-  });
-}
-
-// G2 display green: sampled from the template BMP (#39ff14 peak)
-const G2_GREEN = '#39ff14';
-// Approximate the Even OS monospace font on canvas (~10px per char at 16px size)
-const G2_FONT  = '16px "Courier New", monospace';
-
-// Returns [topLeft, topRight, bottomLeft, bottomRight] — each 288×144 px
-async function renderWelcomeBg(dtStr: string, name: string): Promise<[number[], number[], number[], number[]]> {
-  const W = 576, H_FULL = 288, HALF_W = 288, HALF_H = 144;
-
-  const full = document.createElement('canvas');
-  full.width  = W;
-  full.height = H_FULL;
-  const ctx = full.getContext('2d')!;
-
-  const bg = await loadWelcomeBg();
-  ctx.drawImage(bg, 0, 0, W, H_FULL);
-
-  // Erase placeholder regions with black
-  ctx.fillStyle = '#000';
-  ctx.fillRect(408, 0,  170, 22);  // [DATE AND TIME]
-  ctx.fillRect( 62, 46, 300, 30);  // greeting line
-
-  // Draw real values in G2 green
-  ctx.fillStyle    = G2_GREEN;
-  ctx.font         = G2_FONT;
-  ctx.textBaseline = 'top';
-
-  const dtWidth = ctx.measureText(dtStr).width;
-  ctx.fillText(dtStr, W - dtWidth - 3, 2);
-  ctx.fillText(`Welcome to StudyHub, ${name}.`, 64, 51);
-
-  // Slice into 4 × 288×144 tiles (2 wide × 2 tall)
-  const tile = (srcX: number, srcY: number) => {
-    const c = document.createElement('canvas');
-    c.width  = HALF_W;
-    c.height = HALF_H;
-    c.getContext('2d')!.drawImage(full, srcX, srcY, HALF_W, HALF_H, 0, 0, HALF_W, HALF_H);
-    return canvasToPngBytes(c);
-  };
-
-  return [tile(0, 0), tile(HALF_W, 0), tile(0, HALF_H), tile(HALF_W, HALF_H)];
+// ── Date/time helper ─────────────────────────────────────────
+// Returns right-aligned date+time string (padded to CHARS_PER_LINE).
+// Used by all screens that show [DATE AND TIME] in the top-right corner.
+function currentDtStr(): string {
+  const now = new Date();
+  const d = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const t = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return `${d}  ${t}`.padStart(CHARS_PER_LINE);
 }
 
 // ── Screen builders ──────────────────────────────────────────
 
+// Sleep check-in screen ("Before biometrics added for the day" mockup).
+// Shows a bar chart for sleep quality selection (Bad / Regular / Good / Great).
 function buildSleepCheckin(): PageConfig {
-  // 4 columns × 8 chars = 32 chars (fills the full display width exactly).
-  // Bar heights: Bad=1, Regular=2, Good=3, Great=4 rows (MAX_H=4 leaves room for image below).
   const HEIGHTS = [1, 2, 3, 4];
   const MAX_H   = 4;
-  const BAR     = ' ██████ '; // 8 chars: 1sp + 6 blocks + 1sp
-  const EMPTY   = '        '; // 8 chars: spaces
+  const BAR     = ' ██████ ';
+  const EMPTY   = '        ';
   const LABELS  = ['Bad', 'Regular', 'Good', 'Great'];
 
-  // Rows generated top-to-bottom. threshold = MAX_H - r.
-  // A column shows a bar only when its height >= threshold.
-  // This produces the stepped bar-chart shape (tall on the right, short on the left).
   const chartRows: string[] = [];
   for (let r = 0; r < MAX_H; r++) {
     const threshold = MAX_H - r;
     chartRows.push(HEIGHTS.map(h => h >= threshold ? BAR : EMPTY).join(''));
   }
 
-  // Label row: '>' prefix marks the selected column; each column is 8 chars wide.
-  // '>Regular' = 8 chars exactly; padEnd(8) handles shorter labels.
   const labelRow = LABELS.map((lbl, i) => {
     const prefix = i === state.sleepSelectIdx ? '>' : ' ';
     return (prefix + lbl).padEnd(8);
   }).join('');
 
-  // Header: "  Welcome to StudyHub." left, date right (e.g. "Mar 30")
-  const now     = new Date();
-  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  const leftStr = '  Welcome to StudyHub.';
-  const gapLen  = CHARS_PER_LINE - leftStr.length - dateStr.length;
-  const headerLine = leftStr + ' '.repeat(Math.max(1, gapLen)) + dateStr;
-  const header  = headerLine + '\n' + separator(CHARS_PER_LINE);
-
-  // Body: centered question + 4 chart rows + label row = 6 text lines (~120px from y=44 → ~y=164).
-  // Bed icon renders below the text at y≈170, centered horizontally.
-  const howStr  = 'How did you sleep?';
-  const howPad  = Math.floor((CHARS_PER_LINE - howStr.length) / 2);
-  const body = [
-    ' '.repeat(howPad) + howStr,
-    ...chartRows,
-    labelRow,
-  ].join('\n');
+  const name = state.userName || 'there';
+  const greetStr = `Welcome to StudyHub, ${name}.`;
+  const howStr   = '         How did you sleep?';
+  const body = [greetStr, howStr, ...chartRows, labelRow].join('\n');
 
   const footer = buildFooter(
     [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Confirm' }],
     'Sleep',
   );
 
-  // Bed icon: 128×72px, centered horizontally, below bar chart text
   const IMG_W = 128, IMG_H = 72;
-  const imgX  = Math.round((DISPLAY_WIDTH - IMG_W) / 2); // 224
-  const imgY  = 170; // below 6 text lines (~y=164), above footer (y=252)
+  const imgX  = Math.round((DISPLAY_WIDTH - IMG_W) / 2);
+  const imgY  = 185;
 
   return {
     textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(99, 'evt',    ' ',    0, 0, 1, 1, true),
+      textContainer(1,  'dt',     currentDtStr(), 0, 4,   DISPLAY_WIDTH, 20),
+      textContainer(2,  'body',   body,           0, 28,  DISPLAY_WIDTH, 200, false, true),
+      textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'bed', xPosition: imgX, yPosition: imgY, width: IMG_W, height: IMG_H }),
@@ -304,56 +221,33 @@ function buildSleepCheckin(): PageConfig {
   };
 }
 
-async function buildWelcome(): Promise<PageConfig> {
-  const now     = new Date();
-  const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dtStr   = `${dateStr}  ${timeStr}`;
-  const name    = state.userName || 'Simulator';
-
+// Welcome screen ("After biometrics added for the day" mockup).
+// Pure text layout — image tiles cover text containers in the G2 SDK regardless
+// of container ID, so we use text-only which matches the mockup and always works.
+function buildWelcome(): PageConfig {
+  const name      = state.userName || 'Simulator';
   const menuItems = ['Continue Studying', 'View Insights'];
 
-  // Try image-based layout; fall back to plain text if the PNG isn't available.
-  try {
-    const [tl, tr, bl, br] = await renderWelcomeBg(dtStr, name);
-    return {
-      listObject: [
-        listContainer(3, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
-      ],
-      imageObject: [
-        new ImageContainerProperty({ containerID: 20, containerName: 'tl', xPosition:   0, yPosition:   0, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 21, containerName: 'tr', xPosition: 288, yPosition:   0, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 22, containerName: 'bl', xPosition:   0, yPosition: 144, width: 288, height: 144 }),
-        new ImageContainerProperty({ containerID: 23, containerName: 'br', xPosition: 288, yPosition: 144, width: 288, height: 144 }),
-      ],
-      imageData: [
-        { id: 20, name: 'tl', data: tl },
-        { id: 21, name: 'tr', data: tr },
-        { id: 22, name: 'bl', data: bl },
-        { id: 23, name: 'br', data: br },
-      ],
-    };
-  } catch (err) {
-    // welcome-bg.png not yet available — render text-only welcome screen
-    log(`Welcome image unavailable, using text layout: ${err}`);
-    const centerOf = (s: string) =>
-      ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
-    const greeting = [
-      centerOf(`Welcome to StudyHub, ${name}.`),
-      centerOf('What would you like to do?'),
-    ].join('\n');
-    return {
-      textObject: [
-        textContainer(1, 'dt',       dtStr.padStart(CHARS_PER_LINE), 0, 4,   DISPLAY_WIDTH, 36),
-        textContainer(2, 'greeting', greeting,                        0, 100, DISPLAY_WIDTH, 80),
-      ],
-      listObject: [
-        listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
-      ],
-    };
-  }
+  const center = (s: string) =>
+    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
+
+  const greeting = [
+    center(`Welcome to StudyHub, ${name}.`),
+    center('What would you like to do?'),
+  ].join('\n');
+
+  return {
+    textObject: [
+      textContainer(1, 'dt',       currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
+      textContainer(2, 'greeting', greeting,        0, 100, DISPLAY_WIDTH, 80),
+    ],
+    listObject: [
+      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+    ],
+  };
 }
 
+// No-decks placeholder screen.
 function buildNoDecks(): PageConfig {
   const header = buildTitleBlock('Adaptive Learning');
   const body = [
@@ -379,44 +273,55 @@ function buildNoDecks(): PageConfig {
   };
 }
 
-function buildDeckSelect(): PageConfig {
-  const header = buildTitleBlock('Pick a Subject');
-  const lines = state.deckNames.map(
-    (name, i) => (i === state.deckSelectIdx ? '> ' : '  ') + name,
-  );
-  const body = lines.length > VISIBLE_LINES
-    ? applyScrollIndicators(lines, Math.max(0, state.deckSelectIdx - 4), VISIBLE_LINES)
-    : lines.join('\n');
-  const footer = buildFooter(
-    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Start' }],
-    'Subjects',
-  );
-
+// Study menu screen ("ContinueStudying-Dashboard" mockup).
+// Shown after tapping "Continue Studying" from the welcome screen.
+// Lists the two study modes: Programmed Study (uses first deck) and Select Deck.
+function buildStudyMenu(): PageConfig {
   return {
     textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(1, 'dt', currentDtStr(), 0, 4, DISPLAY_WIDTH, 36),
+    ],
+    listObject: [
+      listContainer(2, 'menu', ['Programmed Study', 'Select Deck'], 0, 215, DISPLAY_WIDTH, 73, true),
     ],
   };
 }
 
-function buildDashboard(): PageConfig {
-  const header = buildTitleBlock('Adaptive Learning');
-  const hasModel = state.modelStatus !== 'collecting_data' && state.modelStatus !== 'error';
-  const deckLabel = state.deckName || 'No deck loaded';
+// Deck select screen ("SelectDeck" mockup).
+// Shows deck names as a scrollable list; first item is selected by default.
+function buildDeckSelect(): PageConfig {
+  const items = state.deckNames.length > 0
+    ? state.deckNames
+    : ['(no decks available)'];
 
-  // Two-column key-value layout — Even G2 data display pattern
+  const footer = buildFooter(
+    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Start' }],
+    'Select Deck',
+  );
+
+  return {
+    textObject: [
+      textContainer(99, 'evt',    ' ',            0, 0, 1, 1, true),
+      textContainer(1,  'dt',     currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
+      textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+    ],
+    listObject: [
+      listContainer(2, 'decks', items, 0, 44, DISPLAY_WIDTH, 200, true),
+    ],
+  };
+}
+
+// Dashboard / pre-study stats ("ProgrammedStudy-Dashboard" mockup).
+// Shows ML model stats and biometric recommendation before starting a session.
+function buildDashboard(): PageConfig {
+  const rec = state.topStyles[0] ?? '--';
+
   const body = [
-    truncateLines(deckLabel, CHARS_PER_LINE),
-    separator(CHARS_PER_LINE),
-    kvRow('Cards due',    String(state.cardsDue)),
-    kvRow('Observations', String(state.obsCount)),
+    kvRow('Cards Due',    String(state.cardsDue)),
     kvRow('Best style',   state.topStyles[0] ?? '--'),
-    kvRow('Model',        state.modelStatus),
-    hasModel ? kvRow('R\u00B2', state.modelR2.toFixed(2)) : '',
-  ].filter(Boolean).join('\n');
+    kvRow('Model Status', state.modelStatus),
+    kvRow('Biometric Rec.', rec),
+  ].join('\n');
 
   const footer = buildFooter(
     [{ gesture: 'Tap', action: 'Study' }, { gesture: 'Scroll\u2193', action: 'ML' }],
@@ -425,14 +330,15 @@ function buildDashboard(): PageConfig {
 
   return {
     textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(99, 'evt',    ' ',            0, 0, 1, 1, true),
+      textContainer(1,  'dt',     currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
+      textContainer(2,  'body',   body,           0, ZONE.body.y, DISPLAY_WIDTH, ZONE.body.h, false, true),
+      textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
+// ML insights screen (unchanged from original design).
 function buildModelInsights(): PageConfig {
   const header = buildTitleBlock('ML Insights');
   const hasModel = state.modelStatus !== 'collecting_data' && state.modelStatus !== 'error';
@@ -465,48 +371,57 @@ function buildModelInsights(): PageConfig {
   };
 }
 
+// Question screen ("Question template" mockup).
+// Layout: date/time top-right | "Question N" centered | body text | card counter footer.
 function buildQuestion(): PageConfig {
-  const header = buildTitleBlock(`Card ${state.cardNumber} / ${state.totalCards}`);
+  const qLabel  = `Question ${state.cardNumber}`;
+  const qPad    = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - qLabel.length) / 2)));
+  const title   = qPad + qLabel;
+
   const wrapped = wordWrap(state.questionText);
-  const body = wrapped.length > VISIBLE_LINES
+  const body    = wrapped.length > VISIBLE_LINES
     ? applyScrollIndicators(wrapped, 0, VISIBLE_LINES)
     : wrapped.join('\n');
-  const footer = buildFooter(
-    [{ gesture: 'Tap', action: 'Reveal' }],
-    'Question',
-  );
+
+  const cardLine = `\u25A0 Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(99, 'evt',   ' ',            0, 0,  1,            1,            true),
+      textContainer(1,  'dt',    currentDtStr(), 0, 4,  DISPLAY_WIDTH, 20),
+      textContainer(2,  'title', title,          0, 28, DISPLAY_WIDTH, 20),
+      textContainer(3,  'body',  body,           0, 52, DISPLAY_WIDTH, 196,         false, true),
+      textContainer(4,  'card',  cardLine,       0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
+// Answer screen ("Answer template" mockup).
+// Same layout as question but header reads "Answer" (not numbered).
 function buildAnswer(): PageConfig {
-  const header = buildTitleBlock(`Answer ${state.cardNumber} / ${state.totalCards}`);
+  const aLabel = 'Answer';
+  const aPad   = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - aLabel.length) / 2)));
+  const title  = aPad + aLabel;
+
   const wrapped = wordWrap(state.answerText);
-  const body = wrapped.length > VISIBLE_LINES
+  const body    = wrapped.length > VISIBLE_LINES
     ? applyScrollIndicators(wrapped, 0, VISIBLE_LINES)
     : wrapped.join('\n');
-  const footer = buildFooter(
-    [{ gesture: 'Tap', action: 'Rate' }],
-    'Answer',
-  );
+
+  const cardLine = `\u25A0 Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(99, 'evt',   ' ',            0, 0,  1,            1,            true),
+      textContainer(1,  'dt',    currentDtStr(), 0, 4,  DISPLAY_WIDTH, 20),
+      textContainer(2,  'title', title,          0, 28, DISPLAY_WIDTH, 20),
+      textContainer(3,  'body',  body,           0, 52, DISPLAY_WIDTH, 196,         false, true),
+      textContainer(4,  'card',  cardLine,       0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
+// Rating screen — list of recall ratings (unchanged).
 function buildRating(): PageConfig {
   const header = buildTitleBlock('Rate Your Recall');
   const items = RATING_OPTIONS.map(
@@ -528,9 +443,10 @@ function buildRating(): PageConfig {
   };
 }
 
+// Session summary screen (unchanged).
 function buildSummary(): PageConfig {
   const header = buildTitleBlock('Session Complete');
-  const body = state.summaryText;
+  const body   = state.summaryText;
   const footer = buildFooter(
     [{ gesture: 'Tap', action: 'Dashboard' }],
     'Summary',
@@ -538,36 +454,37 @@ function buildSummary(): PageConfig {
 
   return {
     textObject: [
-      textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(99, 'evt',    ' ',    0, 0, 1, 1, true),
+      textContainer(1,  'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
+      textContainer(2,  'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
+      textContainer(3,  'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
   };
 }
 
-// ── Public API ───────────────────────────────────────────────
+// ── Screen builder registry ──────────────────────────────────
 
 const SCREEN_BUILDERS: Record<string, () => PageConfig | Promise<PageConfig>> = {
-  sleep_checkin: buildSleepCheckin,
-  welcome: buildWelcome,
-  no_decks: buildNoDecks,
-  deck_select: buildDeckSelect,
-  dashboard: buildDashboard,
+  sleep_checkin:  buildSleepCheckin,
+  welcome:        buildWelcome,
+  no_decks:       buildNoDecks,
+  study_menu:     buildStudyMenu,
+  deck_select:    buildDeckSelect,
+  dashboard:      buildDashboard,
   model_insights: buildModelInsights,
-  question: buildQuestion,
-  answer: buildAnswer,
-  rating: buildRating,
-  summary: buildSummary,
+  question:       buildQuestion,
+  answer:         buildAnswer,
+  rating:         buildRating,
+  summary:        buildSummary,
 };
 
 export async function showScreen(): Promise<void> {
   const builder = SCREEN_BUILDERS[state.screen];
   if (!builder) {
-    log(`Unknown screen: ${state.screen}`);
+    log(`No builder for screen: ${state.screen}`);
     return;
   }
-  const config = await Promise.resolve(builder());
   log(`Rendering: ${state.screen}`);
+  const config = await Promise.resolve(builder());
   await rebuildPage(config);
 }

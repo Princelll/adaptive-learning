@@ -15,6 +15,8 @@ let rateCardFn: (idx: number) => Promise<void> = async () => {};
 let returnToDashboardFn: () => Promise<void> = async () => {};
 let selectDeckFn: (idx: number) => Promise<void> = async () => {};
 let startPlannedStudyFn: () => Promise<void> = async () => {};
+let startProgrammedStudyFn: () => void = () => {};
+let goToDeckSelectFn: () => void = () => {};
 let showModelInsightsFn: () => void = () => {};
 let submitSleepCheckinFn: () => Promise<void> = async () => {};
 let skipSleepCheckinFn: () => Promise<void> = async () => {};
@@ -26,6 +28,8 @@ export function setAppActions(actions: {
   returnToDashboard: () => Promise<void>;
   selectDeck: (idx: number) => Promise<void>;
   startPlannedStudy: () => Promise<void>;
+  startProgrammedStudy: () => void;
+  goToDeckSelect: () => void;
   showModelInsights: () => void;
   submitSleepCheckin: () => Promise<void>;
   skipSleepCheckin: () => Promise<void>;
@@ -36,6 +40,8 @@ export function setAppActions(actions: {
   returnToDashboardFn = actions.returnToDashboard;
   selectDeckFn = actions.selectDeck;
   startPlannedStudyFn = actions.startPlannedStudy;
+  startProgrammedStudyFn = actions.startProgrammedStudy;
+  goToDeckSelectFn = actions.goToDeckSelect;
   showModelInsightsFn = actions.showModelInsights;
   submitSleepCheckinFn = actions.submitSleepCheckin;
   skipSleepCheckinFn = actions.skipSleepCheckin;
@@ -114,6 +120,18 @@ export function resolveEventType(
 
 export function onEvenHubEvent(event: EvenHubEvent): void {
   const eventType = resolveEventType(event);
+
+  // Study menu: 0 = Programmed Study, 1 = Select Deck
+  if (state.screen === 'study_menu' && event.listEvent) {
+    const listIdx = event.listEvent.currentSelectItemIndex ?? 0;
+    if (eventType === OsEventTypeList.CLICK_EVENT) {
+      log(`Study menu selected: ${listIdx}`);
+      if (listIdx === 0) startProgrammedStudyFn();
+      else goToDeckSelectFn();
+      return;
+    }
+    return;
+  }
 
   // Welcome menu: 0 = Continue Studying, 1 = View Insights
   if (state.screen === 'welcome' && event.listEvent) {
