@@ -238,11 +238,11 @@ function buildWelcome(): PageConfig {
 
   return {
     textObject: [
-      textContainer(1, 'dt',       currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
-      textContainer(2, 'greeting', greeting,        0, 100, DISPLAY_WIDTH, 80),
+      textContainer(1, 'dt',       currentDtStr(), 0,  4, DISPLAY_WIDTH, 22),
+      textContainer(2, 'greeting', greeting,        0, 48, DISPLAY_WIDTH, 64),
     ],
     listObject: [
-      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+      listContainer(3, 'menu', menuItems, 0, 148, DISPLAY_WIDTH, 110, true),
     ],
   };
 }
