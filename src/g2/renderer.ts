@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, bookIconBytes, globeIconBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -222,9 +222,11 @@ function buildSleepCheckin(): PageConfig {
 }
 
 // Welcome screen ("After biometrics added for the day" mockup).
-// Layout matches mockup: date top-right, greeting near top, large gap, list at bottom.
+// Layout: date top-right | 2-line greeting near top | large gap | list + icons at bottom.
+// Icons (book / globe) are image containers positioned right of each list item.
+// Image containers render on top of all text/list containers in the G2 SDK — we keep them
+// to the right of the text so they don't cover the list labels.
 // NO separate evt container — the list (isEventCapture=1) is the sole event listener.
-// SDK rule: only ONE container per screen may have isEventCapture=1.
 function buildWelcome(): PageConfig {
   const name      = state.userName || 'Simulator';
   const menuItems = ['Continue Studying', 'View Insights'];
@@ -232,18 +234,39 @@ function buildWelcome(): PageConfig {
   const center = (s: string) =>
     ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
 
-  // Two-line greeting matching mockup
-  const greetText = [
-    `  Welcome to StudyHub, ${name}.`,
-    center('What would you like to do?'),
+  // Guarantee greeting fits in one line (CHARS_PER_LINE = 32).
+  // "Welcome to StudyHub, " = 21 chars + "." = 1 → max name = 10 chars.
+  const maxNameLen = CHARS_PER_LINE - 22; // 22 = "Welcome to StudyHub, .".length
+  const shortName  = name.slice(0, maxNameLen);
+  const greetText  = [
+    `Welcome to StudyHub, ${shortName}.`,   // ≤ 32 chars, never wraps
+    center('What would you like to do?'),    // 29 chars, always fits
   ].join('\n');
+
+  // Icon dimensions and x-position.
+  // Icons sit at the far right of the list area, clear of the list item text.
+  // "Continue Studying" = 17 chars × ~18px = ~310px → icon at x=530 is safely past that.
+  const ICON_W = 30, ICON_H = 28;
+  const ICON_X = DISPLAY_WIDTH - ICON_W - 18; // ~528 — right edge with small margin
+
+  // Y positions: list at y=196, h=92, 2 items → each ~46px.
+  // Item 1 center ≈ y 219; item 2 center ≈ y 265.
+  // Measured from mockup: items at y≈196-228 and y≈228-262.
+  const BOOK_Y  = 200; // aligns with "Continue Studying"
+  const GLOBE_Y = 232; // aligns with "View Insights"
 
   return {
     textObject: [
-      // Date/time top-right
       textContainer(1, 'dt',    currentDtStr(), 0,  4,  DISPLAY_WIDTH, 20),
-      // Greeting near top — big black gap follows, then list at bottom
       textContainer(2, 'greet', greetText,      0,  36, DISPLAY_WIDTH, 50),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 10, containerName: 'book',  xPosition: ICON_X, yPosition: BOOK_Y,  width: ICON_W, height: ICON_H }),
+      new ImageContainerProperty({ containerID: 11, containerName: 'globe', xPosition: ICON_X, yPosition: GLOBE_Y, width: ICON_W, height: ICON_H }),
+    ],
+    imageData: [
+      { id: 10, name: 'book',  data: bookIconBytes(ICON_W,  ICON_H) },
+      { id: 11, name: 'globe', data: globeIconBytes(ICON_W, ICON_H) },
     ],
     listObject: [
       // isEvt=true → this is the ONLY event capture container on this screen
