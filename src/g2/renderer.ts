@@ -154,17 +154,19 @@ async function rebuildPage(config: PageConfig): Promise<void> {
 
 
 // ── Date/time helper ─────────────────────────────────────────
-// Right-aligns by padding to CHARS_PER_LINE (49) chars inside a full-width container.
-// 49 chars measured from ruler test — each char ≈ 576/49 ≈ 11.75 px wide.
+// Right-aligns the date by positioning the container so text lands flush-right.
+// Measured: charWidth=5px, paddingLength=4px → container x = 576 - (15chars×5px) - 4px = 440.
 function currentDtStr(): string {
   const now = new Date();
   const d = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const t = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return `${d}  ${t}`.padStart(CHARS_PER_LINE);
+  return `${d}  ${t}`;
 }
 
 function dtContainer(h: number): TextContainerProperty {
-  return textContainer(1, 'dt', currentDtStr(), 0, 4, DISPLAY_WIDTH, h);
+  const s = currentDtStr();
+  const x = DISPLAY_WIDTH - Math.ceil(s.length * 5) - 4; // 5px/char + 4px padding
+  return textContainer(1, 'dt', s, x, 4, DISPLAY_WIDTH - x, h);
 }
 
 // ── Screen builders ──────────────────────────────────────────
