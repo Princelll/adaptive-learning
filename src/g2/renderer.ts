@@ -169,7 +169,7 @@ function currentDtStr(): string {
   const now = new Date();
   const d = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const t = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return `${d}  ${t}`.padStart(CHARS_PER_LINE);
+  return `${d}  ${t}`.padStart(64);
 }
 
 function dtContainer(h: number): TextContainerProperty {
