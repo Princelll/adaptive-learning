@@ -164,9 +164,7 @@ function currentDtStr(): string {
 }
 
 function dtContainer(h: number): TextContainerProperty {
-  const s = currentDtStr();
-  const x = DISPLAY_WIDTH - Math.ceil(s.length * 5) - 4; // 5px/char + 4px padding
-  return textContainer(1, 'dt', s, x, 4, DISPLAY_WIDTH - x, h);
+  return textContainer(1, 'dt', currentDtStr(), 341, 4, 235, h);
 }
 
 // ── Screen builders ──────────────────────────────────────────
