@@ -154,8 +154,8 @@ async function rebuildPage(config: PageConfig): Promise<void> {
 
 // ── Layout zones (576×288 display) ───────────────────────────
 const ZONE = {
-  header: { y: 0,   h: 44  },
-  body:   { y: 44,  h: 208 },
+  header: { y: 0,   h: 45  },
+  body:   { y: 45,  h: 208 },
   footer: { y: 252, h: 36  },
 } as const;
 
