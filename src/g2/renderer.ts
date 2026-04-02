@@ -222,8 +222,9 @@ function buildSleepCheckin(): PageConfig {
 }
 
 // Welcome screen ("After biometrics added for the day" mockup).
-// Pure text layout — image tiles cover text containers in the G2 SDK regardless
-// of container ID, so we use text-only which matches the mockup and always works.
+// Layout matches mockup: date top-right, greeting near top, large gap, list at bottom.
+// NO separate evt container — the list (isEventCapture=1) is the sole event listener.
+// SDK rule: only ONE container per screen may have isEventCapture=1.
 function buildWelcome(): PageConfig {
   const name      = state.userName || 'Simulator';
   const menuItems = ['Continue Studying', 'View Insights'];
@@ -231,25 +232,22 @@ function buildWelcome(): PageConfig {
   const center = (s: string) =>
     ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
 
-  // Compact info card: greeting + deck stats (4 lines, no padding waste)
-  const deckLabel = (state.deckName ?? 'No deck loaded').slice(0, CHARS_PER_LINE);
-  const cardsLine = kvRow('Cards due', String(state.cardsDue));
-  const body = [
-    center(`Welcome, ${name}.`),
-    separator(CHARS_PER_LINE),
-    deckLabel,
-    cardsLine,
+  // Two-line greeting matching mockup
+  const greetText = [
+    `  Welcome to StudyHub, ${name}.`,
+    center('What would you like to do?'),
   ].join('\n');
 
   return {
     textObject: [
-      textContainer(99, 'evt',  ' ',            0,  0,  1,            1,   true),
-      textContainer(1,  'dt',   currentDtStr(), 0,  4,  DISPLAY_WIDTH, 20),
-      textContainer(2,  'body', body,           0,  28, DISPLAY_WIDTH, 110, false, true),
+      // Date/time top-right
+      textContainer(1, 'dt',    currentDtStr(), 0,  4,  DISPLAY_WIDTH, 20),
+      // Greeting near top — big black gap follows, then list at bottom
+      textContainer(2, 'greet', greetText,      0,  36, DISPLAY_WIDTH, 50),
     ],
     listObject: [
-      // y=148 places the list just below the info card, filling the lower half
-      listContainer(3, 'menu', menuItems, 0, 148, DISPLAY_WIDTH, 130, true),
+      // isEvt=true → this is the ONLY event capture container on this screen
+      listContainer(3, 'menu', menuItems, 0, 196, DISPLAY_WIDTH, 92, true),
     ],
   };
 }
@@ -289,12 +287,12 @@ function buildStudyMenu(): PageConfig {
 
   return {
     textObject: [
-      textContainer(99, 'evt',   ' ',                   0,  0,  1,            1,  true),
+      // NO evt container — list is the sole event capture container (SDK allows only 1)
       textContainer(1,  'dt',    currentDtStr(),        0,  4,  DISPLAY_WIDTH, 20),
       textContainer(2,  'title', center('Study Mode'),  0,  28, DISPLAY_WIDTH, 30),
     ],
     listObject: [
-      // List fills from below title to bottom of screen
+      // isEvt=true → sole event capture; list fills from below title to bottom
       listContainer(3, 'menu', ['Programmed Study', 'Select Deck'], 0, 65, DISPLAY_WIDTH, 183, true),
     ],
   };
@@ -314,7 +312,7 @@ function buildDeckSelect(): PageConfig {
 
   return {
     textObject: [
-      textContainer(99, 'evt',    ' ',            0, 0, 1, 1, true),
+      // NO evt container — list is the sole event capture container
       textContainer(1,  'dt',     currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
       textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
