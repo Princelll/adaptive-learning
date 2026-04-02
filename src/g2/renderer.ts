@@ -231,18 +231,25 @@ function buildWelcome(): PageConfig {
   const center = (s: string) =>
     ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
 
-  const greeting = [
-    center(`Welcome to StudyHub, ${name}.`),
-    center('What would you like to do?'),
+  // Compact info card: greeting + deck stats (4 lines, no padding waste)
+  const deckLabel = (state.deckName ?? 'No deck loaded').slice(0, CHARS_PER_LINE);
+  const cardsLine = kvRow('Cards due', String(state.cardsDue));
+  const body = [
+    center(`Welcome, ${name}.`),
+    separator(CHARS_PER_LINE),
+    deckLabel,
+    cardsLine,
   ].join('\n');
 
   return {
     textObject: [
-      textContainer(1, 'dt',       currentDtStr(), 0,  4, DISPLAY_WIDTH, 22),
-      textContainer(2, 'greeting', greeting,        0, 48, DISPLAY_WIDTH, 64),
+      textContainer(99, 'evt',  ' ',            0,  0,  1,            1,   true),
+      textContainer(1,  'dt',   currentDtStr(), 0,  4,  DISPLAY_WIDTH, 20),
+      textContainer(2,  'body', body,           0,  28, DISPLAY_WIDTH, 110, false, true),
     ],
     listObject: [
-      listContainer(3, 'menu', menuItems, 0, 148, DISPLAY_WIDTH, 110, true),
+      // y=148 places the list just below the info card, filling the lower half
+      listContainer(3, 'menu', menuItems, 0, 148, DISPLAY_WIDTH, 130, true),
     ],
   };
 }
@@ -277,12 +284,18 @@ function buildNoDecks(): PageConfig {
 // Shown after tapping "Continue Studying" from the welcome screen.
 // Lists the two study modes: Programmed Study (uses first deck) and Select Deck.
 function buildStudyMenu(): PageConfig {
+  const center = (s: string) =>
+    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
+
   return {
     textObject: [
-      textContainer(1, 'dt', currentDtStr(), 0, 4, DISPLAY_WIDTH, 36),
+      textContainer(99, 'evt',   ' ',                   0,  0,  1,            1,  true),
+      textContainer(1,  'dt',    currentDtStr(),        0,  4,  DISPLAY_WIDTH, 20),
+      textContainer(2,  'title', center('Study Mode'),  0,  28, DISPLAY_WIDTH, 30),
     ],
     listObject: [
-      listContainer(2, 'menu', ['Programmed Study', 'Select Deck'], 0, 215, DISPLAY_WIDTH, 73, true),
+      // List fills from below title to bottom of screen
+      listContainer(3, 'menu', ['Programmed Study', 'Select Deck'], 0, 65, DISPLAY_WIDTH, 183, true),
     ],
   };
 }
