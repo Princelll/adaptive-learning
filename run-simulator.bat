@@ -1,6 +1,6 @@
 @echo off
 set GITBASH=C:\Program Files\Git\git-bash.exe
-set BRANCH=claude/add-bioloop-ml-system-nLfSa
+set BRANCH=claude/convert-bmp-to-png-Og4HR
 
 if not exist "%GITBASH%" (
   echo ERROR: Git Bash not found at %GITBASH%
