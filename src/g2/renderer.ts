@@ -167,7 +167,7 @@ function currentDtStr(): string {
 }
 
 function dtContainer(h: number): TextContainerProperty {
-  return textContainer(1, 'dt', currentDtStr(), 0, 4, DISPLAY_WIDTH, h);
+  return textContainer(1, 'dt', currentDtStr(), 400, 4, DISPLAY_WIDTH - 400, h);
 }
 
 // ── Screen builders ──────────────────────────────────────────
