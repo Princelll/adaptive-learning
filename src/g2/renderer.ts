@@ -243,17 +243,20 @@ function buildWelcome(): PageConfig {
     center('What would you like to do?'),    // 29 chars, always fits
   ].join('\n');
 
-  // Icon dimensions and x-position.
-  // Icons sit at the far right of the list area, clear of the list item text.
-  // "Continue Studying" = 17 chars × ~18px = ~310px → icon at x=530 is safely past that.
-  const ICON_W = 30, ICON_H = 28;
-  const ICON_X = DISPLAY_WIDTH - ICON_W - 18; // ~528 — right edge with small margin
+  // Icon size: match the G2 pixel font character height (~20px).
+  const ICON_W = 22, ICON_H = 20;
 
-  // Y positions: list at y=196, h=92, 2 items → each ~46px.
-  // Item 1 center ≈ y 219; item 2 center ≈ y 265.
-  // Measured from mockup: items at y≈196-228 and y≈228-262.
-  const BOOK_Y  = 200; // aligns with "Continue Studying"
-  const GLOBE_Y = 232; // aligns with "View Insights"
+  // X positions: place each icon immediately after its list item's text.
+  // List paddingLength = 4px. G2 pixel font ≈ 18px per character.
+  // "Continue Studying" = 17 chars → 4 + 17×18 + 6 gap = 316
+  // "View Insights"     = 13 chars → 4 + 13×18 + 6 gap = 244
+  const BOOK_ICON_X  = 4 + 17 * 18 + 6; // 316 — just after "Continue Studying"
+  const GLOBE_ICON_X = 4 + 13 * 18 + 6; // 244 — just after "View Insights"
+
+  // Y positions: list at y=196, h=92, 2 items → each ~32px (measured from mockup).
+  // Items at y≈196-228 and y≈228-262 → center icon vertically on each item.
+  const BOOK_Y  = 196 + 6;  // 202 — top of item 1 + small top-margin
+  const GLOBE_Y = 228 + 6;  // 234 — top of item 2 + small top-margin
 
   return {
     textObject: [
@@ -261,8 +264,8 @@ function buildWelcome(): PageConfig {
       textContainer(2, 'greet', greetText,      0,  36, DISPLAY_WIDTH, 50),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 10, containerName: 'book',  xPosition: ICON_X, yPosition: BOOK_Y,  width: ICON_W, height: ICON_H }),
-      new ImageContainerProperty({ containerID: 11, containerName: 'globe', xPosition: ICON_X, yPosition: GLOBE_Y, width: ICON_W, height: ICON_H }),
+      new ImageContainerProperty({ containerID: 10, containerName: 'book',  xPosition: BOOK_ICON_X,  yPosition: BOOK_Y,  width: ICON_W, height: ICON_H }),
+      new ImageContainerProperty({ containerID: 11, containerName: 'globe', xPosition: GLOBE_ICON_X, yPosition: GLOBE_Y, width: ICON_W, height: ICON_H }),
     ],
     imageData: [
       { id: 10, name: 'book',  data: bookIconBytes(ICON_W,  ICON_H) },
