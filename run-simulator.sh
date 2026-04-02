@@ -5,7 +5,7 @@
 
 REPO_URL="https://github.com/Princelll/adaptive-learning.git"
 EVEN_DEV="$HOME/even-dev"
-BRANCH="claude/add-bioloop-ml-system-nLfSa"
+BRANCH="claude/convert-bmp-to-png-Og4HR"
 APP_NAME="adaptive-learning"
 APP_DIR="$EVEN_DEV/apps/$APP_NAME"
 
