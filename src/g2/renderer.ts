@@ -160,23 +160,20 @@ const ZONE = {
 } as const;
 
 // ── Date/time helper ─────────────────────────────────────────
-// Returns the date+time string without padding.
-// dtContainer() positions the text container so its left edge is at
-// x = DISPLAY_WIDTH - (str.length * CHAR_WIDTH), placing it flush-right.
-const CHAR_WIDTH = DISPLAY_WIDTH / CHARS_PER_LINE; // 18 px per character
-
+// Right-aligns by padding the string to CHARS_PER_LINE characters and placing
+// it in a full-width container (x=0, w=DISPLAY_WIDTH). This is the correct
+// approach because the G2 SDK maps one character to one fixed-width cell — the
+// container width determines the character grid, so padding with spaces is
+// equivalent to "x = 576 - (date_chars × char_width)".
 function currentDtStr(): string {
   const now = new Date();
   const d = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const t = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return `${d}  ${t}`;
+  return `${d}  ${t}`.padStart(CHARS_PER_LINE);
 }
 
 function dtContainer(h: number): TextContainerProperty {
-  const s = currentDtStr();
-  const w = Math.ceil(s.length * CHAR_WIDTH);
-  const x = DISPLAY_WIDTH - w;
-  return textContainer(1, 'dt', s, x, 4, w, h);
+  return textContainer(1, 'dt', currentDtStr(), 0, 4, DISPLAY_WIDTH, h);
 }
 
 // ── Screen builders ──────────────────────────────────────────
