@@ -10,6 +10,8 @@
 // but the toDataURL('image/png') path satisfies both paths.
 // ============================================================
 
+import { ImageContainerProperty } from '@evenrealities/even_hub_sdk';
+
 /**
  * Convert an already-drawn canvas to PNG bytes.
  * Returns the full PNG file as a number[] (byte values 0-255).
@@ -245,6 +247,146 @@ export function bookIconBytesFromBmp(): { w: number; h: number; pixels: number[]
 /** Globe icon from user BMP (49×40 px). */
 export function globeIconBytesFromBmp(): { w: number; h: number; pixels: number[] } {
   return { w: 49, h: 40, pixels: decodeBmpB64(GLOBE_BMP_B64) };
+}
+
+// ── Full-screen BMP → tiled PNG helpers ──────────────────────────────────────
+//
+// The G2 SDK ImageContainerProperty has hard pixel limits:
+//   width:  20–288 px
+//   height: 20–144 px
+//
+// A 576×288 BMP therefore needs 4 tiles (each ≤ 288×144).
+// The browser decodes the BMP natively (handles row-reversal, BGR→RGB, padding).
+// Each tile is re-encoded as PNG for the Rust image crate on the G2 firmware.
+//
+// IMPORTANT: image containers always render ON TOP of text/list containers in
+// the G2 SDK regardless of containerID ordering. Only use full-screen tiles on
+// screens where the entire UI is encoded in the image (no text/list on top).
+
+/** A single tile produced by bmpUrlToTiles(). */
+export interface TileData {
+  id: number;     // containerID
+  name: string;   // containerName
+  x: number;      // xPosition for ImageContainerProperty
+  y: number;      // yPosition
+  w: number;      // width  (≤ 288)
+  h: number;      // height (≤ 144)
+  data: number[]; // PNG bytes (full file, with header)
+}
+
+// Max dimensions per G2 image container.
+const TILE_MAX_W = 288;
+const TILE_MAX_H = 144;
+
+/** Load a URL as an HTMLImageElement (resolves on load, rejects on error). */
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload  = () => resolve(img);
+    img.onerror = (e) => reject(new Error(`Failed to load image: ${url} (${e})`));
+    img.src = url;
+  });
+}
+
+/**
+ * Apply a luminance threshold to a canvas in-place.
+ * Pixels with luminance > 30 become white (#FFF); all others become black (#000).
+ * Use this when targeting real G2 hardware (4-bit grayscale) for maximum contrast.
+ * Not needed for the browser simulator where colors display as-is.
+ */
+export function thresholdCanvas(canvas: HTMLCanvasElement): void {
+  const ctx = canvas.getContext('2d')!;
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < data.length; i += 4) {
+    const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    const v = lum > 30 ? 255 : 0;
+    data[i] = data[i + 1] = data[i + 2] = v;
+    // alpha (data[i+3]) unchanged
+  }
+  ctx.putImageData(new ImageData(data, canvas.width, canvas.height), 0, 0);
+}
+
+/**
+ * Load a BMP (or PNG/JPEG) from a URL, optionally threshold it, then split into
+ * tiles that each fit within the G2 ImageContainerProperty dimension limits.
+ * Returns an array of TileData (PNG-encoded, ready for updateImageRawData).
+ *
+ * @param imageUrl      URL reachable in the browser context (e.g. '/icons/foo.png')
+ * @param baseId        Starting containerID for the tiles (default 50)
+ * @param applyThreshold Convert to monochrome before encoding — recommended for real G2 hardware
+ */
+export async function bmpUrlToTiles(
+  imageUrl: string,
+  baseId = 50,
+  applyThreshold = false,
+): Promise<TileData[]> {
+  const img = await loadImage(imageUrl);
+
+  // Draw full image onto a source canvas.
+  const srcCanvas = document.createElement('canvas');
+  srcCanvas.width  = img.width;
+  srcCanvas.height = img.height;
+  const srcCtx = srcCanvas.getContext('2d')!;
+  srcCtx.drawImage(img, 0, 0);
+
+  if (applyThreshold) thresholdCanvas(srcCanvas);
+
+  // Slice into tiles.
+  const tiles: TileData[] = [];
+  let id = baseId;
+
+  for (let ty = 0; ty < Math.ceil(img.height / TILE_MAX_H); ty++) {
+    for (let tx = 0; tx < Math.ceil(img.width / TILE_MAX_W); tx++) {
+      const sx = tx * TILE_MAX_W;
+      const sy = ty * TILE_MAX_H;
+      const sw = Math.min(TILE_MAX_W, img.width  - sx);
+      const sh = Math.min(TILE_MAX_H, img.height - sy);
+
+      const tileCanvas = document.createElement('canvas');
+      tileCanvas.width  = sw;
+      tileCanvas.height = sh;
+      tileCanvas.getContext('2d')!.drawImage(srcCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+      tiles.push({
+        id,
+        name: `tile_${id}`,
+        x: sx,
+        y: sy,
+        w: sw,
+        h: sh,
+        data: canvasToPngBytes(tileCanvas),
+      });
+      id++;
+    }
+  }
+
+  return tiles;
+}
+
+/**
+ * Convert TileData[] into the imageObject / imageData arrays expected by PageConfig
+ * in renderer.ts. Spread the result into your PageConfig:
+ *
+ *   const tiles = await bmpUrlToTiles('/icons/welcome.png');
+ *   return { ...tilesToPageConfig(tiles) };
+ */
+export function tilesToPageConfig(tiles: TileData[]): {
+  imageObject: ImageContainerProperty[];
+  imageData: Array<{ id: number; name: string; data: number[] }>;
+} {
+  return {
+    imageObject: tiles.map(
+      t => new ImageContainerProperty({
+        containerID:   t.id,
+        containerName: t.name,
+        xPosition:     t.x,
+        yPosition:     t.y,
+        width:         t.w,
+        height:        t.h,
+      }),
+    ),
+    imageData: tiles.map(t => ({ id: t.id, name: t.name, data: t.data })),
+  };
 }
 
 // Globe / compass icon for "View Insights" list item.
