@@ -152,12 +152,6 @@ async function rebuildPage(config: PageConfig): Promise<void> {
   }
 }
 
-// ── Layout zones (576×288 display) ───────────────────────────
-const ZONE = {
-  header: { y: 0,   h: 45  },
-  body:   { y: 45,  h: 208 },
-  footer: { y: 252, h: 36  },
-} as const;
 
 // ── Date/time helper ─────────────────────────────────────────
 // Right-aligns by padding the string to CHARS_PER_LINE characters and placing
@@ -217,7 +211,7 @@ function buildSleepCheckin(): PageConfig {
       textContainer(99, 'evt',    ' ',    0, 0, 1, 1, true),
       dtContainer(20),
       textContainer(2,  'body',   body,           0, 28,  DISPLAY_WIDTH, 200, false, true),
-      textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(3,  'footer', footer,         0, 252, DISPLAY_WIDTH, 36),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'bed', xPosition: imgX, yPosition: imgY, width: IMG_W, height: IMG_H }),
@@ -269,9 +263,9 @@ function buildNoDecks(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(1, 'header', header, 0, 0, DISPLAY_WIDTH, 45),
+      textContainer(2, 'body',   body,   0, 45,   DISPLAY_WIDTH, 208, false, true),
+      textContainer(3, 'footer', footer, 0, 252, DISPLAY_WIDTH, 36),
     ],
   };
 }
@@ -306,7 +300,7 @@ function buildDeckSelect(): PageConfig {
     textObject: [
       textContainer(99, 'evt',    ' ',            0, 0, 1, 1, true),
       dtContainer(36),
-      textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(3,  'footer', footer,         0, 252, DISPLAY_WIDTH, 36),
     ],
     listObject: [
       listContainer(2, 'decks', items, 0, 44, DISPLAY_WIDTH, 200, true),
@@ -335,8 +329,8 @@ function buildDashboard(): PageConfig {
     textObject: [
       textContainer(99, 'evt',    ' ',            0, 0, 1, 1, true),
       dtContainer(36),
-      textContainer(2,  'body',   body,           0, ZONE.body.y, DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(2,  'body',   body,           0, 45, DISPLAY_WIDTH, 208, false, true),
+      textContainer(3,  'footer', footer,         0, 252, DISPLAY_WIDTH, 36),
     ],
   };
 }
@@ -367,9 +361,9 @@ function buildModelInsights(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt', ' ', 0, 0, 1, 1, true),
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2, 'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(1, 'header', header, 0, 0, DISPLAY_WIDTH, 45),
+      textContainer(2, 'body',   body,   0, 45,   DISPLAY_WIDTH, 208, false, true),
+      textContainer(3, 'footer', footer, 0, 252, DISPLAY_WIDTH, 36),
     ],
   };
 }
@@ -394,7 +388,7 @@ function buildQuestion(): PageConfig {
       dtContainer(20),
       textContainer(2,  'title', title,          0, 28, DISPLAY_WIDTH, 20),
       textContainer(3,  'body',  body,           0, 52, DISPLAY_WIDTH, 196,         false, true),
-      textContainer(4,  'card',  cardLine,       0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(4,  'card',  cardLine,       0, 252, DISPLAY_WIDTH, 36),
     ],
   };
 }
@@ -419,7 +413,7 @@ function buildAnswer(): PageConfig {
       dtContainer(20),
       textContainer(2,  'title', title,          0, 28, DISPLAY_WIDTH, 20),
       textContainer(3,  'body',  body,           0, 52, DISPLAY_WIDTH, 196,         false, true),
-      textContainer(4,  'card',  cardLine,       0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(4,  'card',  cardLine,       0, 252, DISPLAY_WIDTH, 36),
     ],
   };
 }
@@ -437,11 +431,11 @@ function buildRating(): PageConfig {
 
   return {
     textObject: [
-      textContainer(1, 'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(3, 'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(1, 'header', header, 0, 0, DISPLAY_WIDTH, 45),
+      textContainer(3, 'footer', footer, 0, 252, DISPLAY_WIDTH, 36),
     ],
     listObject: [
-      listContainer(2, 'ratings', items, 0, ZONE.body.y, DISPLAY_WIDTH, ZONE.body.h, true),
+      listContainer(2, 'ratings', items, 0, 45, DISPLAY_WIDTH, 208, true),
     ],
   };
 }
@@ -458,9 +452,9 @@ function buildSummary(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',    ' ',    0, 0, 1, 1, true),
-      textContainer(1,  'header', header, 0, ZONE.header.y, DISPLAY_WIDTH, ZONE.header.h),
-      textContainer(2,  'body',   body,   0, ZONE.body.y,   DISPLAY_WIDTH, ZONE.body.h, false, true),
-      textContainer(3,  'footer', footer, 0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
+      textContainer(1,  'header', header, 0, 0, DISPLAY_WIDTH, 45),
+      textContainer(2,  'body',   body,   0, 45,   DISPLAY_WIDTH, 208, false, true),
+      textContainer(3,  'footer', footer, 0, 252, DISPLAY_WIDTH, 36),
     ],
   };
 }
