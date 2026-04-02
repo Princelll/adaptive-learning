@@ -235,21 +235,17 @@ function buildWelcome(): PageConfig {
   const name      = state.userName || 'Simulator';
   const menuItems = ['Continue Studying', 'View Insights'];
 
-  const center = (s: string) =>
-    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
-
-  const greeting = [
-    center(`Welcome to StudyHub, ${name}.`),
-    center('What would you like to do?'),
-  ].join('\n');
+  // ── CHAR RULER TEST ── remove after calibration ──────────────
+  // Each row is 80 chars of repeating 0-9. Count how many digits
+  // are visible on one line to find the true chars-per-line value.
+  const ruler = '01234567890123456789012345678901234567890123456789012345678901234567890123456789';
+  const greeting = [ruler, ruler, ruler].join('\n');
+  // ─────────────────────────────────────────────────────────────
 
   return {
     textObject: [
       dtContainer(36),
-      textContainer(2, 'greeting', greeting,        0, 100, DISPLAY_WIDTH, 80),
-    ],
-    listObject: [
-      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+      textContainer(2, 'ruler', greeting, 0, 44, DISPLAY_WIDTH, 208),
     ],
   };
 }
