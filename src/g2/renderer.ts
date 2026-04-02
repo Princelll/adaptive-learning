@@ -160,13 +160,23 @@ const ZONE = {
 } as const;
 
 // ── Date/time helper ─────────────────────────────────────────
-// Returns right-aligned date+time string (padded to CHARS_PER_LINE).
-// Used by all screens that show [DATE AND TIME] in the top-right corner.
+// Returns the date+time string without padding.
+// dtContainer() positions the text container so its left edge is at
+// x = DISPLAY_WIDTH - (str.length * CHAR_WIDTH), placing it flush-right.
+const CHAR_WIDTH = DISPLAY_WIDTH / CHARS_PER_LINE; // 18 px per character
+
 function currentDtStr(): string {
   const now = new Date();
   const d = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const t = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return `${d}  ${t}`.padStart(CHARS_PER_LINE);
+  return `${d}  ${t}`;
+}
+
+function dtContainer(h: number): TextContainerProperty {
+  const s = currentDtStr();
+  const w = Math.ceil(s.length * CHAR_WIDTH);
+  const x = DISPLAY_WIDTH - w;
+  return textContainer(1, 'dt', s, x, 4, w, h);
 }
 
 // ── Screen builders ──────────────────────────────────────────
@@ -208,7 +218,7 @@ function buildSleepCheckin(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',    ' ',    0, 0, 1, 1, true),
-      textContainer(1,  'dt',     currentDtStr(), 0, 4,   DISPLAY_WIDTH, 20),
+      dtContainer(20),
       textContainer(2,  'body',   body,           0, 28,  DISPLAY_WIDTH, 200, false, true),
       textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
@@ -238,7 +248,7 @@ function buildWelcome(): PageConfig {
 
   return {
     textObject: [
-      textContainer(1, 'dt',       currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
+      dtContainer(36),
       textContainer(2, 'greeting', greeting,        0, 100, DISPLAY_WIDTH, 80),
     ],
     listObject: [
@@ -279,7 +289,7 @@ function buildNoDecks(): PageConfig {
 function buildStudyMenu(): PageConfig {
   return {
     textObject: [
-      textContainer(1, 'dt', currentDtStr(), 0, 4, DISPLAY_WIDTH, 36),
+      dtContainer(36),
     ],
     listObject: [
       listContainer(2, 'menu', ['Programmed Study', 'Select Deck'], 0, 215, DISPLAY_WIDTH, 73, true),
@@ -302,7 +312,7 @@ function buildDeckSelect(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',    ' ',            0, 0, 1, 1, true),
-      textContainer(1,  'dt',     currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
+      dtContainer(36),
       textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
     listObject: [
@@ -331,7 +341,7 @@ function buildDashboard(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',    ' ',            0, 0, 1, 1, true),
-      textContainer(1,  'dt',     currentDtStr(), 0, 4,   DISPLAY_WIDTH, 36),
+      dtContainer(36),
       textContainer(2,  'body',   body,           0, ZONE.body.y, DISPLAY_WIDTH, ZONE.body.h, false, true),
       textContainer(3,  'footer', footer,         0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
     ],
@@ -388,7 +398,7 @@ function buildQuestion(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',   ' ',            0, 0,  1,            1,            true),
-      textContainer(1,  'dt',    currentDtStr(), 0, 4,  DISPLAY_WIDTH, 20),
+      dtContainer(20),
       textContainer(2,  'title', title,          0, 28, DISPLAY_WIDTH, 20),
       textContainer(3,  'body',  body,           0, 52, DISPLAY_WIDTH, 196,         false, true),
       textContainer(4,  'card',  cardLine,       0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
@@ -413,7 +423,7 @@ function buildAnswer(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',   ' ',            0, 0,  1,            1,            true),
-      textContainer(1,  'dt',    currentDtStr(), 0, 4,  DISPLAY_WIDTH, 20),
+      dtContainer(20),
       textContainer(2,  'title', title,          0, 28, DISPLAY_WIDTH, 20),
       textContainer(3,  'body',  body,           0, 52, DISPLAY_WIDTH, 196,         false, true),
       textContainer(4,  'card',  cardLine,       0, ZONE.footer.y, DISPLAY_WIDTH, ZONE.footer.h),
