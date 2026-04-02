@@ -154,20 +154,17 @@ async function rebuildPage(config: PageConfig): Promise<void> {
 
 
 // ── Date/time helper ─────────────────────────────────────────
-// Right-aligns by padding the string to CHARS_PER_LINE characters and placing
-// it in a full-width container (x=0, w=DISPLAY_WIDTH). This is the correct
-// approach because the G2 SDK maps one character to one fixed-width cell — the
-// container width determines the character grid, so padding with spaces is
-// equivalent to "x = 576 - (date_chars × char_width)".
+// Right-aligns by padding to CHARS_PER_LINE (49) chars inside a full-width container.
+// 49 chars measured from ruler test — each char ≈ 576/49 ≈ 11.75 px wide.
 function currentDtStr(): string {
   const now = new Date();
   const d = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
   const t = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return `${d}  ${t}`.padStart(64);
+  return `${d}  ${t}`.padStart(CHARS_PER_LINE);
 }
 
 function dtContainer(h: number): TextContainerProperty {
-  return textContainer(1, 'dt', currentDtStr(), 400, 4, DISPLAY_WIDTH - 400, h);
+  return textContainer(1, 'dt', currentDtStr(), 0, 4, DISPLAY_WIDTH, h);
 }
 
 // ── Screen builders ──────────────────────────────────────────
@@ -226,12 +223,24 @@ function buildSleepCheckin(): PageConfig {
 // Pure text layout — image tiles cover text containers in the G2 SDK regardless
 // of container ID, so we use text-only which matches the mockup and always works.
 function buildWelcome(): PageConfig {
-  const ruler = '01234567890123456789012345678901234567890123456789012345678901234567890123456789';
+  const name = state.userName || 'Simulator';
+  const menuItems = ['Continue Studying', 'View Insights'];
+
+  const center = (s: string) =>
+    ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - s.length) / 2))) + s;
+
+  const greeting = [
+    center(`Welcome to StudyHub, ${name}.`),
+    center('What would you like to do?'),
+  ].join('\n');
 
   return {
     textObject: [
       dtContainer(36),
-      textContainer(2, 'content', [ruler, ruler, ruler].join('\n'), 0, 44, DISPLAY_WIDTH, 208),
+      textContainer(2, 'greeting', greeting, 0, 100, DISPLAY_WIDTH, 80),
+    ],
+    listObject: [
+      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
     ],
   };
 }

@@ -9,11 +9,8 @@
 export const DISPLAY_WIDTH = 576;
 export const DISPLAY_HEIGHT = 288;
 
-// Approximate chars per line at default monospace size.
-// Even OS 2.0 card: 576px - 2×20px L/R margin = 536px usable.
-// Even Roster Grotesk size 20 ≈ 16px wide per char → 536/16 ≈ 33 chars.
-// Use 32 to stay comfortably within bounds.
-export const CHARS_PER_LINE = 32;
+// Measured from ruler test (repeating 0-9 string): 49 chars fit per line.
+export const CHARS_PER_LINE = 49;
 
 // Approximate visible lines in the body area (200px height)
 // ~20px per line = ~10 visible lines
