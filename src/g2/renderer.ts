@@ -226,20 +226,12 @@ function buildSleepCheckin(): PageConfig {
 // Pure text layout — image tiles cover text containers in the G2 SDK regardless
 // of container ID, so we use text-only which matches the mockup and always works.
 function buildWelcome(): PageConfig {
-  const name      = state.userName || 'Simulator';
-  const menuItems = ['Continue Studying', 'View Insights'];
-
-  // ── CHAR RULER TEST ── remove after calibration ──────────────
-  // Each row is 80 chars of repeating 0-9. Count how many digits
-  // are visible on one line to find the true chars-per-line value.
   const ruler = '01234567890123456789012345678901234567890123456789012345678901234567890123456789';
-  const greeting = [ruler, ruler, ruler].join('\n');
-  // ─────────────────────────────────────────────────────────────
 
   return {
     textObject: [
       dtContainer(36),
-      textContainer(2, 'ruler', greeting, 0, 44, DISPLAY_WIDTH, 208),
+      textContainer(2, 'content', [ruler, ruler, ruler].join('\n'), 0, 44, DISPLAY_WIDTH, 208),
     ],
   };
 }
