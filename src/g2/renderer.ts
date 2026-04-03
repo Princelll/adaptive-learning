@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, sleepBarsBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -170,51 +170,36 @@ function dtContainer(h: number): TextContainerProperty {
 // ── Screen builders ──────────────────────────────────────────
 
 // Sleep check-in screen ("Before biometrics added for the day" mockup).
-// Shows a bar chart for sleep quality selection (Bad / Regular / Good / Great).
+// Bar chart and bed are images; Bad/Regular/Good/Great are selectable text.
 function buildSleepCheckin(): PageConfig {
-  const HEIGHTS = [1, 2, 3, 4];
-  const MAX_H   = 4;
-  const BAR     = ' ██████ ';
-  const EMPTY   = '        ';
-  const LABELS  = ['Bad', 'Regular', 'Good', 'Great'];
+  const name   = state.userName || 'there';
+  const LABELS = ['Bad', 'Regular', 'Good', 'Great'];
+  const idx    = state.sleepSelectIdx ?? 0;
 
-  const chartRows: string[] = [];
-  for (let r = 0; r < MAX_H; r++) {
-    const threshold = MAX_H - r;
-    chartRows.push(HEIGHTS.map(h => h >= threshold ? BAR : EMPTY).join(''));
-  }
-
+  // Each label is centered in a ~9-char column; selected item gets brackets.
   const labelRow = LABELS.map((lbl, i) => {
-    const prefix = i === state.sleepSelectIdx ? '>' : ' ';
-    return (prefix + lbl).padEnd(8);
+    const text = i === idx ? `[${lbl}]` : lbl;
+    return text.padStart(Math.ceil((9 + text.length) / 2)).padEnd(9);
   }).join('');
 
-  const name = state.userName || 'there';
-  const greetStr = `Welcome to StudyHub, ${name}.`;
-  const howStr   = '         How did you sleep?';
-  const body = [greetStr, howStr, ...chartRows, labelRow].join('\n');
-
-  const footer = buildFooter(
-    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Confirm' }],
-    'Sleep',
-  );
-
-  const IMG_W = 128, IMG_H = 72;
-  const imgX  = Math.round((DISPLAY_WIDTH - IMG_W) / 2);
-  const imgY  = 185;
+  const BAR_W = 350, BAR_H = 110;
+  const BED_W = 70,  BED_H = 60;
 
   return {
     textObject: [
-      textContainer(99, 'evt',    ' ',    0, 0, 1, 1, true),
-      dtContainer(20),
-      textContainer(2,  'body',   body,           0, 28,  DISPLAY_WIDTH, 200, false, true),
-      textContainer(3,  'footer', footer,         0, 252, DISPLAY_WIDTH, 36),
+      textContainer(99, 'evt',      ' ',                                0,   0,  1,                   1,  true),
+      dtContainer(36),
+      textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`,    60,  42, DISPLAY_WIDTH - 60,  36),
+      textContainer(5,  'subtitle', 'How did you sleep?',                209, 67, DISPLAY_WIDTH - 209, 36),
+      textContainer(6,  'labels',   labelRow,                            100, 248, DISPLAY_WIDTH - 100, 36),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 10, containerName: 'bed', xPosition: imgX, yPosition: imgY, width: IMG_W, height: IMG_H }),
+      new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 10,  yPosition: 155, width: BED_W, height: BED_H }),
+      new ImageContainerProperty({ containerID: 11, containerName: 'bars', xPosition: 100, yPosition: 120, width: BAR_W, height: BAR_H }),
     ],
     imageData: [
-      { id: 10, name: 'bed', data: bedIconBytes(IMG_W, IMG_H) },
+      { id: 10, name: 'bed',  data: bedIconBytes(BED_W, BED_H) },
+      { id: 11, name: 'bars', data: sleepBarsBytes(BAR_W, BAR_H) },
     ],
   };
 }

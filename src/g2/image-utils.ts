@@ -109,6 +109,45 @@ export function bedIconBytes(w = 128, h = 80): number[] {
   });
 }
 
+// ── Sleep bar chart ───────────────────────────────────────────
+// 4 columns (Bad=1 bar, Regular=2, Good=3, Great=4).
+// Each bar is a filled rounded rectangle; columns stack from bottom up.
+
+export function sleepBarsBytes(w = 350, h = 110): number[] {
+  return renderIcon(w, h, (ctx, w, h) => {
+    ctx.fillStyle = '#FFF';
+
+    const nCols = 4;
+    const colW  = w / nCols;
+    const barH  = Math.round(h * 0.18);
+    const gap   = Math.round(h * 0.05);
+    const barW  = Math.round(colW * 0.72);
+    const r     = Math.round(barH * 0.45);
+
+    for (let col = 0; col < nCols; col++) {
+      const nBars = col + 1;
+      const cx    = colW * col + colW / 2;
+      const x     = Math.round(cx - barW / 2);
+
+      for (let bar = 0; bar < nBars; bar++) {
+        const y = h - (bar + 1) * (barH + gap);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + barW - r, y);
+        ctx.arcTo(x + barW, y,         x + barW, y + r,         r);
+        ctx.lineTo(x + barW, y + barH - r);
+        ctx.arcTo(x + barW, y + barH,  x + barW - r, y + barH,  r);
+        ctx.lineTo(x + r,     y + barH);
+        ctx.arcTo(x,          y + barH, x, y + barH - r,         r);
+        ctx.lineTo(x,          y + r);
+        ctx.arcTo(x,          y,        x + r, y,                r);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  });
+}
+
 // ── Book icon ─────────────────────────────────────────────────
 // Used on the welcome screen "Continue Studying" item.
 
