@@ -304,8 +304,8 @@ export async function initApp(): Promise<void> {
   state.deckNames = allDecks.map(d => d.name);
   state.deckIds = allDecks.map(d => d.id);
 
-  // Show sleep check-in once per day on first open, otherwise go to welcome
-  const needsSleepCheckin = await storage.needsSleepCheckin();
+  // DEV: always show sleep check-in for design work — restore after
+  const needsSleepCheckin = true; // await storage.needsSleepCheckin();
   if (needsSleepCheckin) {
     state.sleepSelectIdx = 1; // default: Regular
     state.screen = 'sleep_checkin';
