@@ -109,41 +109,68 @@ export function bedIconBytes(w = 128, h = 80): number[] {
   });
 }
 
-// ── Sleep bar chart ───────────────────────────────────────────
-// 4 columns (Bad=1 bar, Regular=2, Good=3, Great=4).
-// Each bar is a filled rounded rectangle; columns stack from bottom up.
+// ── Sleep column images ───────────────────────────────────────
+// One 95×130 image per column (Bad/Regular/Good/Great).
+// Contains the stacked bars + label + selection ring if active.
+// Each image is well within the 288×144 SDK limit.
 
-export function sleepBarsBytes(w = 350, h = 110): number[] {
+const SLEEP_LABELS = ['Bad', 'Regular', 'Good', 'Great'];
+
+export function sleepColumnBytes(colIdx: number, selected: boolean, w = 95, h = 130): number[] {
+  const label  = SLEEP_LABELS[colIdx];
+  const nBars  = colIdx + 1;
+  const barW   = w - 10;          // 5 px margin each side
+  const barH   = 18;
+  const gap    = 8;
+  const labelH = 20;
+  const barsBottom = h - labelH - 4;
+  const r      = Math.round(barH * 0.45);
+
   return renderIcon(w, h, (ctx, w, h) => {
     ctx.fillStyle = '#FFF';
 
-    const nCols = 4;
-    const colW  = w / nCols;
-    const barH  = Math.round(h * 0.18);
-    const gap   = Math.round(h * 0.05);
-    const barW  = Math.round(colW * 0.72);
-    const r     = Math.round(barH * 0.45);
+    // Bars — stacked from barsBottom upward
+    for (let bar = 0; bar < nBars; bar++) {
+      const y = barsBottom - (bar + 1) * (barH + gap) + gap;
+      const x = 5;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + barW - r, y);
+      ctx.arcTo(x + barW, y,        x + barW, y + r,        r);
+      ctx.lineTo(x + barW, y + barH - r);
+      ctx.arcTo(x + barW, y + barH, x + barW - r, y + barH, r);
+      ctx.lineTo(x + r,   y + barH);
+      ctx.arcTo(x,        y + barH, x, y + barH - r,        r);
+      ctx.lineTo(x,        y + r);
+      ctx.arcTo(x,        y,        x + r, y,               r);
+      ctx.closePath();
+      ctx.fill();
+    }
 
-    for (let col = 0; col < nCols; col++) {
-      const nBars = col + 1;
-      const cx    = colW * col + colW / 2;
-      const x     = Math.round(cx - barW / 2);
+    // Label
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(label, w / 2, h - 4);
 
-      for (let bar = 0; bar < nBars; bar++) {
-        const y = h - (bar + 1) * (barH + gap);
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + barW - r, y);
-        ctx.arcTo(x + barW, y,         x + barW, y + r,         r);
-        ctx.lineTo(x + barW, y + barH - r);
-        ctx.arcTo(x + barW, y + barH,  x + barW - r, y + barH,  r);
-        ctx.lineTo(x + r,     y + barH);
-        ctx.arcTo(x,          y + barH, x, y + barH - r,         r);
-        ctx.lineTo(x,          y + r);
-        ctx.arcTo(x,          y,        x + r, y,                r);
-        ctx.closePath();
-        ctx.fill();
-      }
+    // Selection ring — rounded rectangle outline around entire column
+    if (selected) {
+      ctx.strokeStyle = '#FFF';
+      ctx.lineWidth = 2;
+      const pad = 2, rr = 8;
+      const sx = pad, sy = pad, sw = w - 2 * pad, sh = h - 2 * pad;
+      ctx.beginPath();
+      ctx.moveTo(sx + rr, sy);
+      ctx.lineTo(sx + sw - rr, sy);
+      ctx.arcTo(sx + sw, sy,      sx + sw, sy + rr,      rr);
+      ctx.lineTo(sx + sw, sy + sh - rr);
+      ctx.arcTo(sx + sw, sy + sh, sx + sw - rr, sy + sh, rr);
+      ctx.lineTo(sx + rr, sy + sh);
+      ctx.arcTo(sx,       sy + sh, sx, sy + sh - rr,     rr);
+      ctx.lineTo(sx,       sy + rr);
+      ctx.arcTo(sx,       sy,      sx + rr, sy,           rr);
+      ctx.closePath();
+      ctx.stroke();
     }
   });
 }

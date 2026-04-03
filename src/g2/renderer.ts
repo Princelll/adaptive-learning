@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, sleepBarsBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, sleepColumnBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -170,36 +170,37 @@ function dtContainer(h: number): TextContainerProperty {
 // ── Screen builders ──────────────────────────────────────────
 
 // Sleep check-in screen ("Before biometrics added for the day" mockup).
-// Bar chart and bed are images; Bad/Regular/Good/Great are selectable text.
+// Each sleep quality column (Bad/Regular/Good/Great) is its own 95×130 image
+// containing the stacked bars, label, and selection ring when active.
 function buildSleepCheckin(): PageConfig {
-  const name   = state.userName || 'there';
-  const LABELS = ['Bad', 'Regular', 'Good', 'Great'];
-  const idx    = state.sleepSelectIdx ?? 0;
+  const name = state.userName || 'there';
+  const idx  = state.sleepSelectIdx ?? 0;
 
-  // Each label is centered in a ~9-char column; selected item gets brackets.
-  const labelRow = LABELS.map((lbl, i) => {
-    const text = i === idx ? `[${lbl}]` : lbl;
-    return text.padStart(Math.ceil((9 + text.length) / 2)).padEnd(9);
-  }).join('');
-
-  const BAR_W = 280, BAR_H = 110;
-  const BED_W = 70,  BED_H = 60;
+  // Columns: x=124…546 (≈547), gap=14px between columns, each 95px wide.
+  const COL_W = 95, COL_H = 130, COL_Y = 110;
+  const COL_X = [124, 233, 342, 451]; // 124+95+14=233, +95+14=342, +95+14=451
+  const BED_W = 77, BED_H = 64;
 
   return {
     textObject: [
-      textContainer(99, 'evt',      ' ',                                0,   0,  1,                   1,  true),
+      textContainer(99, 'evt',      ' ',                             0,   0,  1,                   1,  true),
       dtContainer(36),
-      textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`,    60,  42, DISPLAY_WIDTH - 60,  36),
-      textContainer(5,  'subtitle', 'How did you sleep?',                209, 67, DISPLAY_WIDTH - 209, 36),
-      textContainer(6,  'labels',   labelRow,                            100, 248, DISPLAY_WIDTH - 100, 36),
+      textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`, 60,  42, DISPLAY_WIDTH - 60,  36),
+      textContainer(5,  'subtitle', 'How did you sleep?',             209, 67, DISPLAY_WIDTH - 209, 36),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 10,  yPosition: 155, width: BED_W, height: BED_H }),
-      new ImageContainerProperty({ containerID: 11, containerName: 'bars', xPosition: 100, yPosition: 120, width: BAR_W, height: BAR_H }),
+      new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 24,       yPosition: 160, width: BED_W, height: BED_H }),
+      new ImageContainerProperty({ containerID: 11, containerName: 'col0', xPosition: COL_X[0], yPosition: COL_Y, width: COL_W, height: COL_H }),
+      new ImageContainerProperty({ containerID: 12, containerName: 'col1', xPosition: COL_X[1], yPosition: COL_Y, width: COL_W, height: COL_H }),
+      new ImageContainerProperty({ containerID: 13, containerName: 'col2', xPosition: COL_X[2], yPosition: COL_Y, width: COL_W, height: COL_H }),
+      new ImageContainerProperty({ containerID: 14, containerName: 'col3', xPosition: COL_X[3], yPosition: COL_Y, width: COL_W, height: COL_H }),
     ],
     imageData: [
       { id: 10, name: 'bed',  data: bedIconBytes(BED_W, BED_H) },
-      { id: 11, name: 'bars', data: sleepBarsBytes(BAR_W, BAR_H) },
+      { id: 11, name: 'col0', data: sleepColumnBytes(0, idx === 0, COL_W, COL_H) },
+      { id: 12, name: 'col1', data: sleepColumnBytes(1, idx === 1, COL_W, COL_H) },
+      { id: 13, name: 'col2', data: sleepColumnBytes(2, idx === 2, COL_W, COL_H) },
+      { id: 14, name: 'col3', data: sleepColumnBytes(3, idx === 3, COL_W, COL_H) },
     ],
   };
 }
