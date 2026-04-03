@@ -238,7 +238,7 @@ function buildWelcome(): PageConfig {
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 20, containerName: 'book',     xPosition: 180, yPosition: 216, width: BOOK_W,    height: BOOK_H }),
-      new ImageContainerProperty({ containerID: 21, containerName: 'insights', xPosition: 180, yPosition: 260, width: 21,        height: 20 }),
+      new ImageContainerProperty({ containerID: 21, containerName: 'insights', xPosition: 140, yPosition: 256, width: 21,        height: 20 }),
     ],
     imageData: [
       { id: 20, name: 'book',     data: userBookIconPngBytes() },
