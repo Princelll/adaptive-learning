@@ -164,7 +164,7 @@ function currentDtStr(): string {
 }
 
 function dtContainer(h: number): TextContainerProperty {
-  return textContainer(1, 'dt', currentDtStr(), 341, 4, 235, h);
+  return textContainer(1, 'dt', currentDtStr(), 410, 4, 166, h);
 }
 
 // ── Screen builders ──────────────────────────────────────────
