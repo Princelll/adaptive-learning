@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, sleepColumnBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, sleepColumnBytes, userBedIconPngBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -196,7 +196,7 @@ function buildSleepCheckin(): PageConfig {
       new ImageContainerProperty({ containerID: 14, containerName: 'col3', xPosition: COL_X[3], yPosition: COL_Y, width: COL_W, height: COL_H }),
     ],
     imageData: [
-      { id: 10, name: 'bed',  data: bedIconBytes(BED_W, BED_H) },
+      { id: 10, name: 'bed',  data: userBedIconPngBytes() },
       { id: 11, name: 'col0', data: sleepColumnBytes(0, idx === 0, COL_W, COL_H) },
       { id: 12, name: 'col1', data: sleepColumnBytes(1, idx === 1, COL_W, COL_H) },
       { id: 13, name: 'col2', data: sleepColumnBytes(2, idx === 2, COL_W, COL_H) },

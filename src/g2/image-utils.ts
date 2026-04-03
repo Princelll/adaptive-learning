@@ -56,6 +56,30 @@ export function renderIcon(
 // Used on the sleep check-in screen.
 // Designed for 128 × 80 pixels (scalable).
 
+// User-supplied bed icon PNG (40×32) — embedded as base64.
+const BED_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAACgAAAAgCAYAAABgrToAAAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
+  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAMYSURBVFhH7Ze9TuNaFIXX8bEThJBCYjv+wYki' +
+  'UfIm8AJAQ5VHoKOggwpEQ50CCTokCro8BC24CD+KlRAbGQWQMfaeAsWDg+8dAsOMr3Q/aTXeO8k+' +
+  'a5+zfYKzszM6OTmhQqFAAHInYWZmBtPT02CMIY8IAHJbHEYFIsdFCkQ0/ixXJA7mlf9OgVmt5pxj' +
+  'dnYWsiynVCqVIAh/Zm3Mtm26vLzE4uIigiBIBRuNBnZ3d1GtVsEYSxZxcXGB9fV13N7epvK/g0wb' +
+  'OOeoVCool8uQJAmiKIJzDlEUIYoiCoVCEv92J23bpna7TcViMZnetVqNjo+PqdVq0fz8PCmKkkiW' +
+  'ZVpYWKDDw0NqtVqkquq76f87lbl8SZJgWRY0TcP9/T0Gg0Ei13Xx+PgIwzBgGAZEUUw+JwgCZFmG' +
+  'pmkTqVqtpqQoStIZEcg+IJ9BVVXs7e3BMIzMwf+R3yEiDIdDrK2twXXd7D04KSPnZFmGKIoQBAGM' +
+  'sXcSBOGX4pyDcw5ZlqGq6quDn+GtQ5qmYWdnBwCwsbEBz/PeZE6OJEnY3t6GruvZDoZhiOvra/R6' +
+  'PVQqFei6DsMwoOs6dF1HqVSC4zjodrt4eXlJ9qxpmvB9H/1+/0tyXRdzc3NoNBrZDna7XTSbTdTr' +
+  'dWxtbUFRlFS80+lgc3MTvV4Pvu/DsqxU/HeS6WAURXBdF57nIYoixHGcKIoiPD8/w/M83N3dIY5j' +
+  '4IMH4DMw27ap0+lgaWnp3Ztk9KrjnKeeh2EI3/eT4ur1Og4ODkBEWF5ehuM4qfxJmZqawunpKWq1' +
+  'WraDI0ZOju+Rt859N/9aYB5gtm3Tzc0NVldXEQRB5oD9J0b7zrIs7O/vg4jQbDbR7/eTnM98X6FQ' +
+  'wNHREUzTfC2QMYbBYDCe/2E45yiXywAAz/O+1H4iAmMMiqIgjuPXAokIjuMkq51k1V9l/PQTEYgI' +
+  'pmkCoxZfXV1hZWUFYRimkv8GRJS02LKsn9etPP1xLxaL1G636fz8/Od160+29VekLhjjwbzxf4Ff' +
+  'JdcFEhGE4XCIh4eHd/PobxMEAZ6envAD9+74HUqUMIIAAAAASUVORK5CYII=';
+
+/** User-supplied bed icon as PNG bytes (40×32, ready for G2 imageData). */
+export function userBedIconPngBytes(): number[] {
+  return decodeBmpB64(BED_ICON_PNG_B64);
+}
+
 export function bedIconBytes(w = 128, h = 80): number[] {
   return renderIcon(w, h, (ctx, w, h) => {
     ctx.fillStyle = '#FFF';
