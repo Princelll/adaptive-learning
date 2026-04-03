@@ -274,6 +274,35 @@ export function globeIconBytesFromBmp(): { w: number; h: number; pixels: number[
   return { w: 49, h: 40, pixels: decodeBmpB64(GLOBE_BMP_B64) };
 }
 
+// User-supplied insights icon PNG (21×20, RGBA) — embedded as base64.
+const INSIGHTS_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABUAAAAUCAYAAABiS3YzAAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
+  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAQeSURBVDhPrZRbiJVVFMd/+/Ldzncuc+amM+MN' +
+  'xxulNiBTQiiSBN3tAgWVZJD50ksqJGgQ9VZREPQwZY+BQUEQ0UNRJGp3KbELk6GZpTOMzuWcOdfv' +
+  '26uHr5nU6q0N+2Ev1vrzX2v//0sBwv981H+BFm60RGsMWEUy7ph8v0X3QwGorKj6ZULtZHp12fyR' +
+  '+asRXVDS82ggvY8FogJE+ciCXYGseqcg5W2eYBGdUzJwIJLO+33RMYK6DANknqkKoWd7AALhCsMf' +
+  'L9aRFphiRm3ZyzGnHqniZgUUFLdY4iGLawjJpHDp7RaSZCz1HN3C9ZbmGcf4wSbTH7fJD1sWP5dj' +
+  '9bsF4utM1jOgC9Bxi4e2Cq9bM/1JgjQhWGnmoDLQ6FpDz44QE4POQXJRqH2fMvNpm7GRBsm0YMua' +
+  '0laPRftzDL6eJ60LZ5+u0fgpxTWF/r0h/uKMo9I5pHdnyPjBBigo3eTT/YDPhZEGlWMJ0aBGx5qB' +
+  'AxHnX6ijIvC6NK3zjnRaMloOmr87erYHjL3aQOtQ0b7g0IEit9bgL1L4SzRejyZeb0jr2fzmgCqH' +
+  'ExqjjsqRBFNSXPNhidyQAQfplKAsaH9AE2+wdN7nUx91VL9IOLN7lpnDbZq/OYqbLf17I3RBzX8E' +
+  'gCmBCuDs/lnqP6TEQ4bcOoPXp6FvTyimrMSWlcTDRko3W1ERkt9oBZB42Ehhk5XV7xUlf4OVjjs8' +
+  '6dsTSXGTFeUjpoDkh7Ncr1fLwidC0W5GMHlFsFKz7KU8ndt8aIPSEA5qpA7NMw4SSCYc0SrDgl0B' +
+  'osCWVSa7LoWOoD3hcDVB66LC5MBfqBkbaTBxqEV+o6Xjdp+B/Tm8hZr8BoMpggoVtW8TftlRxVXB' +
+  'dmkKmyzLX4npuM1HxwpTUOjZ4wldDwa4mjDxZpPKkYTq1wnKQnJJaJxKqR5PSSYzNzfPOSqfJ5gy' +
+  'NE+nzJ5I+XVfDVcTBvZFzBxuAxrp2x2K8jO7BUu1FDZb0VH2zq030nmvL2s/K0n5bn8+z3Yq6X08' +
+  'kO6HA8Fmdu57MhQUonEgLfD6NcqHJc/H1E+m6JxCGaidSGn8nOL3a2yXYvGzOfqfinBNoeNWH1MA' +
+  'EvAXayTNTK8AMUXo2x1ROZqQTAq2DMmEECw31L7LdLTqUJEf75whnXHoWBGtMZhI0R532F5NPGQY' +
+  'G2mSTmVjEkB0jJS2erL8tbzYTvWXRJTYbiXhCi3rvuoQr09fsY2CpVoG34glv9GKDv+OG+AZAGlD' +
+  '87QDLdhOTeucI62AJNB5l4/Xq0mnhPpomrUYQHGLR+VYQvVocoUx/rGkdQjle3zywxZXB3+RpnK0' +
+  'zcW3WvTuDAgHDclkpu2pD1pMf9RG2pcj/AvoXDS33uD1aFxNqH6TrTcdQ37YoqyieTalMequrgTg' +
+  'TwKyxRrXW2xNAAAAAElFTkSuQmCC';
+
+/** User-supplied insights icon as PNG bytes (21×20, ready for G2 imageData). */
+export function userInsightsIconPngBytes(): number[] {
+  return decodeBmpB64(INSIGHTS_ICON_PNG_B64);
+}
+
 // ── Full-screen BMP → tiled PNG helpers ──────────────────────────────────────
 //
 // The G2 SDK ImageContainerProperty has hard pixel limits:

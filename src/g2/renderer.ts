@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, userBookIconPngBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -224,7 +224,7 @@ function buildSleepCheckin(): PageConfig {
 // of container ID, so we use text-only which matches the mockup and always works.
 function buildWelcome(): PageConfig {
   const name = state.userName || 'Simulator';
-  const menuItems = ['Continue Studying     ', 'View Insights'];
+  const menuItems = ['Continue Studying     ', 'View Insights     '];
 
   const BOOK_W = 25, BOOK_H = 20;
   return {
@@ -237,10 +237,12 @@ function buildWelcome(): PageConfig {
       listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 20, containerName: 'book', xPosition: 180, yPosition: 216, width: BOOK_W, height: BOOK_H }),
+      new ImageContainerProperty({ containerID: 20, containerName: 'book',     xPosition: 180, yPosition: 216, width: BOOK_W,    height: BOOK_H }),
+      new ImageContainerProperty({ containerID: 21, containerName: 'insights', xPosition: 180, yPosition: 260, width: 21,        height: 20 }),
     ],
     imageData: [
-      { id: 20, name: 'book', data: userBookIconPngBytes() },
+      { id: 20, name: 'book',     data: userBookIconPngBytes() },
+      { id: 21, name: 'insights', data: userInsightsIconPngBytes() },
     ],
   };
 }
