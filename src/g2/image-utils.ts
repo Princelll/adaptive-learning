@@ -134,21 +134,17 @@ export function bedIconBytes(w = 128, h = 80): number[] {
 }
 
 // ── Sleep column images ───────────────────────────────────────
-// One 95×130 image per column (Bad/Regular/Good/Great).
-// Contains the stacked bars + label + selection ring if active.
+// One 95×110 image per column (bars + selection ring only).
+// Labels are rendered as SDK text containers so they match the G2 font.
 // Each image is well within the 288×144 SDK limit.
 
-const SLEEP_LABELS = ['Bad', 'Regular', 'Good', 'Great'];
-
-export function sleepColumnBytes(colIdx: number, selected: boolean, w = 95, h = 130): number[] {
-  const label  = SLEEP_LABELS[colIdx];
-  const nBars  = colIdx + 1;
-  const barW   = w - 10;          // 5 px margin each side
-  const barH   = 18;
-  const gap    = 8;
-  const labelH = 20;
-  const barsBottom = h - labelH - 4;
-  const r      = Math.round(barH * 0.45);
+export function sleepColumnBytes(colIdx: number, selected: boolean, w = 95, h = 110): number[] {
+  const nBars = colIdx + 1;
+  const barW  = w - 10;   // 5 px margin each side
+  const barH  = 18;
+  const gap   = 8;
+  const barsBottom = h - 4;
+  const r     = Math.round(barH * 0.45);
 
   return renderIcon(w, h, (ctx, w, h) => {
     ctx.fillStyle = '#FFF';
@@ -170,12 +166,6 @@ export function sleepColumnBytes(colIdx: number, selected: boolean, w = 95, h = 
       ctx.closePath();
       ctx.fill();
     }
-
-    // Label
-    ctx.font = 'bold 11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText(label, w / 2, h - 4);
 
     // Selection ring — rounded rectangle outline around entire column
     if (selected) {

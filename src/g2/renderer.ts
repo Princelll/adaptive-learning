@@ -170,23 +170,31 @@ function dtContainer(h: number): TextContainerProperty {
 // ── Screen builders ──────────────────────────────────────────
 
 // Sleep check-in screen ("Before biometrics added for the day" mockup).
-// Each sleep quality column (Bad/Regular/Good/Great) is its own 95×130 image
-// containing the stacked bars, label, and selection ring when active.
+// Bars are per-column images (with selection ring); labels use SDK text
+// containers so they match the G2 built-in font.
 function buildSleepCheckin(): PageConfig {
   const name = state.userName || 'there';
   const idx  = state.sleepSelectIdx ?? 0;
 
-  // Columns: x=124…546 (≈547), gap=14px between columns, each 95px wide.
-  const COL_W = 95, COL_H = 130, COL_Y = 110;
-  const COL_X = [124, 233, 342, 451]; // 124+95+14=233, +95+14=342, +95+14=451
-  const BED_W = 77, BED_H = 64;
+  // Columns: x=124…546, gap=14px, each 95px wide, 110px tall.
+  const COL_W = 95, COL_H = 110, COL_Y = 110;
+  const COL_X = [124, 233, 342, 451];
+  const LABELS = ['Bad', 'Regular', 'Good', 'Great'];
+  const LBL_Y  = COL_Y + COL_H + 6;  // just below bar images
+  // Bed doubled: 77×64 → 154×128
+  const BED_W = 154, BED_H = 128;
 
   return {
     textObject: [
-      textContainer(99, 'evt',      ' ',                             0,   0,  1,                   1,  true),
+      textContainer(99, 'evt',      ' ',                             0,      0,     1,                   1,   true),
       dtContainer(36),
-      textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`, 60,  42, DISPLAY_WIDTH - 60,  36),
-      textContainer(5,  'subtitle', 'How did you sleep?',             209, 67, DISPLAY_WIDTH - 209, 36),
+      textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`, 60,     42,    DISPLAY_WIDTH - 60,  36),
+      textContainer(5,  'subtitle', 'How did you sleep?',             209,    67,    DISPLAY_WIDTH - 209, 36),
+      // Labels — one per column, same x/width as the bar image above
+      textContainer(6,  'lbl0', LABELS[0], COL_X[0], LBL_Y, COL_W, 28),
+      textContainer(7,  'lbl1', LABELS[1], COL_X[1], LBL_Y, COL_W, 28),
+      textContainer(8,  'lbl2', LABELS[2], COL_X[2], LBL_Y, COL_W, 28),
+      textContainer(9,  'lbl3', LABELS[3], COL_X[3], LBL_Y, COL_W, 28),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 24,       yPosition: 160, width: BED_W, height: BED_H }),
