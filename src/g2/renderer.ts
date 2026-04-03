@@ -237,7 +237,7 @@ function buildWelcome(): PageConfig {
       listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 20, containerName: 'book', xPosition: 175, yPosition: 216, width: BOOK_W, height: BOOK_H }),
+      new ImageContainerProperty({ containerID: 20, containerName: 'book', xPosition: 180, yPosition: 216, width: BOOK_W, height: BOOK_H }),
     ],
     imageData: [
       { id: 20, name: 'book', data: userBookIconPngBytes() },
