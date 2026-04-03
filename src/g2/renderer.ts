@@ -182,7 +182,7 @@ function buildSleepCheckin(): PageConfig {
     return text.padStart(Math.ceil((9 + text.length) / 2)).padEnd(9);
   }).join('');
 
-  const BAR_W = 350, BAR_H = 110;
+  const BAR_W = 280, BAR_H = 110;
   const BED_W = 70,  BED_H = 60;
 
   return {
