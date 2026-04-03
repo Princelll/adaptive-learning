@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, bookIconBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -226,6 +226,7 @@ function buildWelcome(): PageConfig {
   const name = state.userName || 'Simulator';
   const menuItems = ['Continue Studying', 'View Insights'];
 
+  const BOOK_W = 29, BOOK_H = 23;
   return {
     textObject: [
       dtContainer(36),
@@ -234,6 +235,12 @@ function buildWelcome(): PageConfig {
     ],
     listObject: [
       listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 20, containerName: 'book', xPosition: 175, yPosition: 216, width: BOOK_W, height: BOOK_H }),
+    ],
+    imageData: [
+      { id: 20, name: 'book', data: bookIconBytes(BOOK_W, BOOK_H) },
     ],
   };
 }
