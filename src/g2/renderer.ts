@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, bookIconBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, sleepColumnBytes, userBedIconPngBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -170,51 +170,45 @@ function dtContainer(h: number): TextContainerProperty {
 // ── Screen builders ──────────────────────────────────────────
 
 // Sleep check-in screen ("Before biometrics added for the day" mockup).
-// Shows a bar chart for sleep quality selection (Bad / Regular / Good / Great).
+// Bars are per-column images (with selection ring); labels use SDK text
+// containers so they match the G2 built-in font.
 function buildSleepCheckin(): PageConfig {
-  const HEIGHTS = [1, 2, 3, 4];
-  const MAX_H   = 4;
-  const BAR     = ' ██████ ';
-  const EMPTY   = '        ';
-  const LABELS  = ['Bad', 'Regular', 'Good', 'Great'];
-
-  const chartRows: string[] = [];
-  for (let r = 0; r < MAX_H; r++) {
-    const threshold = MAX_H - r;
-    chartRows.push(HEIGHTS.map(h => h >= threshold ? BAR : EMPTY).join(''));
-  }
-
-  const labelRow = LABELS.map((lbl, i) => {
-    const prefix = i === state.sleepSelectIdx ? '>' : ' ';
-    return (prefix + lbl).padEnd(8);
-  }).join('');
-
   const name = state.userName || 'there';
-  const greetStr = `Welcome to StudyHub, ${name}.`;
-  const howStr   = '         How did you sleep?';
-  const body = [greetStr, howStr, ...chartRows, labelRow].join('\n');
+  const idx  = state.sleepSelectIdx ?? 0;
 
-  const footer = buildFooter(
-    [{ gesture: 'Scroll', action: 'Select' }, { gesture: 'Tap', action: 'Confirm' }],
-    'Sleep',
-  );
-
-  const IMG_W = 128, IMG_H = 72;
-  const imgX  = Math.round((DISPLAY_WIDTH - IMG_W) / 2);
-  const imgY  = 185;
+  // Columns: x=124…546, gap=14px, each 95px wide, 110px tall.
+  const COL_W = 95, COL_H = 110, COL_Y = 110;
+  const COL_X = [124, 233, 342, 451];
+  const LABELS = ['Bad', 'Regular', 'Good', 'Great'];
+  const LBL_Y  = COL_Y + COL_H + 6;  // just below bar images
+  // Bed doubled: 77×64 → 154×128
+  const BED_W = 154, BED_H = 128;
 
   return {
     textObject: [
-      textContainer(99, 'evt',    ' ',    0, 0, 1, 1, true),
-      dtContainer(20),
-      textContainer(2,  'body',   body,           0, 28,  DISPLAY_WIDTH, 200, false, true),
-      textContainer(3,  'footer', footer,         0, 252, DISPLAY_WIDTH, 36),
+      textContainer(99, 'evt',      ' ',                             0,      0,     1,                   1,   true),
+      dtContainer(36),
+      textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`, 60,     42,    DISPLAY_WIDTH - 60,  36),
+      textContainer(5,  'subtitle', 'How did you sleep?',             209,    67,    DISPLAY_WIDTH - 209, 36),
+      // Labels — one per column, same x/width as the bar image above
+      textContainer(6,  'lbl0', LABELS[0], COL_X[0], LBL_Y, COL_W, 28),
+      textContainer(7,  'lbl1', LABELS[1], COL_X[1], LBL_Y, COL_W, 28),
+      textContainer(8,  'lbl2', LABELS[2], COL_X[2], LBL_Y, COL_W, 28),
+      textContainer(9,  'lbl3', LABELS[3], COL_X[3], LBL_Y, COL_W, 28),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 10, containerName: 'bed', xPosition: imgX, yPosition: imgY, width: IMG_W, height: IMG_H }),
+      new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 24,       yPosition: 160, width: BED_W, height: BED_H }),
+      new ImageContainerProperty({ containerID: 11, containerName: 'col0', xPosition: COL_X[0], yPosition: COL_Y, width: COL_W, height: COL_H }),
+      new ImageContainerProperty({ containerID: 12, containerName: 'col1', xPosition: COL_X[1], yPosition: COL_Y, width: COL_W, height: COL_H }),
+      new ImageContainerProperty({ containerID: 13, containerName: 'col2', xPosition: COL_X[2], yPosition: COL_Y, width: COL_W, height: COL_H }),
+      new ImageContainerProperty({ containerID: 14, containerName: 'col3', xPosition: COL_X[3], yPosition: COL_Y, width: COL_W, height: COL_H }),
     ],
     imageData: [
-      { id: 10, name: 'bed', data: bedIconBytes(IMG_W, IMG_H) },
+      { id: 10, name: 'bed',  data: userBedIconPngBytes() },
+      { id: 11, name: 'col0', data: sleepColumnBytes(0, idx === 0, COL_W, COL_H) },
+      { id: 12, name: 'col1', data: sleepColumnBytes(1, idx === 1, COL_W, COL_H) },
+      { id: 13, name: 'col2', data: sleepColumnBytes(2, idx === 2, COL_W, COL_H) },
+      { id: 14, name: 'col3', data: sleepColumnBytes(3, idx === 3, COL_W, COL_H) },
     ],
   };
 }
@@ -224,9 +218,9 @@ function buildSleepCheckin(): PageConfig {
 // of container ID, so we use text-only which matches the mockup and always works.
 function buildWelcome(): PageConfig {
   const name = state.userName || 'Simulator';
-  const menuItems = ['Continue Studying', 'View Insights'];
+  const menuItems = ['Continue Studying     ', 'View Insights     '];
 
-  const BOOK_W = 29, BOOK_H = 23;
+  const BOOK_W = 25, BOOK_H = 20;
   return {
     textObject: [
       dtContainer(36),
@@ -237,10 +231,12 @@ function buildWelcome(): PageConfig {
       listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 20, containerName: 'book', xPosition: 175, yPosition: 216, width: BOOK_W, height: BOOK_H }),
+      new ImageContainerProperty({ containerID: 20, containerName: 'book',     xPosition: 180, yPosition: 216, width: BOOK_W,    height: BOOK_H }),
+      new ImageContainerProperty({ containerID: 21, containerName: 'insights', xPosition: 140, yPosition: 256, width: 21,        height: 20 }),
     ],
     imageData: [
-      { id: 20, name: 'book', data: bookIconBytes(BOOK_W, BOOK_H) },
+      { id: 20, name: 'book',     data: userBookIconPngBytes() },
+      { id: 21, name: 'insights', data: userInsightsIconPngBytes() },
     ],
   };
 }

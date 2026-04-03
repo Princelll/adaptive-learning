@@ -56,6 +56,30 @@ export function renderIcon(
 // Used on the sleep check-in screen.
 // Designed for 128 × 80 pixels (scalable).
 
+// User-supplied bed icon PNG (40×32) — embedded as base64.
+const BED_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAACgAAAAgCAYAAABgrToAAAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
+  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAMYSURBVFhH7Ze9TuNaFIXX8bEThJBCYjv+wYki' +
+  'UfIm8AJAQ5VHoKOggwpEQ50CCTokCro8BC24CD+KlRAbGQWQMfaeAsWDg+8dAsOMr3Q/aTXeO8k+' +
+  'a5+zfYKzszM6OTmhQqFAAHInYWZmBtPT02CMIY8IAHJbHEYFIsdFCkQ0/ixXJA7mlf9OgVmt5pxj' +
+  'dnYWsiynVCqVIAh/Zm3Mtm26vLzE4uIigiBIBRuNBnZ3d1GtVsEYSxZxcXGB9fV13N7epvK/g0wb' +
+  'OOeoVCool8uQJAmiKIJzDlEUIYoiCoVCEv92J23bpna7TcViMZnetVqNjo+PqdVq0fz8PCmKkkiW' +
+  'ZVpYWKDDw0NqtVqkquq76f87lbl8SZJgWRY0TcP9/T0Gg0Ei13Xx+PgIwzBgGAZEUUw+JwgCZFmG' +
+  'pmkTqVqtpqQoStIZEcg+IJ9BVVXs7e3BMIzMwf+R3yEiDIdDrK2twXXd7D04KSPnZFmGKIoQBAGM' +
+  'sXcSBOGX4pyDcw5ZlqGq6quDn+GtQ5qmYWdnBwCwsbEBz/PeZE6OJEnY3t6GruvZDoZhiOvra/R6' +
+  'PVQqFei6DsMwoOs6dF1HqVSC4zjodrt4eXlJ9qxpmvB9H/1+/0tyXRdzc3NoNBrZDna7XTSbTdTr' +
+  'dWxtbUFRlFS80+lgc3MTvV4Pvu/DsqxU/HeS6WAURXBdF57nIYoixHGcKIoiPD8/w/M83N3dIY5j' +
+  '4IMH4DMw27ap0+lgaWnp3Ztk9KrjnKeeh2EI3/eT4ur1Og4ODkBEWF5ehuM4qfxJmZqawunpKWq1' +
+  'WraDI0ZOju+Rt859N/9aYB5gtm3Tzc0NVldXEQRB5oD9J0b7zrIs7O/vg4jQbDbR7/eTnM98X6FQ' +
+  'wNHREUzTfC2QMYbBYDCe/2E45yiXywAAz/O+1H4iAmMMiqIgjuPXAokIjuMkq51k1V9l/PQTEYgI' +
+  'pmkCoxZfXV1hZWUFYRimkv8GRJS02LKsn9etPP1xLxaL1G636fz8/Od160+29VekLhjjwbzxf4Ff' +
+  'JdcFEhGE4XCIh4eHd/PobxMEAZ6envAD9+74HUqUMIIAAAAASUVORK5CYII=';
+
+/** User-supplied bed icon as PNG bytes (40×32, ready for G2 imageData). */
+export function userBedIconPngBytes(): number[] {
+  return decodeBmpB64(BED_ICON_PNG_B64);
+}
+
 export function bedIconBytes(w = 128, h = 80): number[] {
   return renderIcon(w, h, (ctx, w, h) => {
     ctx.fillStyle = '#FFF';
@@ -106,6 +130,62 @@ export function bedIconBytes(w = 128, h = 80): number[] {
 
     // Blanket fold line
     ctx.fillRect(bx + Math.round(w * 0.03), by + Math.round(bh * 0.45), bw - Math.round(w * 0.06), lw);
+  });
+}
+
+// ── Sleep column images ───────────────────────────────────────
+// One 95×110 image per column (bars + selection ring only).
+// Labels are rendered as SDK text containers so they match the G2 font.
+// Each image is well within the 288×144 SDK limit.
+
+export function sleepColumnBytes(colIdx: number, selected: boolean, w = 95, h = 110): number[] {
+  const nBars = colIdx + 1;
+  const barW  = w - 10;   // 5 px margin each side
+  const barH  = 18;
+  const gap   = 8;
+  const barsBottom = h - 4;
+  const r     = Math.round(barH * 0.45);
+
+  return renderIcon(w, h, (ctx, w, h) => {
+    ctx.fillStyle = '#FFF';
+
+    // Bars — stacked from barsBottom upward
+    for (let bar = 0; bar < nBars; bar++) {
+      const y = barsBottom - (bar + 1) * (barH + gap) + gap;
+      const x = 5;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + barW - r, y);
+      ctx.arcTo(x + barW, y,        x + barW, y + r,        r);
+      ctx.lineTo(x + barW, y + barH - r);
+      ctx.arcTo(x + barW, y + barH, x + barW - r, y + barH, r);
+      ctx.lineTo(x + r,   y + barH);
+      ctx.arcTo(x,        y + barH, x, y + barH - r,        r);
+      ctx.lineTo(x,        y + r);
+      ctx.arcTo(x,        y,        x + r, y,               r);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Selection ring — rounded rectangle outline around entire column
+    if (selected) {
+      ctx.strokeStyle = '#FFF';
+      ctx.lineWidth = 2;
+      const pad = 2, rr = 8;
+      const sx = pad, sy = pad, sw = w - 2 * pad, sh = h - 2 * pad;
+      ctx.beginPath();
+      ctx.moveTo(sx + rr, sy);
+      ctx.lineTo(sx + sw - rr, sy);
+      ctx.arcTo(sx + sw, sy,      sx + sw, sy + rr,      rr);
+      ctx.lineTo(sx + sw, sy + sh - rr);
+      ctx.arcTo(sx + sw, sy + sh, sx + sw - rr, sy + sh, rr);
+      ctx.lineTo(sx + rr, sy + sh);
+      ctx.arcTo(sx,       sy + sh, sx, sy + sh - rr,     rr);
+      ctx.lineTo(sx,       sy + rr);
+      ctx.arcTo(sx,       sy,      sx + rr, sy,           rr);
+      ctx.closePath();
+      ctx.stroke();
+    }
   });
 }
 
@@ -244,9 +324,63 @@ export function bookIconBytesFromBmp(): { w: number; h: number; pixels: number[]
   return { w: 49, h: 40, pixels: decodeBmpB64(BOOK_BMP_B64) };
 }
 
+// User-supplied book icon PNG (25×20, RGBA) — embedded to avoid Vite/even-dev path issues.
+const BOOK_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABkAAAAUCAYAAAB4d5a9AAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
+  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAOHSURBVEhLrZXLK7xfHMdfh2HGdeSSu2zk9ihS' +
+  'k8Q/IZJCiZTUZGFhoVzKhiwUKxslZSNmY6FcSrJwyW3MTJMm8yjKbZSZMcmc7+LL0zwzvptfv3e9' +
+  '6zmf8zrncz7n0iMACZCens7MzAyNjY38psXFRY6Ojjg7O6Ouro7a2lp6e3tJTEyMRtnf32dhYQG7' +
+  '3Q6AyMrKkmVlZdTU1GC1Wunv7ycUCkWPo6+vD0VRMBqNZGZmoqoqs7Oz3N/fR6O0trZisVgYHR3F' +
+  '7/fDxsaGvL6+lk6nUx4fH0uTySS/q4txYWGhdLvd0mKxxPRFur+/X768vMiTkxPp8XikoaKigo6O' +
+  'DpKSkpidncVgMNDZ2UlzczMAQgiklMzPz/P8/EwoFMLj8WA2mxkeHiY3N1er4O3tjfHxcQC2trbo' +
+  '6upifX2dOCklPwZISUkhNzcXVVVRVRWv14uqqgSDQW0ygNLSUoLBILe3t3i9XrxeL3d3d4TDYQDd' +
+  'nHG6kUA4HMbv9/P+/q7z19eXjnM4HNzd3enYQCCgTRwpXRIhBImJiVRVVVFTU6NZURTS09MjUerr' +
+  '62lqakJRFM3l5eXEx8cjhNCxhsiGlJLn52esVmtkWFNBQYH2fXh4yOHhoa7/X4rZroyMDFZWVri8' +
+  'vNS8t7dHZWWljrNYLBwcHOi4nZ0dzGazjiO6EgCfz8fIyAglJSVa7PX1FafTSX5+vhY7OjpiYGCA' +
+  'tLQ07QaGQqG/7yJKMUmys7MZGxsjNTVVF5+enubh4UFrK4rC0NAQycnJWszn8zE8PAzf5/ujmCQf' +
+  'Hx/s7u5iNBq1mJSSx8dHHWe327HZbGRlZWmxQCDA5+enjuMnyc+1E0Lg9/tZWVmJ5iDq4MPhMDab' +
+  'Tdf/L+kOPvIB/Z+Ki9w7IUTMHf8vil6s7kyqq6txOBxIKbVk4XCY5eVlPB4PNzc3fwcZDLS0tJCR' +
+  'kUFPTw/FxcXaHFJKUlNT2d7e1mIGvit4enrCZrOxubnJ6empBggh6O7upr29HUVRyMnJYWdnh6+v' +
+  'L87Pz5mcnERVVY03Go0MDg5ydXWlVSRcLpecm5vD7XZr9z1aQghcLhdFRUU0NDRwdXVFIBDAZDLp' +
+  'uMixP1s/MTGBWFtbk4WFhTr4B4rU09MTq6urXFxckJCQwNTUFHl5eQSDwV8XF7ndRP9w/uW2tjZ5' +
+  'dnYmr6+vpd1ul0tLS9JsNsdwv/kPMonUIuIEPgsAAAAASUVORK5CYII=';
+/** User-supplied book icon as PNG bytes (25×20, ready for G2 imageData). */
+export function userBookIconPngBytes(): number[] {
+  return decodeBmpB64(BOOK_ICON_PNG_B64);
+}
+
 /** Globe icon from user BMP (49×40 px). */
 export function globeIconBytesFromBmp(): { w: number; h: number; pixels: number[] } {
   return { w: 49, h: 40, pixels: decodeBmpB64(GLOBE_BMP_B64) };
+}
+
+// User-supplied insights icon PNG (21×20, RGBA) — embedded as base64.
+const INSIGHTS_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABUAAAAUCAYAAABiS3YzAAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
+  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAQeSURBVDhPrZRbiJVVFMd/+/Ldzncuc+amM+MN' +
+  'xxulNiBTQiiSBN3tAgWVZJD50ksqJGgQ9VZREPQwZY+BQUEQ0UNRJGp3KbELk6GZpTOMzuWcOdfv' +
+  '26uHr5nU6q0N+2Ev1vrzX2v//0sBwv981H+BFm60RGsMWEUy7ph8v0X3QwGorKj6ZULtZHp12fyR' +
+  '+asRXVDS82ggvY8FogJE+ciCXYGseqcg5W2eYBGdUzJwIJLO+33RMYK6DANknqkKoWd7AALhCsMf' +
+  'L9aRFphiRm3ZyzGnHqniZgUUFLdY4iGLawjJpHDp7RaSZCz1HN3C9ZbmGcf4wSbTH7fJD1sWP5dj' +
+  '9bsF4utM1jOgC9Bxi4e2Cq9bM/1JgjQhWGnmoDLQ6FpDz44QE4POQXJRqH2fMvNpm7GRBsm0YMua' +
+  '0laPRftzDL6eJ60LZ5+u0fgpxTWF/r0h/uKMo9I5pHdnyPjBBigo3eTT/YDPhZEGlWMJ0aBGx5qB' +
+  'AxHnX6ijIvC6NK3zjnRaMloOmr87erYHjL3aQOtQ0b7g0IEit9bgL1L4SzRejyZeb0jr2fzmgCqH' +
+  'ExqjjsqRBFNSXPNhidyQAQfplKAsaH9AE2+wdN7nUx91VL9IOLN7lpnDbZq/OYqbLf17I3RBzX8E' +
+  'gCmBCuDs/lnqP6TEQ4bcOoPXp6FvTyimrMSWlcTDRko3W1ERkt9oBZB42Ehhk5XV7xUlf4OVjjs8' +
+  '6dsTSXGTFeUjpoDkh7Ncr1fLwidC0W5GMHlFsFKz7KU8ndt8aIPSEA5qpA7NMw4SSCYc0SrDgl0B' +
+  'osCWVSa7LoWOoD3hcDVB66LC5MBfqBkbaTBxqEV+o6Xjdp+B/Tm8hZr8BoMpggoVtW8TftlRxVXB' +
+  'dmkKmyzLX4npuM1HxwpTUOjZ4wldDwa4mjDxZpPKkYTq1wnKQnJJaJxKqR5PSSYzNzfPOSqfJ5gy' +
+  'NE+nzJ5I+XVfDVcTBvZFzBxuAxrp2x2K8jO7BUu1FDZb0VH2zq030nmvL2s/K0n5bn8+z3Yq6X08' +
+  'kO6HA8Fmdu57MhQUonEgLfD6NcqHJc/H1E+m6JxCGaidSGn8nOL3a2yXYvGzOfqfinBNoeNWH1MA' +
+  'EvAXayTNTK8AMUXo2x1ROZqQTAq2DMmEECw31L7LdLTqUJEf75whnXHoWBGtMZhI0R532F5NPGQY' +
+  'G2mSTmVjEkB0jJS2erL8tbzYTvWXRJTYbiXhCi3rvuoQr09fsY2CpVoG34glv9GKDv+OG+AZAGlD' +
+  '87QDLdhOTeucI62AJNB5l4/Xq0mnhPpomrUYQHGLR+VYQvVocoUx/rGkdQjle3zywxZXB3+RpnK0' +
+  'zcW3WvTuDAgHDclkpu2pD1pMf9RG2pcj/AvoXDS33uD1aFxNqH6TrTcdQ37YoqyieTalMequrgTg' +
+  'TwKyxRrXW2xNAAAAAElFTkSuQmCC';
+
+/** User-supplied insights icon as PNG bytes (21×20, ready for G2 imageData). */
+export function userInsightsIconPngBytes(): number[] {
+  return decodeBmpB64(INSIGHTS_ICON_PNG_B64);
 }
 
 // ── Full-screen BMP → tiled PNG helpers ──────────────────────────────────────
@@ -429,4 +563,18 @@ export function globeIconBytes(w = 40, h = 40): number[] {
     ctx.lineWidth = lw;
     ctx.stroke();
   });
+}
+
+/**
+ * Fetch an image from a URL (PNG, BMP, etc.), draw it scaled to targetW×targetH,
+ * and return the result as PNG bytes for the G2 SDK imageData field.
+ */
+export async function fetchIconPngBytes(url: string, targetW: number, targetH: number): Promise<number[]> {
+  const img = await loadImage(url);
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(img, 0, 0, targetW, targetH);
+  return canvasToPngBytes(canvas);
 }
