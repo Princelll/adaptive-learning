@@ -430,3 +430,17 @@ export function globeIconBytes(w = 40, h = 40): number[] {
     ctx.stroke();
   });
 }
+
+/**
+ * Fetch an image from a URL (PNG, BMP, etc.), draw it scaled to targetW×targetH,
+ * and return the result as PNG bytes for the G2 SDK imageData field.
+ */
+export async function fetchIconPngBytes(url: string, targetW: number, targetH: number): Promise<number[]> {
+  const img = await loadImage(url);
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(img, 0, 0, targetW, targetH);
+  return canvasToPngBytes(canvas);
+}

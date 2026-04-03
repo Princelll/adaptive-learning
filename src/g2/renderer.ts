@@ -14,7 +14,20 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, bookIconBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, bookIconBytes, fetchIconPngBytes, canvasToPngBytes } from './image-utils';
+
+// Cache for the user-supplied book icon PNG (loaded async at startup).
+let _bookIconCache: number[] | null = null;
+
+/** Call once during initApp() to preload the book icon from public/icons/. */
+export async function preloadWelcomeIcons(): Promise<void> {
+  try {
+    _bookIconCache = await fetchIconPngBytes('/icons/book-icon.png', 29, 23);
+  } catch {
+    // File not present — fall back to programmatic icon.
+    _bookIconCache = null;
+  }
+}
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -240,7 +253,7 @@ function buildWelcome(): PageConfig {
       new ImageContainerProperty({ containerID: 20, containerName: 'book', xPosition: 175, yPosition: 216, width: BOOK_W, height: BOOK_H }),
     ],
     imageData: [
-      { id: 20, name: 'book', data: bookIconBytes(BOOK_W, BOOK_H) },
+      { id: 20, name: 'book', data: _bookIconCache ?? bookIconBytes(BOOK_W, BOOK_H) },
     ],
   };
 }
