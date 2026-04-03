@@ -14,21 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, bookIconBytes, fetchIconPngBytes, canvasToPngBytes } from './image-utils';
-
-// Cache for the user-supplied book icon PNG (loaded async at startup).
-let _bookIconCache: number[] | null = null;
-
-/** Call once during initApp() to preload the book icon from public/icons/. */
-export async function preloadWelcomeIcons(): Promise<void> {
-  try {
-    _bookIconCache = await fetchIconPngBytes('/icons/book-icon.png', 29, 23);
-    log('book-icon.png loaded OK, bytes=' + _bookIconCache.length);
-  } catch (err) {
-    log('book-icon.png load FAILED: ' + err);
-    _bookIconCache = null;
-  }
-}
+import { bedIconBytes, userBookIconPngBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -240,7 +226,7 @@ function buildWelcome(): PageConfig {
   const name = state.userName || 'Simulator';
   const menuItems = ['Continue Studying', 'View Insights'];
 
-  const BOOK_W = 29, BOOK_H = 23;
+  const BOOK_W = 25, BOOK_H = 20;
   return {
     textObject: [
       dtContainer(36),
@@ -254,7 +240,7 @@ function buildWelcome(): PageConfig {
       new ImageContainerProperty({ containerID: 20, containerName: 'book', xPosition: 175, yPosition: 216, width: BOOK_W, height: BOOK_H }),
     ],
     imageData: [
-      { id: 20, name: 'book', data: _bookIconCache ?? bookIconBytes(BOOK_W, BOOK_H) },
+      { id: 20, name: 'book', data: userBookIconPngBytes() },
     ],
   };
 }

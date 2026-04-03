@@ -244,6 +244,35 @@ export function bookIconBytesFromBmp(): { w: number; h: number; pixels: number[]
   return { w: 49, h: 40, pixels: decodeBmpB64(BOOK_BMP_B64) };
 }
 
+// User-supplied book icon PNG (25×20, RGBA) — embedded to avoid Vite/even-dev path issues.
+const BOOK_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABkAAAAUCAYAAAB4d5a9AAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
+  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAOHSURBVEhLrZXLK7xfHMdfh2HGdeSSu2zk9ih' +
+  'Sk8Q/IZJCiZTUZGFhoVzKhiwUKxslZSNmY6FcSrJwyW3MTJMm8yjKbZSZMcmc7+LL0zwzvptf' +
+  'v3e96zmf8zrncz7n0iMACZCens7MzAyNjY38psXFRY6Ojjg7O6Ouro7a2lp6e3tJTEyMRtnf32' +
+  'dhYQG73Q6AyMrKkmVlZdTU1GC1Wunv7ycUCkWPo6+vD0VRMBqNZGZmoqoqs7Oz3N/fR6O0trZi' +
+  'sVgYHR3F7/fDxsaGvL6+lk6nUx4fH0uTySS/q4txYWGhdLvd0mKxxPRFur+/X768vMiTkxPp8X' +
+  'ikoaKijo6ODpKSkpidncVgMNDZ2UlzczMAQgiklMzPz/P8/EwoFMLj8WA2mxkeHiY3N1er4O3tj' +
+  'fHxcQC2trbo6upifX2dOCklPwZISUkhNzcXVVVRVRWv14uqqgSDQW0ygNLSUoLBILe3t3i9Xrxe' +
+  'L3d3d4TDYQDdnHG6kUA4HMbv9/P+/q7z19eXjnM4HNzd3enYQCCgTRwpXRIhBImJiVRVVVFTU6' +
+  'NZURTS09MjUerr62lqakJRFM3l5eXEx8cjhNCxhsiGlJLn52esVmtkWFNBQYH2fXh4yOHhoa7/' +
+  'X4rZroyMDFZWVri8vNS8t7dHZWWljrNYLBwcHOi4nZ0dzGazjiO6EgCfz8fIyAglJSVa7PX1Fa' +
+  'fTSX5+vhY7OjpiYGCAtLQ07QaGQqG/7yJKMUmys7MZGxsjNTVVF5+enubh4UFrK4rC0NAQycnJ' +
+  'WszncwwPD8P3+f4oJsnHxwe7u7sYjUYtJqXk8fFRx9ntdmw2G1lZWVrs8PCQy8tLzeqRPgSgJ8' +
+  'fIyAgVJSVa7PX1FafTSX5+vhY7OjpiYGCAtLQ07QaGQqG/7yJKMUmys7MZGxsjNTVVF5+enubh' +
+  '4UFrK4rC0NAQycnJWszncwwPD8P3+f4oJsnHxwe7u7sYjUYtJqXk8fFRx9ntdmw2G1lZWVrs8P' +
+  'CQy8tLzeqRPgSgJ8fIyAgVJSVa7PX1FafTSX5+vhY7OjpiYGCAtLQ07QaGQqG/7yJKMUmys7MZ' +
+  'GxsjNTVVF5+enubh4UFrK4rC0NAQycnJWszncwwPD8P3+f4oJsnHxwe7u7sYjUYtJqXk8fFRx9' +
+  'ntdmw2G1lZWVrs8PCQy8tLzeqRPgSgJ8fIyAgVJSVa7PX1FafTSX5+vhY7OjpiYGCAtLQ07QaG' +
+  'QqG/7yJKMUmys7MZGxsjNTVVF5+enubh4UFrK4rC0NAQycnJWsznQgghcLhdFRUU0NDRwdXVFI' +
+  'BDAZDLpuMixP1s/MTGBWFtbk4WFhTr4B4rU09MTq6urXFxckJCQwNTUFHl5eQSDwV8XF7ndRP9' +
+  'w/uW2tjZ5dnYmr6+vpd1ul0tLS9JsNsdwv/kPMonUIuIEPgsAAAAASUVORK5CYII=';
+
+/** User-supplied book icon as PNG bytes (25×20, ready for G2 imageData). */
+export function userBookIconPngBytes(): number[] {
+  return decodeBmpB64(BOOK_ICON_PNG_B64);
+}
+
 /** Globe icon from user BMP (49×40 px). */
 export function globeIconBytesFromBmp(): { w: number; h: number; pixels: number[] } {
   return { w: 49, h: 40, pixels: decodeBmpB64(GLOBE_BMP_B64) };

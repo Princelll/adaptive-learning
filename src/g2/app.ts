@@ -4,7 +4,7 @@
 // ============================================================
 
 import { state, RATING_OPTIONS, getBridge } from './state';
-import { showScreen, preloadWelcomeIcons } from './renderer';
+import { showScreen } from './renderer';
 import { onEvenHubEvent, setAppActions } from './events';
 import { log } from './log';
 import { separator } from './display-utils';
@@ -237,9 +237,6 @@ function updateBrowserStatus(): void {
 
 export async function initApp(): Promise<void> {
   log('Initializing Adaptive Learning...');
-
-  // Preload welcome screen icons (falls back to programmatic if file missing).
-  await preloadWelcomeIcons();
 
   // Open storage and load/create sample decks
   storage = new Storage();
