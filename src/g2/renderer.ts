@@ -237,7 +237,7 @@ function buildWelcome(): PageConfig {
   return {
     textObject: [
       dtContainer(36),
-      textContainer(2, 'greeting', greeting, 0, 100, DISPLAY_WIDTH, 80),
+      textContainer(2, 'greeting', greeting, 8, 62, DISPLAY_WIDTH - 8, 80),
     ],
     listObject: [
       listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
