@@ -224,7 +224,7 @@ function buildSleepCheckin(): PageConfig {
 // of container ID, so we use text-only which matches the mockup and always works.
 function buildWelcome(): PageConfig {
   const name = state.userName || 'Simulator';
-  const menuItems = ['Continue Studying', 'View Insights'];
+  const menuItems = ['Continue Studying     ', 'View Insights'];
 
   const BOOK_W = 25, BOOK_H = 20;
   return {
