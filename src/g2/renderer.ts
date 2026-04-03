@@ -23,8 +23,9 @@ let _bookIconCache: number[] | null = null;
 export async function preloadWelcomeIcons(): Promise<void> {
   try {
     _bookIconCache = await fetchIconPngBytes('/icons/book-icon.png', 29, 23);
-  } catch {
-    // File not present — fall back to programmatic icon.
+    log('book-icon.png loaded OK, bytes=' + _bookIconCache.length);
+  } catch (err) {
+    log('book-icon.png load FAILED: ' + err);
     _bookIconCache = null;
   }
 }
