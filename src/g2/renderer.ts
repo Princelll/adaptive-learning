@@ -180,9 +180,9 @@ function buildSleepCheckin(): PageConfig {
   const COL_W = 95, COL_H = 110, COL_Y = 110;
   const COL_X = [124, 233, 342, 451];
   const LABELS = ['Bad', 'Regular', 'Good', 'Great'];
-  const LBL_Y  = COL_Y + COL_H + 6;  // just below bar images
-  // Bed doubled: 77×64 → 154×128
-  const BED_W = 154, BED_H = 128;
+  const LBL_Y  = COL_Y + COL_H + 1;  // just below bar images, 5px higher than before
+  // Bed: x=0→105, lower border at y=228; 100x80 PNG scales to 105x84
+  const BED_W = 105, BED_H = 84;
 
   return {
     textObject: [
@@ -191,10 +191,10 @@ function buildSleepCheckin(): PageConfig {
       textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`, 60,     42,    DISPLAY_WIDTH - 60,  36),
       textContainer(5,  'subtitle', 'How did you sleep?',             209,    67,    DISPLAY_WIDTH - 209, 36),
       // All 4 labels in one container spanning the full column area (saves 3 containers)
-      textContainer(6,  'labels', '    Bad       Regular      Good        Great', COL_X[0], LBL_Y, DISPLAY_WIDTH - COL_X[0], 28),
+      textContainer(6,  'labels', '     Bad          Regular          Good           Great', COL_X[0], LBL_Y, DISPLAY_WIDTH - COL_X[0], 28),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 24,       yPosition: 160, width: BED_W, height: BED_H }),
+      new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 0,        yPosition: 144, width: BED_W, height: BED_H }),
       new ImageContainerProperty({ containerID: 11, containerName: 'col0', xPosition: COL_X[0], yPosition: COL_Y, width: COL_W, height: COL_H }),
       new ImageContainerProperty({ containerID: 12, containerName: 'col1', xPosition: COL_X[1], yPosition: COL_Y, width: COL_W, height: COL_H }),
       new ImageContainerProperty({ containerID: 13, containerName: 'col2', xPosition: COL_X[2], yPosition: COL_Y, width: COL_W, height: COL_H }),
