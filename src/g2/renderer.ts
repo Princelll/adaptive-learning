@@ -164,7 +164,7 @@ function currentDtStr(): string {
 }
 
 function dtContainer(h: number): TextContainerProperty {
-  return textContainer(1, 'dt', currentDtStr(), 410, -3, 166, h);
+  return textContainer(1, 'dt', currentDtStr(), 410, -9, 166, h);
 }
 
 // ── Screen builders ──────────────────────────────────────────
@@ -229,8 +229,8 @@ function buildWelcome(): PageConfig {
   return {
     textObject: [
       dtContainer(36),
-      textContainer(2, 'greeting-line1', `Welcome to StudyHub, ${name}.`, 14, 42, DISPLAY_WIDTH - 14, 36),
-      textContainer(5, 'greeting-line2', 'What would you like to do?', 253, 60, DISPLAY_WIDTH - 253, 36),
+      textContainer(2, 'greeting-line1', `Welcome to StudyHub, ${name}.`, 60, 42, DISPLAY_WIDTH - 60, 36),
+      textContainer(5, 'greeting-line2', 'What would you like to do?', 209, 60, DISPLAY_WIDTH - 209, 36),
     ],
     listObject: [
       listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
