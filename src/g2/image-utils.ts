@@ -56,25 +56,40 @@ export function renderIcon(
 // Used on the sleep check-in screen.
 // Designed for 128 × 80 pixels (scalable).
 
-// User-supplied bed icon PNG (40×32) — embedded as base64.
+// User-supplied bed icon PNG (100×80) — embedded as base64.
 const BED_ICON_PNG_B64 =
-  'iVBORw0KGgoAAAANSUhEUgAAACgAAAAgCAYAAABgrToAAAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
-  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAMYSURBVFhH7Ze9TuNaFIXX8bEThJBCYjv+wYki' +
-  'UfIm8AJAQ5VHoKOggwpEQ50CCTokCro8BC24CD+KlRAbGQWQMfaeAsWDg+8dAsOMr3Q/aTXeO8k+' +
-  'a5+zfYKzszM6OTmhQqFAAHInYWZmBtPT02CMIY8IAHJbHEYFIsdFCkQ0/ixXJA7mlf9OgVmt5pxj' +
-  'dnYWsiynVCqVIAh/Zm3Mtm26vLzE4uIigiBIBRuNBnZ3d1GtVsEYSxZxcXGB9fV13N7epvK/g0wb' +
-  'OOeoVCool8uQJAmiKIJzDlEUIYoiCoVCEv92J23bpna7TcViMZnetVqNjo+PqdVq0fz8PCmKkkiW' +
-  'ZVpYWKDDw0NqtVqkquq76f87lbl8SZJgWRY0TcP9/T0Gg0Ei13Xx+PgIwzBgGAZEUUw+JwgCZFmG' +
-  'pmkTqVqtpqQoStIZEcg+IJ9BVVXs7e3BMIzMwf+R3yEiDIdDrK2twXXd7D04KSPnZFmGKIoQBAGM' +
-  'sXcSBOGX4pyDcw5ZlqGq6quDn+GtQ5qmYWdnBwCwsbEBz/PeZE6OJEnY3t6GruvZDoZhiOvra/R6' +
-  'PVQqFei6DsMwoOs6dF1HqVSC4zjodrt4eXlJ9qxpmvB9H/1+/0tyXRdzc3NoNBrZDna7XTSbTdTr' +
-  'dWxtbUFRlFS80+lgc3MTvV4Pvu/DsqxU/HeS6WAURXBdF57nIYoixHGcKIoiPD8/w/M83N3dIY5j' +
-  '4IMH4DMw27ap0+lgaWnp3Ztk9KrjnKeeh2EI3/eT4ur1Og4ODkBEWF5ehuM4qfxJmZqawunpKWq1' +
-  'WraDI0ZOju+Rt859N/9aYB5gtm3Tzc0NVldXEQRB5oD9J0b7zrIs7O/vg4jQbDbR7/eTnM98X6FQ' +
-  'wNHREUzTfC2QMYbBYDCe/2E45yiXywAAz/O+1H4iAmMMiqIgjuPXAokIjuMkq51k1V9l/PQTEYgI' +
-  'pmkCoxZfXV1hZWUFYRimkv8GRJS02LKsn9etPP1xLxaL1G636fz8/Od160+29VekLhjjwbzxf4Ff' +
-  'JdcFEhGE4XCIh4eHd/PobxMEAZ6envAD9+74HUqUMIIAAAAASUVORK5CYII=';
-
+  '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';
 /** User-supplied bed icon as PNG bytes (40×32, ready for G2 imageData). */
 export function userBedIconPngBytes(): number[] {
   return decodeBmpB64(BED_ICON_PNG_B64);

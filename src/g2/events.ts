@@ -223,8 +223,8 @@ function handleClick(): void {
 function handleScrollUp(): void {
   switch (state.screen) {
     case 'sleep_checkin':
-      // Scroll up = move selection left (toward Bad)
-      state.sleepSelectIdx = Math.max(0, state.sleepSelectIdx - 1);
+      // Scroll up = move selection right (toward Great)
+      state.sleepSelectIdx = Math.min(3, state.sleepSelectIdx + 1);
       void safeShowScreen();
       break;
 
@@ -243,8 +243,8 @@ function handleScrollUp(): void {
 function handleScrollDown(): void {
   switch (state.screen) {
     case 'sleep_checkin':
-      // Scroll down = move selection right (toward Great)
-      state.sleepSelectIdx = Math.min(3, state.sleepSelectIdx + 1);
+      // Scroll down = move selection left (toward Bad)
+      state.sleepSelectIdx = Math.max(0, state.sleepSelectIdx - 1);
       void safeShowScreen();
       break;
 
