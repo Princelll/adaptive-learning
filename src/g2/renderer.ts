@@ -268,12 +268,15 @@ function buildNoDecks(): PageConfig {
 // Shown after tapping "Continue Studying" from the welcome screen.
 // Lists the two study modes: Programmed Study (uses first deck) and Select Deck.
 function buildStudyMenu(): PageConfig {
+  const name = state.userName || 'Simulator';
   return {
     textObject: [
       dtContainer(36),
+      textContainer(2, 'greeting', `Welcome to StudyHub, ${name}.`, 60, 42, DISPLAY_WIDTH - 60, 36),
+      textContainer(5, 'subtitle', 'How would you like to study?',  209, 67, DISPLAY_WIDTH - 209, 36),
     ],
     listObject: [
-      listContainer(2, 'menu', ['Programmed Study', 'Select Deck'], 0, 215, DISPLAY_WIDTH, 73, true),
+      listContainer(3, 'menu', ['Programmed Study     ', 'Select Deck     '], 0, 200, DISPLAY_WIDTH, 88, true),
     ],
   };
 }
