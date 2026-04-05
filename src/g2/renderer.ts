@@ -300,7 +300,7 @@ function buildStudyMenu(): PageConfig {
     ],
     listObject: [
       // isEvt=true → sole event capture container on this screen
-      listContainer(2, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
+      listContainer(2, 'menu', menuItems, 0, 213, DISPLAY_WIDTH, 73, true),
     ],
   };
 }
