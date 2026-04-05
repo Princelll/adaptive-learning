@@ -503,3 +503,4 @@ export async function showScreen(): Promise<void> {
   log(`Rendering: ${state.screen}`);
   const config = await Promise.resolve(builder());
   await rebuildPage(config);
+}
