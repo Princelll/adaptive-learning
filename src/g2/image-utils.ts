@@ -398,6 +398,61 @@ export function userInsightsIconPngBytes(): number[] {
   return decodeBmpB64(INSIGHTS_ICON_PNG_B64);
 }
 
+// ── Study-menu icons ─────────────────────────────────────────────────────────
+
+// calendar.png (19×20) — shown next to "Programmed Study"
+const CALENDAR_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABMAAAAUCAYAAABvVQZ0AAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
+  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAQKSURBVDhPZZRNSFtdEIafe28CaqNCURGFVosW' +
+  '/5AqhWJsIYsiQdSNbnQlbqQgKLoRlNKFu27FgnTRjVIsUrCkoaV140Jia3Rl/YGUij/kRm+8iYnJ' +
+  '1Wa+heZ+8n0DA3POvOc9M+8cDoAAMjAwIG/fvpXOzk4BZHBwUGZmZqS3t1cAaW9vl+npaRkfHxdA' +
+  '2traZHZ2VgYHByXLobW0tLzyer14vV4CgQCdnZ0UFhbS3d3Np0+f6OnpoaCggI6ODpaXl+nr60PT' +
+  'NLq6uggEArS3t+NyuVAUBbW/v5+trS0Mw8DpdBIOh9nY2LDXkUiEYDDI0dERTqeTeDxOMBjk+PgY' +
+  'p9NJNBolFArx4sULtMbGxlfv37/n/Puce/fusbCwwObmJqZpUlFRgc/n48ePH+i6Tl1dHX6/n5WV' +
+  'FY6Ojqivr+fr1698//4dt9uNMjMzI+vr64gIqqry9+9fgOuyVRURQUQAUFWVTCZD1jRNs/Gtra2o' +
+  'qqqiaRoOhwNVVXE4HDidTjRN43dudj7rAA6Hw8aqf/78YXFxEcuySCQSAKTTaZLJJJqmkUgkSCQS' +
+  'WJaFiNgYy7JIJpNEo1HevXtHOBxGBaitrSWVSuHz+dB1nUAgwOfPn+2927qtrq4SDof5+fMnPp+P' +
+  'xsZGXC4XwDWZqqpcXV2RTqe5vLwkmUxSUFDAr1+/ODs74+zsDMMwaGpqYnx8nDt37mBZFul0Gm70' +
+  'BbhuHHj06BEiQl1dHel0mpGREWKxGL9//yYWizE6OorH4+Hly5dUV1fj8Xg4PT2lrKwsS/Ev2dra' +
+  'GktLS5imyd7eHh8+fGBsbIzXr19zcXHB48ePmZiY4MuXL1iWxd7eHvv7+zQ0NNhkqh3dmIhwdXXF' +
+  '3Nwck5OTlJWV8eTJE1vk20/lv2ZX9vDhQ9xuNzU1NeTl5XFyckJlZSV+v5+cnBwODw9xu93k5uZS' +
+  'U1NDfn4+5eXlFBcX22R2ZfF4nNPTU+LxONFoFMMwUBQFv9/P4uIi0WjUxpyfn2OaJoZhYFkW3HSk' +
+  'ZidxfHzMzs4Oh4eHhEIhdnZ2CIfDbG9vs729TSgU4uDg4H8Y0zThZqIOESESiVBbW4vH46GqqgqX' +
+  'y4VpmpSXl+PxeMhkMty9e5eioiIymQxVVVUUFhby4MED4vE4qVQKEbnWbHd3l0gkgqIobG1tAXD/' +
+  '/n2+ffuGYRhUV1cTCAQoLS1FRPj48WNWHYLBIMlkEgBV0zREhJOTEyKRCLquo+s6z58/p7m5GYCh' +
+  'oSEsy+LZs2c8ffrUxui6TiwWQ1GUa3/z5o3Mz8+TSqXs2wDy8vLIZDJYlkV+fj6xWIycnBwAG5t9' +
+  'IiUlJXi9XpSGhgYZHh62v5vsQLKxoih2nD18GwNweXnJ1NQU/wCalDBEZH7rwwAAAABJRU5ErkJg' +
+  'gg==';
+
+/** Calendar icon PNG bytes (19×20) for "Programmed Study" list item. */
+export function calendarIconPngBytes(): number[] {
+  return decodeBmpB64(CALENDAR_ICON_PNG_B64);
+}
+
+// deck.png (25×17) — shown next to "Select Deck"
+const DECK_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABkAAAARCAYAAAAougcOAAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
+  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAMeSURBVDhPpZW9SyNdFMZ/NzGTpMiuigjGBNJI' +
+  'jMoYbUQbC1MEGy0UxFqCjfgnKFpbWFiphTY2EqwEQVDxAxFBLBKCaCz8ABNDvoRMTDLzFjHzJtld' +
+  'WNkHbnHP3PM859x7zhkBaFRheHiYsbExVFWtNv8RmqYhhEDTyjRCCIQQbG5uEg6Hy7ZqEa/XSyAQ' +
+  '4Pr6mqOjI92xQlRBNWE9LBYLMzMz7O3tcXZ2Vj5XLTI1NUVzczM7Ozskk8lq37+G1WplcXERu93O' +
+  '5eUlGxsbGCof7XY7nZ2dxGIxUqlUrec3kc1mOTw8xOFwYDQa/xeRZRmr1crt7a1+Hd+FEIKenh5c' +
+  'LhfJZJKOjg4WFhZoAGhsbMTtdhMKhXh4eKj3pampCb/fj8Vi0d8hm81ycHBAJpPRzwkh6O7u5vT0' +
+  'lPv7eyKRCKVSqZyJ2+3WRX6XRalUIp1Ok0ql9JXJZH6pQJPJhCRJJBIJVFUll8uRyWQQkiRpo6Oj' +
+  'tLW1sb6+TrFYrHH8DgYGBpidnWV7e5uJiQmen59pbW3F4HQ6mZyc5PHx8ZfIvgshBDc3N4RCIeLx' +
+  'ONFolNfXVwxCCCKRiF7TBoPhn5bRaESWZVpaWgBIJBKIpaUlbXBwsCaT6i6uPHR9Q1ZsVRt+/PxJ' +
+  'KBQCIB6P09XVRTgcpsFisbC8vEw8Hgcgn8/z/v7+11dXXyiSJBEIBEgkEiiKQjAYpOHu7o7p6Wmc' +
+  'TifRaBSHw8Hx8TEfHx81RCcnJ7y9vdUQFotFFEXR90IIRkZGkGWZl5cXNE0jl8uVx0pfXx8+n4+t' +
+  'rS08Hg82m43Pz080TUPTNPr7+3E6neTzytckKs8oVVU5Pz+nVCrpIl6vl2g0iizLXFxcEAwGyyIe' +
+  'j4f5+XnS6TRCCEwmE7u7u8RiMT3KXC6nR8dXgw4NDWE2m2veSlVVUqkUPp+P1dVVYrFYWaRCLIRA' +
+  'kiT8fj/t7e26o81mo7e3l6urKwqFAnxFXSgU2N/fr5l1VquVubk5FEVhZWWl3Iz1/5PfQZIkXC4X' +
+  'JpNJt5nNZsbHx5EkiUKxWCbSNL2M19bWeHp6AuA/bgN4t6DTxgUAAAAASUVORK5CYII=';
+
+/** Deck icon PNG bytes (25×17) for "Select Deck" list item. */
+export function deckIconPngBytes(): number[] {
+  return decodeBmpB64(DECK_ICON_PNG_B64);
+}
+
 // ── Full-screen BMP → tiled PNG helpers ──────────────────────────────────────
 //
 // The G2 SDK ImageContainerProperty has hard pixel limits:

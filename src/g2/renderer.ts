@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, sleepColumnBytes, userBedIconPngBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, sleepColumnBytes, userBedIconPngBytes, userBookIconPngBytes, userInsightsIconPngBytes, calendarIconPngBytes, deckIconPngBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -266,14 +266,39 @@ function buildNoDecks(): PageConfig {
 
 // Study menu screen ("ContinueStudying-Dashboard" mockup).
 // Shown after tapping "Continue Studying" from the welcome screen.
-// Lists the two study modes: Programmed Study (uses first deck) and Select Deck.
+// Calendar icon next to "Programmed Study", deck icon next to "Select Deck".
+// Same icon-embedding pattern as the welcome screen.
 function buildStudyMenu(): PageConfig {
+  // Trailing spaces widen the selection ring to enclose each icon.
+  const menuItems = ['Programmed Study   ', 'Select Deck   '];
+
+  // X: calibrated from welcome screen (~10.4px/char + 4px list padding)
+  // "Programmed Study" (17 chars) → same position as book icon on welcome = 180
+  // "Select Deck"      (11 chars) → 4 + 11*10.4 + 4 ≈ 122
+  const CAL_X  = 180;
+  const DECK_X = 118;
+
+  // Y: list at y=215, h=73, 2 items → each ~36px.
+  // Item 1 center ≈ y 233 → calendar (h=20) y = 223
+  // Item 2 center ≈ y 269 → deck     (h=17) y = 261
+  const CAL_Y  = 223;
+  const DECK_Y = 261;
+
   return {
     textObject: [
       dtContainer(36),
     ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 10, containerName: 'cal',  xPosition: CAL_X,  yPosition: CAL_Y,  width: 19, height: 20 }),
+      new ImageContainerProperty({ containerID: 11, containerName: 'deck', xPosition: DECK_X, yPosition: DECK_Y, width: 25, height: 17 }),
+    ],
+    imageData: [
+      { id: 10, name: 'cal',  data: calendarIconPngBytes() },
+      { id: 11, name: 'deck', data: deckIconPngBytes()     },
+    ],
     listObject: [
-      listContainer(2, 'menu', ['Programmed Study', 'Select Deck'], 0, 215, DISPLAY_WIDTH, 73, true),
+      // isEvt=true → sole event capture container on this screen
+      listContainer(2, 'menu', menuItems, 0, 215, DISPLAY_WIDTH, 73, true),
     ],
   };
 }
@@ -478,4 +503,3 @@ export async function showScreen(): Promise<void> {
   log(`Rendering: ${state.screen}`);
   const config = await Promise.resolve(builder());
   await rebuildPage(config);
-}
