@@ -191,7 +191,7 @@ function buildSleepCheckin(): PageConfig {
       textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`, 60,     42,    DISPLAY_WIDTH - 60,  36),
       textContainer(5,  'subtitle', 'How did you sleep?',             209,    67,    DISPLAY_WIDTH - 209, 36),
       // All 4 labels in one container spanning the full column area (saves 3 containers)
-      textContainer(6,  'labels', '     Bad          Regular          Good           Great', COL_X[0], LBL_Y, DISPLAY_WIDTH - COL_X[0], 28),
+      textContainer(6,  'labels', '     Bad        Regular          Good         Great', COL_X[0], LBL_Y, DISPLAY_WIDTH - COL_X[0], 28),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 0,        yPosition: 144, width: BED_W, height: BED_H }),
