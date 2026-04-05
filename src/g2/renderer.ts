@@ -289,8 +289,10 @@ function buildStudyMenu(): PageConfig {
       dtContainer(36),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 10, containerName: 'cal',  xPosition: CAL_X,  yPosition: CAL_Y,  width: 19, height: 20 }),
-      new ImageContainerProperty({ containerID: 11, containerName: 'deck', xPosition: DECK_X, yPosition: DECK_Y, width: 25, height: 17 }),
+      // SDK minimum is 20px per dimension — calendar is 19×20 so declare 20×20;
+      // deck is 25×17 so declare 25×20. SDK scales the PNG to fill the container.
+      new ImageContainerProperty({ containerID: 10, containerName: 'cal',  xPosition: CAL_X,  yPosition: CAL_Y,  width: 20, height: 20 }),
+      new ImageContainerProperty({ containerID: 11, containerName: 'deck', xPosition: DECK_X, yPosition: DECK_Y, width: 25, height: 20 }),
     ],
     imageData: [
       { id: 10, name: 'cal',  data: calendarIconPngBytes() },
