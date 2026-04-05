@@ -398,6 +398,56 @@ export function userInsightsIconPngBytes(): number[] {
   return decodeBmpB64(INSIGHTS_ICON_PNG_B64);
 }
 
+// ── Calendar icon ─────────────────────────────────────────────────────────────
+const CALENDAR_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABMAAAAUCAYAAABvVQZ0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8' +
+  'YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAQKSURBVDhPZZRNSFtdEIafe28CaqNCURGFVosW/5AqhWJs' +
+  'IYsiQdSNbnQlbqQgKLoRlNKFu27FgnTRjVIsUrCkoaV140Jia3Rl/YGUij/kRm+8iYnJ1Wa+heZ+8n0D' +
+  'A3POvOc9M+8cDoAAMjAwIG/fvpXOzk4BZHBwUGZmZqS3t1cAaW9vl+npaRkfHxdA2traZHZ2VgYHByXL' +
+  'obW0tLzyer14vV4CgQCdnZ0UFhbS3d3Np0+f6OnpoaCggI6ODpaXl+nr60PTNLq6uggEArS3t+NyuVAU' +
+  'BbW/v5+trS0Mw8DpdBIOh9nY2LDXkUiEYDDI0dERTqeTeDxOMBjk+PgYp9NJNBolFArx4sULtMbGxlfv' +
+  '37/n/Pyce/fusbCwwObmJqZpUlFRgc/n48ePH+i6Tl1dHX6/n5WVFY6Ojqivr+fr1698//4dt9uNMjMz' +
+  'I+vr64gIqqry9+9fgOuyVRURQUQAUFWVTCZD1jRNs/Gtra2oqqqiaRoOhwNVVXE4HDidTjRN43dudj7r' +
+  'AA6Hw8aqf/78YXFxEcuySCQSAKTTaZLJJJqmkUgkSCQSWJaFiNgYy7JIJpNEo1HevXtHOBxGBaitrSWV' +
+  'SuHz+dB1nUAgwOfPn+2927qtrq4SDof5+fMnPp+PxsZGXC4XwDWZqqpcXV2RTqe5vLwkmUxSUFDAr1+/' +
+  'ODs74+zsDMMwaGpqYnx8nDt37mBZFul0Gm70BbhuHHj06BEiQl1dHel0mpGREWKxGL9//yYWizE6OorH' +
+  '4+Hly5dUV1fj8Xg4PT2lrKwsS/Ev2draGktLS5imyd7eHh8+fGBsbIzXr19zcXHB48ePmZiY4MuXL1iW' +
+  'xd7eHvv7+zQ0NNhkqh3dmIhwdXXF3Nwck5OTlJWV8eTJE1vk20/lv2ZX9vDhQ9xuNzU1NeTl5XFyckJl' +
+  'ZSV+v5+cnBwODw9xu93k5uZSU1NDfn4+5eXlFBcX22R2ZfF4nNPTU+LxONFoFMMwUBQFv9/P4uIi0WjU' +
+  'xpyfn2OaJoZhYFkW3HSkZidxfHzMzs4Oh4eHhEIhdnZ2CIfDbG9vs729TSgU4uDg4H8Y0zThZqIOESES' +
+  'iVBbW4vH46GqqgqXy4VpmpSXl+PxeMhkMty9e5eioiIymQxVVVUUFhby4MED4vE4qVQKEbnWbHd3l0gk' +
+  'gqIobG1tAXD//n2+ffuGYRhUV1cTCAQoLS1FRPj48WNWHYLBIMlkEgBV0zREhJOTEyKRCLquo+s6z58/' +
+  'p7m5GYChoSEsy+LZs2c8ffrUxui6TiwWQ1GUa3/z5o3Mz8+TSqXs2wDy8vLIZDJYlkV+fj6xWIycnBwA' +
+  'G5t9IiUlJXi9XpSGhgYZHh62v5vsQLKxoih2nD18GwNweXnJ1NQU/wCalDBEZH7rwwAAAABJRU5ErkJg' +
+  'gg==';
+
+export function calendarIconPngBytes(): number[] {
+  return decodeBmpB64(CALENDAR_ICON_PNG_B64);
+}
+
+// ── Deck icon ─────────────────────────────────────────────────────────────────
+const DECK_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABkAAAARCAYAAAAougcOAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8' +
+  'YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAMeSURBVDhPpZW9SyNdFMZ/NzGTpMiuigjGBNJIjMoYbUQb' +
+  'C1MEGy0UxFqCjfgnKFpbWFiphTY2EqwEQVDxAxFBLBKCaCz8ABNDvoRMTDLzFjHzJtldWNkHbnHP3PM8' +
+  '59x7zhkBaFRheHiYsbExVFWtNv8RmqYhhEDTyjRCCIQQbG5uEg6Hy7ZqEa/XSyAQ4Pr6mqOjI92xQlRB' +
+  'NWE9LBYLMzMz7O3tcXZ2Vj5XLTI1NUVzczM7Ozskk8lq37+G1WplcXERu93O5eUlGxsbGCof7XY7nZ2d' +
+  'xGIxUqlUrec3kc1mOTw8xOFwYDQa/xeRZRmr1crt7a1+Hd+FEIKenh5cLhfJZJKOjg4WFhZoAGhsbMTt' +
+  'dhMKhXh4eKj3pampCb/fj8Vi0d8hm81ycHBAJpPRzwkh6O7u5vT0lPv7eyKRCKVSqZyJ2+3WRX6XRalU' +
+  'Ip1Ok0ql9JXJZH6pQJPJhCRJJBIJVFUll8uRyWQQkiRpo6OjtLW1sb6+TrFYrHH8DgYGBpidnWV7e5uJ' +
+  'iQmen59pbW3F4HQ6mZyc5PHx8ZfIvgshBDc3N4RCIeLxONFolNfXVwxCCCKRiF7TBoPhn5bRaESWZVpa' +
+  'WgBIJBKIpaUlbXBwsCaT6i6uPHR9Q1ZsVRt+/PxJKBQCIB6P09XVRTgcpsFisbC8vEw8Hgcgn8/z/v7+' +
+  '11dXXyiSJBEIBEgkEiiKQjAYpOHu7o7p6WmcTifRaBSHw8Hx8TEfHx81RCcnJ7y9vdUQFotFFEXR90II' +
+  'RkZGkGWZl5cXNE0jl8uVx0pfXx8+n4+trS08Hg82m43Pz080TUPTNPr7+3E6neTzytckKs8oVVU5Pz+n' +
+  'VCrpIl6vl2g0iizLXFxcEAwGyyIej4f5+XnS6TRCCEwmE7u7u8RiMT3KXC6nR8dXgw4NDWE2m2veSlVV' +
+  'UqkUPp+P1dVVYrFYWaRCLIRAkiT8fj/t7e26o81mo7e3l6urKwqFAnxFXSgU2N/fr5l1VquVubk5FEUB' +
+  'ZWWl3Iz1/5PfQZIkXC4XJpNJt5nNZsbHx5EkiUKxWCbSNL2M19bWeHp6AuA/bgN4t6DTxgUAAAAASUVO' +
+  'RK5CYII=';
+
+export function deckIconPngBytes(): number[] {
+  return decodeBmpB64(DECK_ICON_PNG_B64);
+}
+
 // ── Full-screen BMP → tiled PNG helpers ──────────────────────────────────────
 //
 // The G2 SDK ImageContainerProperty has hard pixel limits:

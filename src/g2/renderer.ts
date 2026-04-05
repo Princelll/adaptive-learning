@@ -14,7 +14,7 @@ import {
   ImageRawDataUpdate,
 } from '@evenrealities/even_hub_sdk';
 import { state, getBridge, RATING_OPTIONS } from './state';
-import { bedIconBytes, sleepColumnBytes, userBedIconPngBytes, userBookIconPngBytes, userInsightsIconPngBytes, canvasToPngBytes } from './image-utils';
+import { bedIconBytes, sleepColumnBytes, userBedIconPngBytes, userBookIconPngBytes, userInsightsIconPngBytes, calendarIconPngBytes, deckIconPngBytes, canvasToPngBytes } from './image-utils';
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
@@ -191,7 +191,7 @@ function buildSleepCheckin(): PageConfig {
       textContainer(2,  'greeting', `Welcome to StudyHub, ${name}.`, 60,     42,    DISPLAY_WIDTH - 60,  36),
       textContainer(5,  'subtitle', 'How did you sleep?',             209,    67,    DISPLAY_WIDTH - 209, 36),
       // All 4 labels in one container spanning the full column area (saves 3 containers)
-      textContainer(6,  'labels', '     Bad            Regular           Good              Great', COL_X[0], LBL_Y, DISPLAY_WIDTH - COL_X[0], 28),
+      textContainer(6,  'labels', '     Bad             Regular          Good             Great', COL_X[0], LBL_Y, DISPLAY_WIDTH - COL_X[0], 28),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'bed',  xPosition: 0,        yPosition: 144, width: BED_W, height: BED_H }),
@@ -266,17 +266,34 @@ function buildNoDecks(): PageConfig {
 
 // Study menu screen ("ContinueStudying-Dashboard" mockup).
 // Shown after tapping "Continue Studying" from the welcome screen.
-// Lists the two study modes: Programmed Study (uses first deck) and Select Deck.
+// Calendar icon next to "Programmed Study", deck icon next to "Select Deck".
+// Same icon-embedding pattern as the welcome screen.
 function buildStudyMenu(): PageConfig {
   const name = state.userName || 'Simulator';
+  // Trailing spaces widen the selection ring to enclose each icon.
+  const menuItems = ['Programmed Study   ', 'Select Deck   '];
+
+  // List matches welcome screen: y=200, h=88. 2 items → each ~44px tall.
+  // Item 1 center ≈ y=222, Item 2 center ≈ y=266.
+  const CAL_X  = 180; const CAL_Y  = 212;
+  const DECK_X = 118; const DECK_Y = 256;
+
   return {
     textObject: [
       dtContainer(36),
-      textContainer(2, 'greeting', `Welcome to StudyHub, ${name}.`, 60, 42, DISPLAY_WIDTH - 60, 36),
-      textContainer(5, 'subtitle', 'How would you like to study?',  209, 67, DISPLAY_WIDTH - 209, 36),
+      textContainer(2, 'greeting', `Welcome to StudyHub, ${name}.`,  60,  42, DISPLAY_WIDTH - 60,  36),
+      textContainer(5, 'subtitle', 'How would you like to study?',   209,  67, DISPLAY_WIDTH - 209, 36),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 10, containerName: 'cal',  xPosition: CAL_X,  yPosition: CAL_Y,  width: 20, height: 20 }),
+      new ImageContainerProperty({ containerID: 11, containerName: 'deck', xPosition: DECK_X, yPosition: DECK_Y, width: 25, height: 20 }),
+    ],
+    imageData: [
+      { id: 10, name: 'cal',  data: calendarIconPngBytes() },
+      { id: 11, name: 'deck', data: deckIconPngBytes()     },
     ],
     listObject: [
-      listContainer(3, 'menu', ['Programmed Study     ', 'Select Deck     '], 0, 200, DISPLAY_WIDTH, 88, true),
+      listContainer(2, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
     ],
   };
 }
