@@ -400,29 +400,25 @@ export function userInsightsIconPngBytes(): number[] {
 
 // ── Study-menu icons ─────────────────────────────────────────────────────────
 
-// calendar.png (19×20) — shown next to "Programmed Study"
+// calendar.png (19×20) — re-encoded via Pillow to plain PNG (Rust image crate compatible)
 const CALENDAR_ICON_PNG_B64 =
-  'iVBORw0KGgoAAAANSUhEUgAAABMAAAAUCAYAAABvVQZ0AAAAAXNSR0IArs4c6QAAAARnQU1BAACx' +
-  'jwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAQKSURBVDhPZZRNSFtdEIafe28CaqNCURGFVosW' +
-  '/5AqhWJsIYsiQdSNbnQlbqQgKLoRlNKFu27FgnTRjVIsUrCkoaV140Jia3Rl/YGUij/kRm+8iYnJ' +
-  '1Wa+heZ+8n0DA3POvOc9M+8cDoAAMjAwIG/fvpXOzk4BZHBwUGZmZqS3t1cAaW9vl+npaRkfHxdA' +
-  '2traZHZ2VgYHByXLobW0tLzyer14vV4CgQCdnZ0UFhbS3d3Np0+f6OnpoaCggI6ODpaXl+nr60PT' +
-  'NLq6uggEArS3t+NyuVAUBbW/v5+trS0Mw8DpdBIOh9nY2LDXkUiEYDDI0dERTqeTeDxOMBjk+PgY' +
-  'p9NJNBolFArx4sULtMbGxlfv37/n/Puce/fusbCwwObmJqZpUlFRgc/n48ePH+i6Tl1dHX6/n5WV' +
-  'FY6Ojqivr+fr1698//4dt9uNMjMzI+vr64gIqqry9+9fgOuyVRURQUQAUFWVTCZD1jRNs/Gtra2o' +
-  'qqqiaRoOhwNVVXE4HDidTjRN43dudj7rAA6Hw8aqf/78YXFxEcuySCQSAKTTaZLJJJqmkUgkSCQS' +
-  'WJaFiNgYy7JIJpNEo1HevXtHOBxGBaitrSWVSuHz+dB1nUAgwOfPn+2927qtrq4SDof5+fMnPp+P' +
-  'xsZGXC4XwDWZqqpcXV2RTqe5vLwkmUxSUFDAr1+/ODs74+zsDMMwaGpqYnx8nDt37mBZFul0Gm70' +
-  'BbhuHHj06BEiQl1dHel0mpGREWKxGL9//yYWizE6OorH4+Hly5dUV1fj8Xg4PT2lrKwsS/Ev2dra' +
-  'GktLS5imyd7eHh8+fGBsbIzXr19zcXHB48ePmZiY4MuXL1iWxd7eHvv7+zQ0NNhkqh3dmIhwdXXF' +
-  '3Nwck5OTlJWV8eTJE1vk20/lv2ZX9vDhQ9xuNzU1NeTl5XFyckJlZSV+v5+cnBwODw9xu93k5uZS' +
-  'U1NDfn4+5eXlFBcX22R2ZfF4nNPTU+LxONFoFMMwUBQFv9/P4uIi0WjUxpyfn2OaJoZhYFkW3HSk' +
-  'ZidxfHzMzs4Oh4eHhEIhdnZ2CIfDbG9vs729TSgU4uDg4H8Y0zThZqIOESESiVBbW4vH46GqqgqX' +
-  'y4VpmpSXl+PxeMhkMty9e5eioiIymQxVVVUUFhby4MED4vE4qVQKEbnWbHd3l0gkgqIobG1tAXD/' +
-  '/n2+ffuGYRhUV1cTCAQoLS1FRPj48WNWHYLBIMlkEgBV0zREhJOTEyKRCLquo+s6z58/p7m5GYCh' +
-  'oSEsy+LZs2c8ffrUxui6TiwWQ1GUa3/z5o3Mz8+TSqXs2wDy8vLIZDJYlkV+fj6xWIycnBwAG5t9' +
-  'IiUlJXi9XpSGhgYZHh62v5vsQLKxoih2nD18GwNweXnJ1NQU/wCalDBEZH7rwwAAAABJRU5ErkJg' +
-  'gg==';
+  'iVBORw0KGgoAAAANSUhEUgAAABMAAAAUCAYAAABvVQZ0AAADcklEQVR4AW1UWSh1URT+7nVkpm7I' +
+  'VCLENYSkTLlJiDwoL8qDvNyUIl6U8uTNqyghFC+SUkhJlDJTHoxFFDLP87D/863+c9Lfv2qfs9de' +
+  '3157rW+vtQFAcVRXV6vu7m5VWloqutPpVB0dHaqiokL04uJi1d7erpqamkQvKChQXV1dijjDh5aR' +
+  'kYH4+HgUFhZibm4OlZWVCAwMRFlZGQYGBlBeXg4vLy/k5uZiYmICNTU1uLq6En1+fh76Ifj+/sbG' +
+  'xgasVVVV2Nraws3NDVxdXXF+fi4GQ7+8vMT6+jpOT0/F/vj4KPrZ2Znot7e3ODg4kEO0o6MjLC4u' +
+  'ws3NDenp6dBTxebmJnp7e5GYmIj+/n7Z/PX1hby8POipiv7+/o6SkhIMDg5iZmYGetqwkJe1tTUo' +
+  'pWC1WiVknQNYLBbRuc5Bof3n50fm/Li4uJj4rKwsaARw0RA64aAD/v8V4g0hRtM0MxAr0xwZGcHH' +
+  'xween58FxxReXl7kEK5x0M7NBoY6MeSsr69PuJZj4uLi8Pb2hvHxcVxcXGBpaUluzljj+srKitgW' +
+  'FhZk4+rqquCTkpLg7e0tQWj8MnQSzIg+Pz/lRF9fX2xvb+Pu7k6AHh4eSElJEdJnZ2clUuIpBh3i' +
+  'jAvJycmSht1uF6f19fV4eHjA4eGh/BsaGuBwONDS0oLo6GiZX19fIyQkhNtFTGfLy8sYGxvD/f09' +
+  '9vf3MTw8jMbGRrS1teH19RVpaWlobm7G1NSUREXM8fExEhISDF8wnRkrJJkps35Ibl1dHfz9/dHT' +
+  '0yNc0c7xPzGdxcTEIDMzE7GxsfD09JSWiYiIwOTkJNzd3XFyciJ2ckeMj48PQkNDERAQYPo1nbFN' +
+  'yAH/jIjtRGLpjIUaHBwst0bM09OT0EEMS4TCaDXjJthru7u7CAsLk15jL/L2dnZ2xBl5I/Y3hpyR' +
+  'YwptGj2ymVlrDv22oqKiJAKCmAbXGJnNZhPuOCfGz88PkZGRkgnrUSKj1729PXFI73xBKOHh4Zie' +
+  'npZ0WQos5KCgINk0OjoqGH74orATKFb2Jb3yjWKE7ACO/Px8pKamCqi2tla4ycnJQXZ2tokhjrXI' +
+  'IMR0dnaqoaEhaSfZ+ffDG2VKJJg3x028VQrTojAICh/ToqIiWPSiU6wlthSNPIFizKkbc2Pzbwyx' +
+  'bMHW1lb8AamnL7mQjbPBAAAAAElFTkSuQmCC';
 
 /** Calendar icon PNG bytes (19×20) for "Programmed Study" list item. */
 export function calendarIconPngBytes(): number[] {
