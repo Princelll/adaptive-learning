@@ -293,7 +293,7 @@ function buildStudyMenu(): PageConfig {
       { id: 11, name: 'deck', data: deckIconPngBytes()     },
     ],
     listObject: [
-      listContainer(2, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
     ],
   };
 }
