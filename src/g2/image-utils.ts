@@ -399,60 +399,51 @@ export function userInsightsIconPngBytes(): number[] {
 }
 
 // ── Calendar icon ─────────────────────────────────────────────────────────────
-// Canvas-drawn: rounded rect body, top bar, two column lines, three row lines.
-export function calendarIconPngBytes(w = 20, h = 20): number[] {
-  return renderIcon(w, h, (ctx, w, h) => {
-    ctx.strokeStyle = '#FFF';
-    ctx.lineWidth = 1.5;
-    // Outer border
-    const r = 2;
-    ctx.beginPath();
-    ctx.moveTo(r, 3); ctx.lineTo(w - r, 3);
-    ctx.arcTo(w, 3, w, 3 + r, r);
-    ctx.lineTo(w, h - r);
-    ctx.arcTo(w, h, w - r, h, r);
-    ctx.lineTo(r, h);
-    ctx.arcTo(0, h, 0, h - r, r);
-    ctx.lineTo(0, 3 + r);
-    ctx.arcTo(0, 3, r, 3, r);
-    ctx.closePath();
-    ctx.stroke();
-    // Header bar
-    ctx.beginPath(); ctx.moveTo(0, 7); ctx.lineTo(w, 7); ctx.stroke();
-    // Two vertical lines (3 columns)
-    const col = Math.round(w / 3);
-    ctx.beginPath(); ctx.moveTo(col, 7); ctx.lineTo(col, h); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(col * 2, 7); ctx.lineTo(col * 2, h); ctx.stroke();
-    // Two horizontal lines (3 rows)
-    const row = Math.round((h - 7) / 3);
-    ctx.beginPath(); ctx.moveTo(0, 7 + row); ctx.lineTo(w, 7 + row); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, 7 + row * 2); ctx.lineTo(w, 7 + row * 2); ctx.stroke();
-  });
+// User-supplied calendar icon PNG (19×20), re-encoded via PIL for simulator compatibility.
+const CALENDAR_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABMAAAAUCAYAAABvVQZ0AAADcklEQVR4AW1UWSh1URT+7nVkpm7I' +
+  'VCLENYSkTLlJiDwoL8qDvNyUIl6U8uTNqyghFC+SUkhJlDJTHoxFFDLP87D/863+c9Lfv2qfs9de' +
+  '3157rW+vtQFAcVRXV6vu7m5VWloqutPpVB0dHaqiokL04uJi1d7erpqamkQvKChQXV1dijjDh5aR' +
+  'kYH4+HgUFhZibm4OlZWVCAwMRFlZGQYGBlBeXg4vLy/k5uZiYmICNTU1uLq6En1+fh76Ifj+/sbG' +
+  'xgasVVVV2Nraws3NDVxdXXF+fi4GQ7+8vMT6+jpOT0/F/vj4KPrZ2Znot7e3ODg4kEO0o6MjLC4u' +
+  'ws3NDenp6dBTxebmJnp7e5GYmIj+/n7Z/PX1hby8POipiv7+/o6SkhIMDg5iZmYGetqwkJe1tTUo' +
+  'pWC1WiVknQNYLBbRuc5Bof3n50fm/Li4uJj4rKwsaARw0RA64aAD/v8V4g0hRtM0MxAr0xwZGcHH' +
+  'xween58FxxReXl7kEK5x0M7NBoY6MeSsr69PuJZj4uLi8Pb2hvHxcVxcXGBpaUluzljj+srKitgW' +
+  'FhZk4+rqquCTkpLg7e0tQWj8MnQSzIg+Pz/lRF9fX2xvb+Pu7k6AHh4eSElJEdJnZ2clUuIpBh3i' +
+  'jAvJycmSht1uF6f19fV4eHjA4eGh/BsaGuBwONDS0oLo6GiZX19fIyQkhNtFTGfLy8sYGxvD/f09' +
+  '9vf3MTw8jMbGRrS1teH19RVpaWlobm7G1NSUREXM8fExEhISDF8wnRkrJJkps35Ibl1dHfz9/dHT' +
+  '0yNc0c7xPzGdxcTEIDMzE7GxsfD09JSWiYiIwOTkJNzd3XFyciJ2ckeMj48PQkNDERAQYPo1nbFN' +
+  'yAH/jIjtRGLpjIUaHBwst0bM09OT0EEMS4TCaDXjJthru7u7CAsLk15jL/L2dnZ2xBl5I/Y3hpyR' +
+  'YwptGj2ymVlrDv22oqKiJAKCmAbXGJnNZhPuOCfGz88PkZGRkgnrUSKj1729PXFI73xBKOHh4Zie' +
+  'npZ0WQos5KCgINk0OjoqGH74orATKFb2Jb3yjWKE7ACO/Px8pKamCqi2tla4ycnJQXZ2tokhjrXI' +
+  'IGR0dnaqoaEhaSfZ+ffDG2VKJJg3x028VQrTojAICh/ToqIiWPSiU6wlthSNPIFizKkbc2Pzbwyx' +
+  'bMHW1lb8AamnL7mQjbPBAAAAAElFTkSuQmCC';
+
+export function calendarIconPngBytes(): number[] {
+  return decodeBmpB64(CALENDAR_ICON_PNG_B64);
 }
 
 // ── Deck icon ─────────────────────────────────────────────────────────────────
-// Canvas-drawn: three stacked rounded cards (offset upward).
-export function deckIconPngBytes(w = 25, h = 20): number[] {
-  return renderIcon(w, h, (ctx, w, h) => {
-    ctx.strokeStyle = '#FFF';
-    ctx.lineWidth = 1.5;
-    const cardW = w - 4, cardH = Math.round(h * 0.45), r = 2;
-    const offsets = [8, 4, 0]; // bottom to top
-    for (const dy of offsets) {
-      const x = 2, y = dy;
-      ctx.beginPath();
-      ctx.moveTo(x + r, y); ctx.lineTo(x + cardW - r, y);
-      ctx.arcTo(x + cardW, y,     x + cardW, y + r,        r);
-      ctx.lineTo(x + cardW, y + cardH - r);
-      ctx.arcTo(x + cardW, y + cardH, x + cardW - r, y + cardH, r);
-      ctx.lineTo(x + r,    y + cardH);
-      ctx.arcTo(x,         y + cardH, x, y + cardH - r,    r);
-      ctx.lineTo(x,        y + r);
-      ctx.arcTo(x,         y,     x + r, y,               r);
-      ctx.closePath();
-      ctx.stroke();
-    }
-  });
+// User-supplied deck icon PNG (25×17), re-encoded via PIL for simulator compatibility.
+const DECK_ICON_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABkAAAARCAYAAAAougcOAAAC8klEQVR4AZ1Uy0vqURD+NHstupW4' +
+  'yQrCiNKkh7vctKhFO9tE4Fpq5ao/IKh1y3a10HXYTgiCispFBCKliPRAekBZaA8ws/L6jff8rt4e' +
+  '1B34/c5hzpxvZr6ZOToAheKnyfDwMFwuF97e3jTdV5tCoQCdTgeuFO75LS8vIxaLic4g/z+/gYEB' +
+  'TE5OYn9/HxsbG9pFBaRsywGVTq11dXXweDwwGo1KhQonPT09ODw8xOrqKtLptGb0k019fT1eX18x' +
+  'PT2N/v5+LC0tQa8AzGYz6OT6+hqZTEap/2t9eHjA+vo62traUFVV9ddJX18fGEUkEtFo+qkH1sJu' +
+  't6Ojo0OY6OrqwuzsbImupqYmdHd3IxqN4vj4+B12c3MzxsbGQL4JRGG0a2truL+/1+x51tvbi+3t' +
+  'bRwdHSEejwt1QhcdKCeqqNrN4oYc393dCY2kkh/B/+3A6upq1NTU4Pb2Vs6y2azYGahsaWnBwcHB' +
+  'p1QRMBgMlvv9cM/uHBoagt/vh9frxfn5udRF397ejomJCZyenr6L7EOkL5SkKxwOC+2pVAonJye4' +
+  'vLyEgQfkbmdnR67r9VrDfQH38RHvspvYRCaTSYxInW5ubq7AFMszUcOnVlqX75WLivoVJ/5XY6Nk' +
+  'wXNmYrPZZOoN7Jj5+XlR8jCXy+Hm5ubb1FU4Kt5njaempqT4T09PCAQCMCQSCbjdbrA25JADtLm5' +
+  'icfHR/oUIdDW1haurq6UStaXlxcQSAmpHxkZEbouLi4ke3YYm74wODiI0dFR+Hw+WK1WNDQ04Pn5' +
+  'WYzowOFwSBC5HAFLc0IG2MK7u7vS4nREJ+wwBsu6hEKhUiY8ZDSdnZ2YmZkRQ/b7ysqKPDE8TyaT' +
+  'YEQqOuo4oE6nE7W1tdqAMiA+rpwji8Uij2w+ny9lwggIzJWccrpbW1uJJcLM+Njt7e2Blyi05Z7z' +
+  'Q1AlfJo4Iwx8YWFBhlHoUgafrXTM94iBKGEG4+PjElS+WBsBKmai2nhxcRFnZ2di/htnBH7sHA19' +
+  'bwAAAABJRU5ErkJggg==';
+
+export function deckIconPngBytes(): number[] {
+  return decodeBmpB64(DECK_ICON_PNG_B64);
 }
 
 // ── Full-screen BMP → tiled PNG helpers ──────────────────────────────────────
