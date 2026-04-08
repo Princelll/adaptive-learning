@@ -2,10 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0;url=/" />
-  <title>StudyHub</title>
+  <script>
+    // Opened as a popup by the Even Hub simulator — close immediately.
+    // Navigated to directly — redirect to the main app.
+    if (window.opener || window.name) {
+      window.close();
+    } else {
+      location.replace('/');
+    }
+  </script>
 </head>
-<body>
-  <a href="/">Redirecting to StudyHub…</a>
-</body>
+<body></body>
 </html>
