@@ -377,50 +377,87 @@ function buildModelInsights(): PageConfig {
 
 // Question screen ("Question template" mockup).
 // Layout: date/time top-right | "Question N" centered | body text | card counter footer.
+// ── Text justification ───────────────────────────────────────
+// Full-justify a single wrapped line. Lines shorter than CHARS_PER_LINE - 8
+// are treated as paragraph endings and left-aligned.
+function justifyLine(line: string): string {
+  const trimmed = line.trim();
+  if (trimmed.length < CHARS_PER_LINE - 8) return line;
+  const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+  if (words.length <= 1) return line;
+  const totalWordChars = words.reduce((s, w) => s + w.length, 0);
+  const totalSpaces = CHARS_PER_LINE - totalWordChars;
+  if (totalSpaces <= 0) return line;
+  const gaps = words.length - 1;
+  const base = Math.floor(totalSpaces / gaps);
+  const extra = totalSpaces % gaps;
+  return words.map((w, i) =>
+    i < gaps ? w + ' '.repeat(base + (i < extra ? 1 : 0)) : w
+  ).join('');
+}
+
+function justifyWrapped(lines: string[]): string[] {
+  return lines.map((line, i) =>
+    i === lines.length - 1 ? line : justifyLine(line)
+  );
+}
+
+// Question screen.
 function buildQuestion(): PageConfig {
-  const qLabel  = `Question ${state.cardNumber}`;
-  const qPad    = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - qLabel.length) / 2)));
-  const title   = qPad + qLabel;
+  const qLabel = `Question ${state.cardNumber}`;
+  const title  = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - qLabel.length) / 2))) + qLabel;
 
-  const wrapped = wordWrap(state.questionText);
-  const body    = wrapped.length > VISIBLE_LINES
-    ? applyScrollIndicators(wrapped, 0, VISIBLE_LINES)
-    : wrapped.join('\n');
+  const wrapped   = wordWrap(state.questionText);
+  const justified = justifyWrapped(wrapped);
+  const body      = justified.length > VISIBLE_LINES
+    ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
+    : justified.join('\n');
 
-  const cardLine = `\u25A0 Card ${state.cardNumber}/${state.totalCards}`;
+  const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',   ' ',            0, 0,  1,            1,            true),
-      dtContainer(20),
-      textContainer(2,  'title', title,          0, 28, DISPLAY_WIDTH, 20),
-      textContainer(3,  'body',  body,           0, 52, DISPLAY_WIDTH, 196,         false, true),
-      textContainer(4,  'card',  cardLine,       0, 252, DISPLAY_WIDTH, 36),
+      textContainer(99, 'evt',   ' ',      0,  0, 1,                   1,  true),
+      dtContainer(28),
+      textContainer(2,  'title', title,    0, 26, DISPLAY_WIDTH,        22),
+      textContainer(3,  'body',  body,     0, 50, DISPLAY_WIDTH,        202),
+      textContainer(4,  'card',  cardText, 28, 258, DISPLAY_WIDTH - 28, 30),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 260, width: 25, height: 20 }),
+    ],
+    imageData: [
+      { id: 10, name: 'card-icon', data: Array.from(deckIconPngBytes()) },
     ],
   };
 }
 
-// Answer screen ("Answer template" mockup).
-// Same layout as question but header reads "Answer" (not numbered).
+// Answer screen.
 function buildAnswer(): PageConfig {
   const aLabel = 'Answer';
-  const aPad   = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - aLabel.length) / 2)));
-  const title  = aPad + aLabel;
+  const title  = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - aLabel.length) / 2))) + aLabel;
 
-  const wrapped = wordWrap(state.answerText);
-  const body    = wrapped.length > VISIBLE_LINES
-    ? applyScrollIndicators(wrapped, 0, VISIBLE_LINES)
-    : wrapped.join('\n');
+  const wrapped   = wordWrap(state.answerText);
+  const justified = justifyWrapped(wrapped);
+  const body      = justified.length > VISIBLE_LINES
+    ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
+    : justified.join('\n');
 
-  const cardLine = `\u25A0 Card ${state.cardNumber}/${state.totalCards}`;
+  const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',   ' ',            0, 0,  1,            1,            true),
-      dtContainer(20),
-      textContainer(2,  'title', title,          0, 28, DISPLAY_WIDTH, 20),
-      textContainer(3,  'body',  body,           0, 52, DISPLAY_WIDTH, 196,         false, true),
-      textContainer(4,  'card',  cardLine,       0, 252, DISPLAY_WIDTH, 36),
+      textContainer(99, 'evt',   ' ',      0,  0, 1,                   1,  true),
+      dtContainer(28),
+      textContainer(2,  'title', title,    0, 26, DISPLAY_WIDTH,        22),
+      textContainer(3,  'body',  body,     0, 50, DISPLAY_WIDTH,        202),
+      textContainer(4,  'card',  cardText, 28, 258, DISPLAY_WIDTH - 28, 30),
+    ],
+    imageObject: [
+      new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 260, width: 25, height: 20 }),
+    ],
+    imageData: [
+      { id: 10, name: 'card-icon', data: Array.from(deckIconPngBytes()) },
     ],
   };
 }

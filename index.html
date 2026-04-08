@@ -2610,8 +2610,6 @@ Return ONLY a valid JSON array, no markdown, no commentary.
   // Auto-load on page open
   loadConfig();
   loadData();
-  // Silently attempt to sync from G2 app on startup (popup-blocker-safe: fails quietly)
-  setTimeout(() => syncFromG2(true), 400);
   // Init provider pill state
   (function() {
     const saved = localStorage.getItem('ai_provider') || 'anthropic';
