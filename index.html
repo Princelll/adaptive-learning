@@ -1096,80 +1096,18 @@ ML Data Flow:
   }
 
   function syncDeckToG2(deck) {
-    // When running at localhost:5173 (same origin as G2 app), localStorage is already
-    // shared — no bridge needed. The G2 app's storage event fires automatically when
-    // any localStorage write happens here.
-    // When running at file:// (fallback), use a hidden iframe bridge.
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-      // Same origin — localStorage is shared. Just re-save to ensure G2 sees it.
-      const stored = readStorage();
-      if (!Array.isArray(stored.decks)) stored.decks = [];
-      stored.decks = stored.decks.filter(d => d.id !== deck.id);
-      stored.decks.push(deck);
-      localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
-      return;
-    }
-    // file:// fallback — hidden iframe bridge
-    const b64 = btoa(JSON.stringify(deck)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~');
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;width:1px;height:1px;left:-100px;top:-100px;border:none;opacity:0;';
-    iframe.src = 'http://localhost:5173/#import=' + b64;
-    function cleanup() {
-      window.removeEventListener('message', onMsg);
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-    }
-    function onMsg(e) {
-      if (e.data && e.data.type === 'al_import_done') cleanup();
-    }
-    window.addEventListener('message', onMsg);
-    setTimeout(cleanup, 8000);
-    document.body.appendChild(iframe);
+    // localStorage is always shared at the same origin — write directly.
+    const stored = readStorage() || {};
+    if (!Array.isArray(stored.decks)) stored.decks = [];
+    stored.decks = stored.decks.filter(d => d.id !== deck.id);
+    stored.decks.push(deck);
+    localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
   }
 
   // ── Sync data from G2 app ──────────────────────────────────────────────────
   function syncFromG2(silent) {
-    // When at localhost:5173 (same origin), just reload — localStorage is already shared.
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-      loadData();
-      if (!silent) showToast('Synced — data is always live at localhost');
-      return;
-    }
-    const btn = document.getElementById('sync-btn');
-    if (btn) { btn.textContent = '↺ Syncing…'; btn.disabled = true; }
-
-    let resolved = false;
-    const timer = setTimeout(() => {
-      if (resolved) return;
-      resolved = true;
-      window.removeEventListener('message', handler);
-      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
-      if (!silent) showToast('Could not reach G2 app — make sure localhost:5173 is running and allow popups from this page.', 'error', 0);
-    }, 6000);
-
-    function handler(e) {
-      if (!e.data || e.data.type !== 'g2DataExport') return;
-      if (resolved) return;
-      resolved = true;
-      clearTimeout(timer);
-      window.removeEventListener('message', handler);
-      if (e.data.data) {
-        localStorage.setItem('adaptive_learning_data', e.data.data);
-        loadData();
-        if (!silent) showToast('Synced from G2 app');
-      }
-      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
-    }
-
-    window.addEventListener('message', handler);
-    const w = window.open('http://localhost:5173/', 'g2-export-bridge',
-      'width=320,height=120,left=200,top=200');
-    if (!w) {
-      clearTimeout(timer);
-      resolved = true;
-      window.removeEventListener('message', handler);
-      if (btn) { btn.textContent = '↺ Sync'; btn.disabled = false; }
-      showToast('Allow popups from this page in your browser, then click Sync again.', 'error', 0);
-    }
+    loadData();
+    if (!silent) showToast('Data refreshed');
   }
 
   // ── Load config.json and apply to UI ──
@@ -2627,36 +2565,6 @@ Return ONLY a valid JSON array, no markdown, no commentary.
     if (raw.lastSleepQuality) renderSleepLastLog(raw.lastSleepQuality);
     if (raw.lastAnxietyLevel) renderAnxietyLastLog(raw.lastAnxietyLevel);
   } catch {}
-
-  // ── Sync bridge: iframe/popup import & export (file:// ↔ localhost) ──
-  (function () {
-    var hash = location.hash || '';
-    if (hash.indexOf('#import=') === 0) {
-      try {
-        var b64 = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/').replace(/~/g, '=');
-        var deck = JSON.parse(atob(b64));
-        var stored = {};
-        try { stored = JSON.parse(localStorage.getItem('adaptive_learning_data') || '{}'); } catch {}
-        if (!Array.isArray(stored.decks)) stored.decks = [];
-        stored.decks = stored.decks.filter(function (d) { return d.id !== deck.id; });
-        stored.decks.push(deck);
-        localStorage.setItem('adaptive_learning_data', JSON.stringify(stored));
-      } catch (e) {}
-      location.hash = '';
-      try { window.parent.postMessage({ type: 'al_import_done' }, '*'); } catch(e) {}
-      if (window !== window.top || window.opener) {
-        setTimeout(function() { try { window.close(); } catch(e) {} }, 150);
-      }
-    } else if (window.opener) {
-      try {
-        window.opener.postMessage({
-          type: 'g2DataExport',
-          data: localStorage.getItem('adaptive_learning_data')
-        }, '*');
-      } catch(e) {}
-      setTimeout(function() { window.close(); }, 200);
-    }
-  })();
 </script>
 <!-- G2 glasses SDK initialization — controls the Even G2 display via Even Hub bridge -->
 <script type="module" src="/src/main.ts"></script>
