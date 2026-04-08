@@ -293,7 +293,7 @@ function buildStudyMenu(): PageConfig {
       { id: 11, name: 'deck', data: deckIconPngBytes()     },
     ],
     listObject: [
-      listContainer(2, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
+      listContainer(3, 'menu', menuItems, 0, 200, DISPLAY_WIDTH, 88, true),
     ],
   };
 }
@@ -325,26 +325,19 @@ function buildDeckSelect(): PageConfig {
 // Dashboard / pre-study stats ("ProgrammedStudy-Dashboard" mockup).
 // Shows ML model stats and biometric recommendation before starting a session.
 function buildDashboard(): PageConfig {
-  const rec = state.topStyles[0] ?? '--';
-
-  const body = [
-    kvRow('Cards Due',    String(state.cardsDue)),
-    kvRow('Best style',   state.topStyles[0] ?? '--'),
-    kvRow('Model Status', state.modelStatus),
-    kvRow('Biometric Rec.', rec),
+  const content = [
+    '',
+    `Cards Due: ${state.cardsDue}`,
+    `Best style: ${state.topStyles[0] ?? '--'}`,
+    `Model Status: ${state.modelStatus}`,
+    `Biometric Recommendation: ${state.topStyles[0] ?? '--'}`,
   ].join('\n');
-
-  const footer = buildFooter(
-    [{ gesture: 'Tap', action: 'Study' }, { gesture: 'Scroll\u2193', action: 'ML' }],
-    'Dashboard',
-  );
 
   return {
     textObject: [
-      textContainer(99, 'evt',    ' ',            0, 0, 1, 1, true),
+      textContainer(99, 'evt',     ' ',     0, 0, 1,            1, true),
       dtContainer(36),
-      textContainer(2,  'body',   body,           0, 45, DISPLAY_WIDTH, 208, false, true),
-      textContainer(3,  'footer', footer,         0, 252, DISPLAY_WIDTH, 36),
+      textContainer(2,  'content', content, 0, 36, DISPLAY_WIDTH, 252),
     ],
   };
 }
