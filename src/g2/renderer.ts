@@ -408,19 +408,18 @@ function buildQuestion(): PageConfig {
   const title   = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - qLabel.length) / 2))) + qLabel;
   const wrapped   = wordWrap(state.questionText);
   const justified = justifyWrapped(wrapped);
-  const bodyLines = justified.length > VISIBLE_LINES
+  const body      = justified.length > VISIBLE_LINES
     ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
-  // Title and body in a single container — avoids any visual zone separator.
-  const content  = title + '\n' + bodyLines;
-  const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
+  const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',     ' ',      0,  0, 1,                   1, true),
+      textContainer(99, 'evt',   ' ',      0,  0, 1,                   1, true),
       dtContainer(28),
-      textContainer(2,  'content', content,  0, 26, DISPLAY_WIDTH,       226),
-      textContainer(4,  'card',    cardText, 28, 256, DISPLAY_WIDTH - 28, 32),
+      textContainer(2,  'title', title,    0, 26, DISPLAY_WIDTH,        22),
+      textContainer(3,  'body',  body,     0, 50, DISPLAY_WIDTH,        202),
+      textContainer(4,  'card',  cardText, 28, 256, DISPLAY_WIDTH - 28, 30),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 260, width: 25, height: 20 }),
@@ -437,19 +436,18 @@ function buildAnswer(): PageConfig {
   const title   = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - aLabel.length) / 2))) + aLabel;
   const wrapped   = wordWrap(state.answerText);
   const justified = justifyWrapped(wrapped);
-  const bodyLines = justified.length > VISIBLE_LINES
+  const body      = justified.length > VISIBLE_LINES
     ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
-  // Title and body in a single container — avoids any visual zone separator.
-  const content  = title + '\n' + bodyLines;
-  const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
+  const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',     ' ',      0,  0, 1,                   1, true),
+      textContainer(99, 'evt',   ' ',      0,  0, 1,                   1, true),
       dtContainer(28),
-      textContainer(2,  'content', content,  0, 26, DISPLAY_WIDTH,       226),
-      textContainer(4,  'card',    cardText, 28, 256, DISPLAY_WIDTH - 28, 32),
+      textContainer(2,  'title', title,    0, 26, DISPLAY_WIDTH,        22),
+      textContainer(3,  'body',  body,     0, 50, DISPLAY_WIDTH,        202),
+      textContainer(4,  'card',  cardText, 28, 256, DISPLAY_WIDTH - 28, 30),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 260, width: 25, height: 20 }),
