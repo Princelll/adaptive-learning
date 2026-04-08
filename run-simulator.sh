@@ -35,13 +35,7 @@ else
   git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
 fi
 
-# Verify companion file made it (now in public/companion/)
-if [ ! -f "$APP_DIR/public/companion/index.html" ]; then
-  echo "ERROR: public/companion/index.html missing after sync — check network/git"
-  read -p "Press enter to exit..."
-  exit 1
-fi
-echo "  Done. Companion: OK"
+echo "  Done."
 
 # ── Step 2: Install dependencies ─────────────────────
 echo ""
@@ -61,21 +55,12 @@ powershell.exe -NoProfile -Command "
 sleep 1
 echo "  Done."
 
-# Open companion in browser 8 seconds after simulator starts (Vite needs a moment)
-# The companion is in public/companion/index.html inside the app — Vite serves it
-# at localhost:5173/companion/index.html automatically. Same origin = shared localStorage.
-BUST=$(date +%s)
-(sleep 8 && powershell.exe -NoProfile -Command "Start-Process 'http://localhost:5173/companion/index.html?v=$BUST'") &
-
 # ── Step 4: Start simulator ───────────────────────────
 echo ""
 echo "[4/5] Starting Even Hub simulator..."
 echo ""
-echo "  G2 App:    http://localhost:5173"
-echo "  Companion: http://localhost:5173/companion/index.html (opens in ~8s)"
-echo ""
-echo "  Both run on the same origin — localStorage is shared automatically."
-echo "  Any deck saved in the companion instantly updates the glasses display."
+echo "  Open http://localhost:5173 in your browser."
+echo "  Everything is on the same page — no separate companion window needed."
 echo ""
 echo "  Press Ctrl+C to stop."
 echo "=========================================="
