@@ -409,22 +409,23 @@ function buildQuestion(): PageConfig {
   const title     = '\u00A0'.repeat(pad) + qLabel;
   const wrapped   = wordWrap(state.questionText);
   const justified = justifyWrapped(wrapped);
-  // Reserve 2 lines (title + card counter); body gets the rest.
-  const BODY_LINES = VISIBLE_LINES - 2;
-  const body      = justified.length > BODY_LINES
-    ? applyScrollIndicators(justified, 0, BODY_LINES)
+  const body      = justified.length > VISIBLE_LINES
+    ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
-  const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
-  const content   = title + '\n' + body + '\n' + cardText;
+  const content  = title + '\n' + body;
+  const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',     ' ',     0,  0, 1,            1,   true),
-      dtContainer(36),
-      textContainer(2,  'content', content, 0, 36, DISPLAY_WIDTH, 252),
+      textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
+      dtContainer(28),
+      // y=26→254: spans through zone boundaries (44, 252) without edges on them → no separators
+      textContainer(2,  'content', content,  0,  26, DISPLAY_WIDTH,      228),
+      // y=254→288: fully in footer zone, no zone boundary edges
+      textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 264, width: 25, height: 20 }),
+      new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 258, width: 25, height: 20 }),
     ],
     imageData: [
       { id: 10, name: 'card-icon', data: Array.from(deckIconPngBytes()) },
@@ -439,21 +440,21 @@ function buildAnswer(): PageConfig {
   const title     = '\u00A0'.repeat(pad) + aLabel;
   const wrapped   = wordWrap(state.answerText);
   const justified = justifyWrapped(wrapped);
-  const BODY_LINES = VISIBLE_LINES - 2;
-  const body      = justified.length > BODY_LINES
-    ? applyScrollIndicators(justified, 0, BODY_LINES)
+  const body      = justified.length > VISIBLE_LINES
+    ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
-  const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
-  const content   = title + '\n' + body + '\n' + cardText;
+  const content  = title + '\n' + body;
+  const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',     ' ',     0,  0, 1,            1,   true),
-      dtContainer(36),
-      textContainer(2,  'content', content, 0, 36, DISPLAY_WIDTH, 252),
+      textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
+      dtContainer(28),
+      textContainer(2,  'content', content,  0,  26, DISPLAY_WIDTH,      228),
+      textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34),
     ],
     imageObject: [
-      new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 264, width: 25, height: 20 }),
+      new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 258, width: 25, height: 20 }),
     ],
     imageData: [
       { id: 10, name: 'card-icon', data: Array.from(deckIconPngBytes()) },
