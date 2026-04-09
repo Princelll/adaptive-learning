@@ -402,25 +402,38 @@ function justifyWrapped(lines: string[]): string[] {
   );
 }
 
+// Pixel width of one G2 monospace character (576px / 49 chars, empirically measured)
+const CHAR_WIDTH_PX = Math.round(DISPLAY_WIDTH / CHARS_PER_LINE); // = 12
+
+/**
+ * Return a text container whose xPosition centers `text` horizontally.
+ * More reliable than \u00A0 padding since it doesn't depend on G2 whitespace rendering.
+ */
+function centeredTextContainer(
+  id: number, name: string, text: string, y: number, h: number,
+): TextContainerProperty {
+  const titleW = Math.min(DISPLAY_WIDTH, text.length * CHAR_WIDTH_PX + CHAR_WIDTH_PX);
+  const titleX = Math.max(0, Math.floor((DISPLAY_WIDTH - titleW) / 2));
+  return textContainer(id, name, text, titleX, y, titleW, h);
+}
+
 // Question screen.
 function buildQuestion(): PageConfig {
-  const qLabel    = `Question ${state.cardNumber}`;
-  const pad       = Math.max(0, Math.floor((CHARS_PER_LINE - qLabel.length) / 2));
-  const title     = '\u00A0'.repeat(pad) + qLabel;
+  const qLabel   = `Question ${state.cardNumber}`;
   const wrapped   = wordWrap(state.questionText);
   const justified = justifyWrapped(wrapped);
   const body      = justified.length > VISIBLE_LINES
     ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
-  const content  = title + '\n' + body;
   const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
-      // No dtContainer — it reserves x=410→576 and clips text to ~71% width
-      textContainer(2,  'content', content,  0,   6, DISPLAY_WIDTH,      244), // y=6→250, avoids zone boundary y=252
-      textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34), // y=254→288
+      textContainer(99, 'evt',   ' ',      0,   0, 1,                   1,  true),
+      dtContainer(28),                                     // y=-9→19, x=410 (above title, no overlap)
+      centeredTextContainer(3,   'title',  qLabel,    24, 18), // y=24→42, centered by xPosition
+      textContainer(2,  'body',  body,     0,  46, DISPLAY_WIDTH,      202), // y=46→248
+      textContainer(4,  'card',  cardText, 28, 254, DISPLAY_WIDTH - 28,  34), // y=254→288
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 258, width: 25, height: 20 }),
@@ -433,22 +446,21 @@ function buildQuestion(): PageConfig {
 
 // Answer screen.
 function buildAnswer(): PageConfig {
-  const aLabel    = 'Answer';
-  const pad       = Math.max(0, Math.floor((CHARS_PER_LINE - aLabel.length) / 2));
-  const title     = '\u00A0'.repeat(pad) + aLabel;
+  const aLabel   = 'Answer';
   const wrapped   = wordWrap(state.answerText);
   const justified = justifyWrapped(wrapped);
   const body      = justified.length > VISIBLE_LINES
     ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
-  const content  = title + '\n' + body;
   const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
-      textContainer(2,  'content', content,  0,   6, DISPLAY_WIDTH,      246),
-      textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34),
+      textContainer(99, 'evt',   ' ',      0,   0, 1,                   1,  true),
+      dtContainer(28),
+      centeredTextContainer(3,   'title',  aLabel,    24, 18),
+      textContainer(2,  'body',  body,     0,  46, DISPLAY_WIDTH,      202),
+      textContainer(4,  'card',  cardText, 28, 254, DISPLAY_WIDTH - 28,  34),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 258, width: 25, height: 20 }),
