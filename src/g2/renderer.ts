@@ -418,11 +418,9 @@ function buildQuestion(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
-      dtContainer(28),
-      // y=26→254: spans through zone boundaries (44, 252) without edges on them → no separators
-      textContainer(2,  'content', content,  0,  26, DISPLAY_WIDTH,      228),
-      // y=254→288: fully in footer zone, no zone boundary edges
-      textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34),
+      dtContainer(36),                                              // same as buildDashboard
+      textContainer(2,  'content', content,  0,  36, DISPLAY_WIDTH,      218), // y=36→254
+      textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34), // y=254→288
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 258, width: 25, height: 20 }),
@@ -449,8 +447,8 @@ function buildAnswer(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
-      dtContainer(28),
-      textContainer(2,  'content', content,  0,  26, DISPLAY_WIDTH,      228),
+      dtContainer(36),
+      textContainer(2,  'content', content,  0,  36, DISPLAY_WIDTH,      218),
       textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34),
     ],
     imageObject: [
