@@ -405,21 +405,22 @@ function justifyWrapped(lines: string[]): string[] {
 // Question screen.
 function buildQuestion(): PageConfig {
   const qLabel  = `Question ${state.cardNumber}`;
-  const title   = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - qLabel.length) / 2))) + qLabel;
+  const pad     = Math.max(0, Math.floor((CHARS_PER_LINE - qLabel.length) / 2));
+  const title   = '\u00A0'.repeat(pad) + qLabel;
   const wrapped   = wordWrap(state.questionText);
   const justified = justifyWrapped(wrapped);
   const body      = justified.length > VISIBLE_LINES
     ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
+  const content  = title + '\n' + body;
   const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',   ' ',      0,  0, 1,                   1, true),
+      textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
       dtContainer(28),
-      textContainer(2,  'title', title,    0, 26, DISPLAY_WIDTH,        22),
-      textContainer(3,  'body',  body,     0, 50, DISPLAY_WIDTH,        202),
-      textContainer(4,  'card',  cardText, 28, 256, DISPLAY_WIDTH - 28, 30),
+      textContainer(2,  'content', content,  0,  26, DISPLAY_WIDTH,      262),
+      textContainer(4,  'card',    cardText, 28, 258, DISPLAY_WIDTH - 28, 30),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 260, width: 25, height: 20 }),
@@ -433,21 +434,22 @@ function buildQuestion(): PageConfig {
 // Answer screen.
 function buildAnswer(): PageConfig {
   const aLabel  = 'Answer';
-  const title   = ' '.repeat(Math.max(0, Math.floor((CHARS_PER_LINE - aLabel.length) / 2))) + aLabel;
+  const pad     = Math.max(0, Math.floor((CHARS_PER_LINE - aLabel.length) / 2));
+  const title   = '\u00A0'.repeat(pad) + aLabel;
   const wrapped   = wordWrap(state.answerText);
   const justified = justifyWrapped(wrapped);
   const body      = justified.length > VISIBLE_LINES
     ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
+  const content  = title + '\n' + body;
   const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
-      textContainer(99, 'evt',   ' ',      0,  0, 1,                   1, true),
+      textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
       dtContainer(28),
-      textContainer(2,  'title', title,    0, 26, DISPLAY_WIDTH,        22),
-      textContainer(3,  'body',  body,     0, 50, DISPLAY_WIDTH,        202),
-      textContainer(4,  'card',  cardText, 28, 256, DISPLAY_WIDTH - 28, 30),
+      textContainer(2,  'content', content,  0,  26, DISPLAY_WIDTH,      262),
+      textContainer(4,  'card',    cardText, 28, 258, DISPLAY_WIDTH - 28, 30),
     ],
     imageObject: [
       new ImageContainerProperty({ containerID: 10, containerName: 'card-icon', xPosition: 0, yPosition: 260, width: 25, height: 20 }),
