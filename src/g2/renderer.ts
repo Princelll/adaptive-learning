@@ -417,19 +417,21 @@ function buildQuestion(): PageConfig {
     : justified.join('\n');
   const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
-  // Layout — no container edges at zone boundaries (44, 252); no y-range overlaps with dtContainer:
-  // dtContainer   y = -9 → 13   (date, top-right)
-  // title         y = 16 → 34   (centered via xPosition, below date)
-  // body          y = 36 → 250  (full 576px, isEventCapture, spans through y=44)
-  // card          y = 254 → 288
+  // The G2 SDK merges ALL containers with yPosition < 44 into the header row (with | dividers).
+  // Fix: keep only dtContainer in the header zone; title and body start at y≥46 (body zone).
+  //
+  // dtContainer   y = -9 → 19   header zone  (date, x=410)
+  // title         y = 46 → 66   body zone    (centered via xPosition — no header conflict)
+  // body          y = 68 → 248  body zone    (full 576px, isEventCapture)
+  // card          y = 254 → 288 footer zone
   return {
     textObject: [
-      dtContainer(22),
-      textContainer(3, 'title', qLabel, titleX, 16, titleW, 18),
+      dtContainer(28),
+      textContainer(3, 'title', qLabel, titleX, 46, titleW, 20),
       new TextContainerProperty({
         containerID: 2, containerName: 'body',
-        content: body, xPosition: 0, yPosition: 36,
-        width: 576, height: 214,
+        content: body, xPosition: 0, yPosition: 68,
+        width: 576, height: 180,
         isEventCapture: 1, paddingLength: 0,
         borderWidth: 0, borderColor: 0, borderRadius: 0,
       }),
@@ -458,12 +460,12 @@ function buildAnswer(): PageConfig {
 
   return {
     textObject: [
-      dtContainer(22),
-      textContainer(3, 'title', aLabel, titleX, 16, titleW, 18),
+      dtContainer(28),
+      textContainer(3, 'title', aLabel, titleX, 46, titleW, 20),
       new TextContainerProperty({
         containerID: 2, containerName: 'body',
-        content: body, xPosition: 0, yPosition: 36,
-        width: 576, height: 214,
+        content: body, xPosition: 0, yPosition: 68,
+        width: 576, height: 180,
         isEventCapture: 1, paddingLength: 0,
         borderWidth: 0, borderColor: 0, borderRadius: 0,
       }),
