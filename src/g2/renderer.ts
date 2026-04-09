@@ -55,7 +55,7 @@ function textContainer(
     width: w,
     height: h,
     isEventCapture: isEvt ? 1 : 0,
-    paddingLength: card ? 16 : 4,
+    paddingLength: card ? 16 : 0,
     borderWidth: card ? 1 : 0,
     borderColor: card ? BORDER_COLOR_WHITE : 0,
     borderRadius: card ? CARD_BORDER_RADIUS : 0,
