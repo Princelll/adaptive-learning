@@ -418,8 +418,8 @@ function buildQuestion(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
-      dtContainer(36),                                              // same as buildDashboard
-      textContainer(2,  'content', content,  0,  36, DISPLAY_WIDTH,      218), // y=36→254
+      // No dtContainer — it reserves x=410→576 and clips text to ~71% width
+      textContainer(2,  'content', content,  0,   6, DISPLAY_WIDTH,      244), // y=6→250, avoids zone boundary y=252
       textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34), // y=254→288
     ],
     imageObject: [
@@ -447,8 +447,7 @@ function buildAnswer(): PageConfig {
   return {
     textObject: [
       textContainer(99, 'evt',     ' ',      0,   0, 1,                   1,  true),
-      dtContainer(36),
-      textContainer(2,  'content', content,  0,  36, DISPLAY_WIDTH,      218),
+      textContainer(2,  'content', content,  0,   6, DISPLAY_WIDTH,      246),
       textContainer(4,  'card',    cardText, 28, 254, DISPLAY_WIDTH - 28,  34),
     ],
     imageObject: [
