@@ -422,7 +422,7 @@ function buildQuestion(): PageConfig {
       new TextContainerProperty({
         containerID: 1, containerName: 'main',
         content, xPosition: 0, yPosition: 0,
-        width: DISPLAY_WIDTH, height: 250,
+        width: 576, height: 250,
         isEventCapture: 1, paddingLength: 0,
         borderWidth: 0, borderColor: 0, borderRadius: 0,
       }),
@@ -455,7 +455,7 @@ function buildAnswer(): PageConfig {
       new TextContainerProperty({
         containerID: 1, containerName: 'main',
         content, xPosition: 0, yPosition: 0,
-        width: DISPLAY_WIDTH, height: 250,
+        width: 576, height: 250,
         isEventCapture: 1, paddingLength: 0,
         borderWidth: 0, borderColor: 0, borderRadius: 0,
       }),
