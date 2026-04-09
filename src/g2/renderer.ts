@@ -402,27 +402,34 @@ function justifyWrapped(lines: string[]): string[] {
   );
 }
 
+// Pixel width of one G2 monospace character (576 / 49 chars, empirically measured)
+const CHAR_WIDTH_PX = Math.round(DISPLAY_WIDTH / CHARS_PER_LINE); // = 12
+
 // Question screen.
 function buildQuestion(): PageConfig {
   const qLabel   = `Question ${state.cardNumber}`;
-  const dateStr  = currentDtStr();
-  // Header: title left, date right — kvRow from display-utils
-  const header   = kvRow(qLabel, dateStr);
+  const titleW   = qLabel.length * CHAR_WIDTH_PX + CHAR_WIDTH_PX;
+  const titleX   = Math.max(0, Math.floor((DISPLAY_WIDTH - titleW) / 2));
   const wrapped   = wordWrap(state.questionText);
   const justified = justifyWrapped(wrapped);
-  const body      = justified.length > VISIBLE_LINES - 1
-    ? applyScrollIndicators(justified, 0, VISIBLE_LINES - 1)
+  const body      = justified.length > VISIBLE_LINES
+    ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
-  const content  = header + '\n' + body;
   const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
+  // Layout — no container edges at zone boundaries (44, 252); no y-range overlaps with dtContainer:
+  // dtContainer   y = -9 → 13   (date, top-right)
+  // title         y = 16 → 34   (centered via xPosition, below date)
+  // body          y = 36 → 250  (full 576px, isEventCapture, spans through y=44)
+  // card          y = 254 → 288
   return {
     textObject: [
-      // Single full-width container: no zone separators, no width clipping
+      dtContainer(22),
+      textContainer(3, 'title', qLabel, titleX, 16, titleW, 18),
       new TextContainerProperty({
-        containerID: 1, containerName: 'main',
-        content, xPosition: 0, yPosition: 0,
-        width: 576, height: 250,
+        containerID: 2, containerName: 'body',
+        content: body, xPosition: 0, yPosition: 36,
+        width: 576, height: 214,
         isEventCapture: 1, paddingLength: 0,
         borderWidth: 0, borderColor: 0, borderRadius: 0,
       }),
@@ -440,22 +447,23 @@ function buildQuestion(): PageConfig {
 // Answer screen.
 function buildAnswer(): PageConfig {
   const aLabel   = 'Answer';
-  const dateStr  = currentDtStr();
-  const header   = kvRow(aLabel, dateStr);
+  const titleW   = aLabel.length * CHAR_WIDTH_PX + CHAR_WIDTH_PX;
+  const titleX   = Math.max(0, Math.floor((DISPLAY_WIDTH - titleW) / 2));
   const wrapped   = wordWrap(state.answerText);
   const justified = justifyWrapped(wrapped);
-  const body      = justified.length > VISIBLE_LINES - 1
-    ? applyScrollIndicators(justified, 0, VISIBLE_LINES - 1)
+  const body      = justified.length > VISIBLE_LINES
+    ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
     : justified.join('\n');
-  const content  = header + '\n' + body;
   const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
 
   return {
     textObject: [
+      dtContainer(22),
+      textContainer(3, 'title', aLabel, titleX, 16, titleW, 18),
       new TextContainerProperty({
-        containerID: 1, containerName: 'main',
-        content, xPosition: 0, yPosition: 0,
-        width: 576, height: 250,
+        containerID: 2, containerName: 'body',
+        content: body, xPosition: 0, yPosition: 36,
+        width: 576, height: 214,
         isEventCapture: 1, paddingLength: 0,
         borderWidth: 0, borderColor: 0, borderRadius: 0,
       }),
