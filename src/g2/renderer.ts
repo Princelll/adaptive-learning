@@ -18,6 +18,7 @@ import { bedIconBytes, sleepColumnBytes, userBedIconPngBytes, userBookIconPngByt
 import { log } from './log';
 import {
   DISPLAY_WIDTH,
+  buildHeaderLine,
   buildTitleBlock,
   buildFooter,
   buildActionBar,
@@ -402,25 +403,21 @@ function justifyWrapped(lines: string[]): string[] {
   );
 }
 
-// Center text between horizontal-rule characters (─ is G2-supported, no space-stripping issue).
-// e.g. centeredTitle("Answer") → "──────────────────── Answer ─────────────────────────"
-function centeredTitle(text: string, width = CHARS_PER_LINE): string {
-  const inner = ` ${text} `;
-  const fill  = Math.max(0, width - inner.length);
-  const left  = Math.floor(fill / 2);
-  const right = fill - left;
-  return '\u2500'.repeat(left) + inner + '\u2500'.repeat(right);
-}
-
 // Question screen.
 // Layout: dtContainer (date, header zone) | single full-width body (title + content) | card footer.
 // A single container avoids the G2 SDK multi-container clip-at-right-edge behaviour that
 // caused body text to be cut off at ~330 px (the right edge of the narrow title container).
+// Title is space-centered via buildHeaderLine; separator() on its own line avoids mixing
+// ─ chars with text on the same line (─ renders wider than ASCII and causes wrapping).
 function buildQuestion(): PageConfig {
   const wrapped   = wordWrap(state.questionText);
   const justified = justifyWrapped(wrapped);
   const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
-  const allLines  = [centeredTitle(`Question ${state.cardNumber}`), ...justified];
+  const allLines  = [
+    buildHeaderLine(`Question ${state.cardNumber}`),
+    separator(),
+    ...justified,
+  ];
   const body      = allLines.length > VISIBLE_LINES
     ? applyScrollIndicators(allLines, 0, VISIBLE_LINES)
     : allLines.join('\n');
@@ -454,7 +451,11 @@ function buildAnswer(): PageConfig {
   const wrapped   = wordWrap(state.answerText);
   const justified = justifyWrapped(wrapped);
   const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
-  const allLines  = [centeredTitle('Answer'), ...justified];
+  const allLines  = [
+    buildHeaderLine('Answer'),
+    separator(),
+    ...justified,
+  ];
   const body      = allLines.length > VISIBLE_LINES
     ? applyScrollIndicators(allLines, 0, VISIBLE_LINES)
     : allLines.join('\n');
