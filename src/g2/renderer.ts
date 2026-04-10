@@ -402,36 +402,39 @@ function justifyWrapped(lines: string[]): string[] {
   );
 }
 
-// Pixel width of one G2 monospace character (576 / 49 chars, empirically measured)
-const CHAR_WIDTH_PX = Math.round(DISPLAY_WIDTH / CHARS_PER_LINE); // = 12
+// Center text between horizontal-rule characters (─ is G2-supported, no space-stripping issue).
+// e.g. centeredTitle("Answer") → "──────────────────── Answer ─────────────────────────"
+function centeredTitle(text: string, width = CHARS_PER_LINE): string {
+  const inner = ` ${text} `;
+  const fill  = Math.max(0, width - inner.length);
+  const left  = Math.floor(fill / 2);
+  const right = fill - left;
+  return '\u2500'.repeat(left) + inner + '\u2500'.repeat(right);
+}
 
 // Question screen.
+// Layout: dtContainer (date, header zone) | single full-width body (title + content) | card footer.
+// A single container avoids the G2 SDK multi-container clip-at-right-edge behaviour that
+// caused body text to be cut off at ~330 px (the right edge of the narrow title container).
 function buildQuestion(): PageConfig {
-  const qLabel   = `Question ${state.cardNumber}`;
-  const titleW   = qLabel.length * CHAR_WIDTH_PX + CHAR_WIDTH_PX;
-  const titleX   = Math.max(0, Math.floor((DISPLAY_WIDTH - titleW) / 2));
   const wrapped   = wordWrap(state.questionText);
   const justified = justifyWrapped(wrapped);
-  const body      = justified.length > VISIBLE_LINES
-    ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
-    : justified.join('\n');
-  const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
+  const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
+  const allLines  = [centeredTitle(`Question ${state.cardNumber}`), ...justified];
+  const body      = allLines.length > VISIBLE_LINES
+    ? applyScrollIndicators(allLines, 0, VISIBLE_LINES)
+    : allLines.join('\n');
 
-  // The G2 SDK merges ALL containers with yPosition < 44 into the header row (with | dividers).
-  // Fix: keep only dtContainer in the header zone; title and body start at y≥46 (body zone).
-  //
   // dtContainer   y = -9 → 19   header zone  (date, x=410)
-  // title         y = 46 → 66   body zone    (centered via xPosition — no header conflict)
-  // body          y = 68 → 248  body zone    (full 576px, isEventCapture)
+  // body          y = 46 → 250  body zone    (full 576px, title as first line, isEventCapture)
   // card          y = 254 → 288 footer zone
   return {
     textObject: [
       dtContainer(28),
-      textContainer(3, 'title', qLabel, titleX, 46, titleW, 20),
       new TextContainerProperty({
         containerID: 2, containerName: 'body',
-        content: body, xPosition: 0, yPosition: 68,
-        width: 576, height: 180,
+        content: body, xPosition: 0, yPosition: 46,
+        width: 576, height: 204,
         isEventCapture: 1, paddingLength: 0,
         borderWidth: 0, borderColor: 0, borderRadius: 0,
       }),
@@ -446,26 +449,23 @@ function buildQuestion(): PageConfig {
   };
 }
 
-// Answer screen.
+// Answer screen — same single-container layout as buildQuestion.
 function buildAnswer(): PageConfig {
-  const aLabel   = 'Answer';
-  const titleW   = aLabel.length * CHAR_WIDTH_PX + CHAR_WIDTH_PX;
-  const titleX   = Math.max(0, Math.floor((DISPLAY_WIDTH - titleW) / 2));
   const wrapped   = wordWrap(state.answerText);
   const justified = justifyWrapped(wrapped);
-  const body      = justified.length > VISIBLE_LINES
-    ? applyScrollIndicators(justified, 0, VISIBLE_LINES)
-    : justified.join('\n');
-  const cardText = `Card ${state.cardNumber}/${state.totalCards}`;
+  const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
+  const allLines  = [centeredTitle('Answer'), ...justified];
+  const body      = allLines.length > VISIBLE_LINES
+    ? applyScrollIndicators(allLines, 0, VISIBLE_LINES)
+    : allLines.join('\n');
 
   return {
     textObject: [
       dtContainer(28),
-      textContainer(3, 'title', aLabel, titleX, 46, titleW, 20),
       new TextContainerProperty({
         containerID: 2, containerName: 'body',
-        content: body, xPosition: 0, yPosition: 68,
-        width: 576, height: 180,
+        content: body, xPosition: 0, yPosition: 46,
+        width: 576, height: 204,
         isEventCapture: 1, paddingLength: 0,
         borderWidth: 0, borderColor: 0, borderRadius: 0,
       }),
