@@ -407,15 +407,15 @@ function justifyWrapped(lines: string[]): string[] {
 // Layout: dtContainer (date, header zone) | single full-width body (title + content) | card footer.
 // A single container avoids the G2 SDK multi-container clip-at-right-edge behaviour that
 // caused body text to be cut off at ~330 px (the right edge of the narrow title container).
-// Title is space-centered via buildHeaderLine; separator() on its own line avoids mixing
-// ─ chars with text on the same line (─ renders wider than ASCII and causes wrapping).
+// Title is space-centered via buildHeaderLine. An empty line separates title from body —
+// separator(49) overflows because ─ renders wider than ASCII chars on G2.
 function buildQuestion(): PageConfig {
   const wrapped   = wordWrap(state.questionText);
   const justified = justifyWrapped(wrapped);
   const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
   const allLines  = [
     buildHeaderLine(`Question ${state.cardNumber}`),
-    separator(),
+    '',
     ...justified,
   ];
   const body      = allLines.length > VISIBLE_LINES
@@ -453,7 +453,7 @@ function buildAnswer(): PageConfig {
   const cardText  = `Card ${state.cardNumber}/${state.totalCards}`;
   const allLines  = [
     buildHeaderLine('Answer'),
-    separator(),
+    '',
     ...justified,
   ];
   const body      = allLines.length > VISIBLE_LINES
